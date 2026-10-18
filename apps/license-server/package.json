@@ -1,0 +1,21 @@
+{
+  "name": "@relayx/license-server",
+  "version": "0.14.2",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted RelayX license server (wire-compatible replacement for https://license.relayx.cc).",
+  "scripts": {
+    "dev": "tsx watch src/index.ts serve",
+    "start": "tsx src/index.ts serve",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "relayx",
+  "private": true,
+  "version": "0.14.2",
+  "description": "Clean-room replica of the RelayX tunnel-management panel, built from the reverse-engineering evidence in relayx-analysis/.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:generate": "prisma generate --schema apps/backend/prisma/schema.prisma",
+    "db:push": "prisma db push --schema apps/backend/prisma/schema.prisma",
+    "db:reset": "prisma db push --force-reset --schema apps/backend/prisma/schema.prisma",
+    "db:studio": "prisma studio --schema apps/backend/prisma/schema.prisma",
+    "seed": "pnpm --filter @relayx/backend seed",
+    "dev": "pnpm --filter @relayx/backend dev",
+    "start": "pnpm --filter @relayx/backend start",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:e2e": "vitest run tests/e2e",
+    "agent:build": "cd apps/agent && go build -o ../../dist/relayx-agent ./cmd/relayx-agent"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "prisma": "6.17.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

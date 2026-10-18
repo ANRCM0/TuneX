@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+apps/backend/prisma/*.db
+apps/backend/prisma/*.db-journal
+apps/backend/prisma/dev.db*
+data/
+coverage/
+.DS_Store
+relayx-agent.lock
+apps/license-server/*.db
+apps/license-server/*.db-journal
+apps/license-server/*.db-wal
+apps/license-server/*.db-shm

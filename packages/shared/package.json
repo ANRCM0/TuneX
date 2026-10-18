@@ -1,0 +1,23 @@
+{
+  "name": "@relayx/shared",
+  "version": "0.14.2",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./date": "./src/date.ts",
+    "./fernet": "./src/fernet.ts",
+    "./pay": "./src/pay.ts",
+    "./permissions": "./src/permissions.ts",
+    "./telegram": "./src/telegram.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "axios": "^1.13.1",
+    "date-fns": "^4.1.0",
+    "fernet": "^0.3.3"
+  }
+}

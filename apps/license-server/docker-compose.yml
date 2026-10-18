@@ -1,0 +1,38 @@
+# RelayX 自建授权服务器（TypeScript 版）部署编排。
+#
+#   cd apps/license-server
+#   docker compose up -d --build
+#   curl -s http://127.0.0.1:8899/health
+#
+# 面板侧（apps/backend）配置 LICENSE_URL=http://127.0.0.1:8899 即可；
+# 若面板跑在另一个容器里，请把 8899 换成面板容器可访问的主机地址/服务名。
+
+services:
+  license-server:
+    build: .
+    image: relayx/license-server:ts-selfhosted
+    container_name: relayx-license-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8899:8899"
+    environment:
+      LICENSE_HOST: 0.0.0.0
+      LICENSE_PORT: "8899"
+      LICENSE_DB: /data/license.db
+      # plain | base64 | fernet。fernet 使用与面板共享的 RELAYX_FERNET_SECRET。
+      LICENSE_CONTENT_MODE: plain
+    volumes:
+      - license_data:/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8899/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  license_data:

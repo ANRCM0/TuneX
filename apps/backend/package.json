@@ -1,0 +1,41 @@
+{
+  "name": "@relayx/backend",
+  "version": "0.14.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:reset": "prisma db push --force-reset",
+    "seed": "tsx src/seed.ts",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "zod:generate": "node scripts/generate-zod.mjs"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "@hono/node-server": "^2.1.5",
+    "@hono/zod-validator": "^0.9.1",
+    "@prisma/client": "6.17.1",
+    "@relayx/shared": "workspace:*",
+    "@scalar/hono-api-reference": "^0.12.12",
+    "axios": "^1.13.1",
+    "bullmq": "^5.63.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.2.3",
+    "fernet": "^0.3.3",
+    "hono": "^4.13.13",
+    "hono-openapi": "^1.3.5",
+    "ioredis": "^5.8.2",
+    "jose": "^6.2.12",
+    "nodemailer": "^7.0.9",
+    "pino": "^10.4.0",
+    "socket.io": "4.8.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.11",
+    "prisma": "6.17.1"
+  }
+}
