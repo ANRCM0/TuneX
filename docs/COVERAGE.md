@@ -19,7 +19,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 
 | Suite | Count | Notes |
 | --- | --- | --- |
-| Workspace vitest (`pnpm test`) | 38 files / 396 tests | 31 unit files, 6 license-server files, 1 live smoke that self-skips when the backend is down |
+| Workspace vitest (`pnpm test`) | 39 files / 407 tests | 31 unit files, 6 license-server files, 1 live smoke that self-skips when the backend is down |
 | License server (dedicated run) | 6 files / 44 tests | Fernet wire compatibility, CLI, HTTP routes, store |
 | Go (`go test ./...`) | 33 packages, all covered | table below |
 | Live E2E | 1 | license → config push → TCP forward → observer → exact traffic accounting → OpenAPI document |
@@ -62,6 +62,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Tickets (ownership, replies, Telegram routing) | `tests/unit/tickets.test.ts` |
 | Roles (permission sanitising, in-use guard) | `tests/unit/roles-balance.test.ts` |
 | System config (defaults, upsert, `getAllConfigs` asymmetry) | `tests/unit/config-user.test.ts` |
+| In-memory Redis (expiry, hashes, pub/sub, pipeline, lock) | `tests/unit/redis-memory.test.ts` |
 | StackAuth user bridge | `tests/unit/config-user.test.ts` |
 | License client (cache, refresh, error mapping) | `tests/unit/license-client.test.ts` |
 | Email transports (SMTP fake, Resend) | `tests/unit/email-service.test.ts` |

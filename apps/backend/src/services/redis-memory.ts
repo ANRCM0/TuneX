@@ -30,6 +30,7 @@ export class MemoryRedis {
   private sets = new Map<string, SetEntry>();
   private handlers = new Map<string, (channel: string, message: string) => void>();
   private channels = new Set<string>();
+  private messageHandler: ((channel: string, message: string) => void) | null = null;
   private sweep: NodeJS.Timeout | null = null;
 
   constructor(private opts: { sweepIntervalMs?: number } = {}) {
@@ -200,12 +201,19 @@ export class MemoryRedis {
   }
 
   async unsubscribe(...channels: string[]): Promise<void> {
-    for (const channel of channels.length ? channels : [...this.channels]) this.channels.delete(channel);
+    const targets = channels.length ? channels : [...this.channels];
+    for (const channel of targets) {
+      this.channels.delete(channel);
+      // ioredis stops delivering after UNSUBSCRIBE; the handler must leave the
+      // shared bus set too, or a later publish still reaches this facade.
+      if (this.messageHandler) bus.get(channel)?.delete(this.messageHandler);
+    }
   }
 
   on(event: "message", handler: (channel: string, message: string) => void): this {
     if (event === "message") {
       this.handlers.set("message", handler);
+      this.messageHandler = handler;
       if (!bus.has("__any__")) bus.set("__any__", new Set());
       // Register against every channel this facade subscribed to at call time.
       for (const channel of this.channels) {
@@ -227,8 +235,12 @@ export class MemoryRedis {
   }
 
   async quit(): Promise<void> {
+    if (this.messageHandler) {
+      for (const channel of this.channels) bus.get(channel)?.delete(this.messageHandler);
+    }
     this.handlers.clear();
     this.channels.clear();
+    this.messageHandler = null;
     if (this.sweep) clearInterval(this.sweep);
   }
 

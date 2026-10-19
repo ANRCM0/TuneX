@@ -38,6 +38,7 @@ live E2E.
 | Roles and balance adjustments | `vitest run tests/unit/roles-balance.test.ts` | permission sanitising, role create/update/delete collisions and in-use guard, balance/commission increments with admin logs, negative rollback, log filters |
 | DNS orchestration | `vitest run tests/unit/dns-orchestration.test.ts` | provider CRUD/filters/cascade delete, in-group validation and custom lines, owner-scoped update/delete, record pairing in syncIpSet |
 | Commission wallet + withdrawals | `vitest run tests/unit/withdraw.test.ts` | withdraw creation debit/log/ticket, min amount/method/balance gates, approve vs reject refund, transfer between wallets with both logs, admin filters |
+| In-memory Redis | `vitest run tests/unit/redis-memory.test.ts` | strings/NX/PX/expiry sweep, hashes/sets/glob keys, pub-sub delivery and unsubscribe, pipeline tuples, in-process lock serialisation |
 | Ticket service | `vitest run tests/unit/tickets.test.ts` | create/list/thread ownership, status updates, user and admin replies with notification payloads, telegram routing by ownership/super-admin |
 | Node and node-group services | `vitest run tests/unit/node-groups.test.ts` | port-range parsing quirks, group create/update ordering and owner scoping, plan-based group visibility (all-in, explicit list, custom), out-group allow-list, node id uniqueness, liveness window, scoped cascade delete |
 | Tunnel writes and queries | `vitest run tests/unit/tunnel-create.test.ts` | createTunnel insert/chains/order_by, per-user cap, port conflict/range, out-group and protocol gates, wireguard preparation; getTunnels scoping, filters, pagination, sorting, chain filter; listen-protocol defaults/reuse |
@@ -58,7 +59,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 38 files, 396 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 39 files, 407 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
