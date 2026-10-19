@@ -1,6 +1,6 @@
-// Package wstun is the gost wss and mwss transport. wss is one relay
-// connection per websocket. mwss is smux v1 over that websocket, which is
-// what the panel emits when the tunnel type is mwss. TLS uses the same
+// Package wstun is the gost ws, wss, mws and mwss transport. wss is one
+// relay connection per websocket. mwss is smux v1 over that websocket.
+// ws and mws are the same two shapes without TLS. TLS uses the same
 // self-signed certificate as the tls listener: the panel does not ship a key.
 package wstun
 
@@ -22,12 +22,13 @@ import (
 // DefaultPath is gost's ws.path when the panel leaves it empty.
 const DefaultPath = "/ws"
 
-// Server accepts TLS connections and upgrades /path to a websocket.
-// Mux wraps each websocket in an smux server.
+// Server accepts connections and upgrades /path to a websocket.
+// Mux wraps each websocket in an smux server. Plain skips TLS.
 type Server struct {
 	Name  string
 	Path  string
 	Mux   bool
+	Plain bool
 	Serve func(net.Conn)
 
 	ln  net.Listener
@@ -43,10 +44,14 @@ func (s *Server) Listen(addr string) error {
 	if err != nil {
 		return err
 	}
-	cfg, err := selfsign.Server(s.Name, nil)
-	if err != nil {
-		_ = raw.Close()
-		return err
+	ln := raw
+	if !s.Plain {
+		cfg, err := selfsign.Server(s.Name, nil)
+		if err != nil {
+			_ = raw.Close()
+			return err
+		}
+		ln = tls.NewListener(raw, cfg)
 	}
 	path := s.Path
 	if path == "" {
@@ -73,7 +78,7 @@ func (s *Server) Listen(addr string) error {
 		}
 		go s.mux(c)
 	})
-	s.ln = tls.NewListener(raw, cfg)
+	s.ln = ln
 	s.srv = &http.Server{Handler: mux, ReadHeaderTimeout: 15 * time.Second}
 	go func() { _ = s.srv.Serve(s.ln) }()
 	return nil
@@ -127,13 +132,14 @@ func (s *Server) mux(c net.Conn) {
 	}
 }
 
-// Dial opens a websocket to addr. kind "mwss" opens one smux stream on a
-// session cached per address. Any other kind returns the websocket itself.
+// Dial opens a websocket to addr. kind "mwss" or "mws" opens one smux
+// stream on a session cached per address and kind. "ws" and "wss" return
+// the websocket itself. "ws" and "mws" do not use TLS.
 func Dial(kind, addr, name, path string) (net.Conn, error) {
-	if kind != "mwss" {
-		return dialWS(addr, name, path)
+	if kind != "mwss" && kind != "mws" {
+		return dialWS(kind, addr, name, path)
 	}
-	key := addr + " " + path
+	key := kind + " " + addr + " " + path
 	sessMu.Lock()
 	sh := sess[key]
 	if sh != nil && sh.session.IsClosed() {
@@ -141,7 +147,7 @@ func Dial(kind, addr, name, path string) (net.Conn, error) {
 		sh = nil
 	}
 	if sh == nil {
-		conn, err := dialWS(addr, name, path)
+		conn, err := dialWS(kind, addr, name, path)
 		if err != nil {
 			sessMu.Unlock()
 			return nil, err
@@ -170,7 +176,7 @@ func Dial(kind, addr, name, path string) (net.Conn, error) {
 	return stream, nil
 }
 
-func dialWS(addr, name, path string) (net.Conn, error) {
+func dialWS(kind, addr, name, path string) (net.Conn, error) {
 	if path == "" {
 		path = DefaultPath
 	}
@@ -181,10 +187,16 @@ func dialWS(addr, name, path string) (net.Conn, error) {
 	if host == "" {
 		host = addr
 	}
-	u := url.URL{Scheme: "wss", Host: host, Path: path}
+	scheme := "wss"
+	var tlsConfig = selfsign.Client(name, nil)
+	if kind == "ws" || kind == "mws" {
+		scheme = "ws"
+		tlsConfig = nil
+	}
+	u := url.URL{Scheme: scheme, Host: host, Path: path}
 	d := websocket.Dialer{
 		HandshakeTimeout: 15 * time.Second,
-		TLSClientConfig:  selfsign.Client(name, nil),
+		TLSClientConfig:  tlsConfig,
 		NetDial: func(network, _ string) (net.Conn, error) {
 			return (&net.Dialer{Timeout: 15 * time.Second}).Dial("tcp", addr)
 		},

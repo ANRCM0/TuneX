@@ -187,7 +187,7 @@ require_free_port "$E2E_ECHO_PORT"
 if [[ -f "$ROOT/.env" ]]; then
   CONFIG_SECRET="${CONFIG_SECRET:-$(grep -E '^CONFIG_SECRET=' "$ROOT/.env" | head -1 | cut -d= -f2-)}"
 fi
-CONFIG_SECRET="${CONFIG_SECRET:-5HVa-B4kYWf9qI524XABW2lg0g5OZZfyq9BoZWNrHp0=}"
+CONFIG_SECRET="${CONFIG_SECRET:-KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4=}"
 
 if [[ ! -x "$AGENT_BIN" || "${E2E_REBUILD:-0}" == "1" ]]; then
   say "building agent"

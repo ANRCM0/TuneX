@@ -303,7 +303,7 @@ func (m *Manager) start(cfg *gostcfg.Config, s gostcfg.Service) (Result, io.Clos
 	case (kind == "tls" || kind == "mtls") && handlerType == "relay":
 		return m.startTLS(cfg, s, host, candidates)
 
-	case (kind == "wss" || kind == "mwss") && handlerType == "relay":
+	case (kind == "ws" || kind == "wss" || kind == "mws" || kind == "mwss") && handlerType == "relay":
 		return m.startWSS(cfg, s, host, candidates)
 
 	case kind == "relayx" && handlerType == "relay":
@@ -327,7 +327,7 @@ func (m *Manager) start(cfg *gostcfg.Config, s gostcfg.Service) (Result, io.Clos
 	case kind == "udp":
 		return m.startUDP(cfg, s, host, candidates, targets)
 
-	case kind == "tcp" || kind == "tls" || kind == "ws" || kind == "wss" || kind == "mwss" || kind == "mtls":
+	case kind == "tcp" || kind == "tls" || kind == "ws" || kind == "wss" || kind == "mws" || kind == "mwss" || kind == "mtls":
 		if len(targets) == 0 {
 			return fail(fmt.Errorf("service %s: %s/%s has no forward target", s.Name, kind, handlerType))
 		}
@@ -638,10 +638,12 @@ func (m *Manager) startWSS(cfg *gostcfg.Config, s gostcfg.Service, host string, 
 	if s.Listener != nil {
 		path = s.Listener.MetaString("path")
 	}
+	kind := s.Kind()
 	srv := &wstun.Server{
 		Name:  cfg.TLSName(),
 		Path:  path,
-		Mux:   s.Kind() == "mwss",
+		Mux:   kind == "mwss" || kind == "mws",
+		Plain: kind == "ws" || kind == "mws",
 		Serve: inner.ServeConn,
 	}
 	var lastErr error
@@ -1076,7 +1078,7 @@ func hopProtocol(connector string) bool {
 
 func isPlainForward(kind, handler string) bool {
 	switch kind {
-	case "tcp", "tls", "ws", "wss", "mwss", "mtls":
+	case "tcp", "tls", "ws", "wss", "mws", "mwss", "mtls":
 	default:
 		return false
 	}

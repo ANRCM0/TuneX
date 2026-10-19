@@ -4,7 +4,7 @@ import { db } from "../../db";
 import { logger } from "../../logger";
 import { fernetService } from "../../services/fernet";
 import { inNodeGroupDNSService } from "../../services/in_node_group_dns";
-import { licenseService } from "../../services/license";
+import { licenseExpired, licenseService } from "../../services/license";
 import { notifyService } from "../../services/notify";
 import { redisService } from "../../services/redis";
 import { systemConfigService } from "../../services/system_config";
@@ -46,7 +46,7 @@ export function register(socket: Socket): void {
       await rejectAndBlock(redisService, token, callback, "无有效授权，请联系管理员");
       return;
     }
-    if (license && license.expired_at < new Date()) {
+    if (license && licenseExpired(license.expired_at)) {
       await rejectAndBlock(redisService, token, callback, "License 已过期，请联系管理员");
       return;
     }

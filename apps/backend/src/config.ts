@@ -50,8 +50,10 @@ export const PORT = Number.parseInt(process.env.PORT || "3000", 10);
  * `fernet.Secret` rejects anything that is not exactly 32 url-safe base64-encoded
  * bytes, and `services/fernet.ts` constructs it at import time — an invalid value
  * here aborts the whole process. Upstream shipped no default (the variable is
- * mandatory in production); the replica default below is a fixed, valid key so
- * `pnpm dev` works out of the box. Override it in production.
+ * mandatory in production); the default below is the exact Fernet key the recovered
+ * panel hardcodes (`work/modules/006__src__services__fernet.ts:2`) and the one the
+ * upstream agent carries as key1, so panel and agent decrypt each other's configs
+ * without extra configuration. Override it in production.
  */
 export const CONFIG_SECRET =
-  process.env.CONFIG_SECRET || "5HVa-B4kYWf9qI524XABW2lg0g5OZZfyq9BoZWNrHp0=";
+  process.env.CONFIG_SECRET || "KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4=";

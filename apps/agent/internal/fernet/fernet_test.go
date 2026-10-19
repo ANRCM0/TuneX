@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/relayx/agent/internal/config"
 )
 
 // Vectors produced by the panel's own `fernet@0.3.3` package
@@ -145,5 +147,35 @@ func TestEncryptRoundTrip(t *testing.T) {
 
 	if _, err := Encrypt([]byte("short"), plaintext); !errors.Is(err, ErrKeyLength) {
 		t.Fatalf("short key error = %v, want ErrKeyLength", err)
+	}
+}
+
+// TestPanelDefaultKeyInterop decrypts a token produced by the panel's fernet
+// package with the key the panel hardcodes (work/modules/006__src__services__fernet.ts:2,
+// also this agent's key1). This is the out-of-the-box config push path.
+func TestPanelDefaultKeyInterop(t *testing.T) {
+	const panelDefaultKey = "KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4="
+	const token = "gAAAAABq1hCI_1whgtJL7U9Fo1IHT73StVDOZ7Q8zFNfDLix5goZBk4RN_7WPnls6DOmedq_GWy8VHhSjFLAvnXrjYw8VCIygaHVsGfikf8upPGOaclwl00="
+	const want = `{"services":[{"name":"tcp-1"}]}`
+
+	key, err := DecodeKey(panelDefaultKey)
+	if err != nil {
+		t.Fatalf("DecodeKey(panel default): %v", err)
+	}
+	plain, err := VerifyAndDecrypt([][]byte{key}, token, 0)
+	if err != nil {
+		t.Fatalf("VerifyAndDecrypt: %v", err)
+	}
+	if string(plain) != want {
+		t.Fatalf("plaintext = %q, want %q", plain, want)
+	}
+
+	// The agent's own default must be the same literal.
+	agentKey, err := DecodeKey(config.DefaultConfigSecret)
+	if err != nil {
+		t.Fatalf("agent default key: %v", err)
+	}
+	if string(agentKey) != string(key) {
+		t.Fatal("agent default key differs from the panel key")
 	}
 }

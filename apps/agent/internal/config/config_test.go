@@ -23,8 +23,8 @@ func TestNewDefaults(t *testing.T) {
 	if cfg.LicenseSecret != DefaultLicenseSecret {
 		t.Fatalf("LicenseSecret = %q", cfg.LicenseSecret)
 	}
-	if cfg.PprofPort != 6060 {
-		t.Fatalf("PprofPort = %d", cfg.PprofPort)
+	if cfg.PprofPort != 0 {
+		t.Fatalf("PprofPort default = %d, want 0", cfg.PprofPort)
 	}
 	if len(cfg.Ports()) != 9 {
 		t.Fatalf("Ports() = %v", cfg.Ports())

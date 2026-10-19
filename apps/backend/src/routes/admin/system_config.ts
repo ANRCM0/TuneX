@@ -52,7 +52,7 @@ router.post(
   zValidator("json", z.object({ email: z.string().email().optional() })),
   async (c) => {
     const { email } = c.req.valid("json");
-    const to = email ?? "";
+    const to = email || c.get("user").email;
     const siteName =
       ((await systemConfigService.getConfig(
         SystemConfigName.SITE_NAME,

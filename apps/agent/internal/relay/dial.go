@@ -198,7 +198,7 @@ func dialFirst(hop Hop) (net.Conn, error) {
 	if hop.Dialer == "tls" || hop.Dialer == "mtls" {
 		return tlstun.Dial(hop.Dialer, hop.Addr, hop.Host)
 	}
-	if hop.Dialer == "wss" || hop.Dialer == "mwss" {
+	if hop.Dialer == "ws" || hop.Dialer == "wss" || hop.Dialer == "mws" || hop.Dialer == "mwss" {
 		return wstun.Dial(hop.Dialer, hop.Addr, hop.Host, hop.Path)
 	}
 	return (&net.Dialer{Timeout: 15 * time.Second}).Dial("tcp", hop.Addr)

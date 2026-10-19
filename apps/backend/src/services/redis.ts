@@ -3,7 +3,7 @@ import { AGENT_VERSION_URL, REDIS_URL } from "../config";
 import { fernetService } from "./fernet";
 import { logger } from "./logger";
 import { service, TOKENS } from "../container";
-import { MemoryLock, MemoryRedis } from "./redis-memory";
+import { MemoryLock, MemoryRedis, RedisLock, type LockClient } from "./redis-memory";
 
 /**
  * Redis key namespace, mirrored from the recovered `src/services/redis.ts`.
@@ -93,8 +93,13 @@ async function createClient(): Promise<RedisLike> {
   return new Redis(REDIS_URL, { maxRetriesPerRequest: null }) as unknown as RedisLike;
 }
 
-/** In-process stand-in for the redlock instance upstream builds over `client`. */
-export const lock = new MemoryLock();
+/**
+ * The lock upstream builds as `redlock` over the shared client.
+ * With a real Redis the lock is SET NX PX keyed on the same resources, so two
+ * processes cannot renew the same user at once. Without Redis it is the
+ * in-process mutex (`docs/DEVIATIONS.md` §7).
+ */
+export const lock = REDIS_URL ? new RedisLock(client as unknown as LockClient) : new MemoryLock();
 
 export class RedisService {
   LOCK_EXPIRE = 5000;

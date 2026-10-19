@@ -38,7 +38,7 @@ import {
   normalizeRealityDest,
   realityServerName,
 } from "../utils/reality";
-import type { LicenseService } from "./license";
+import { licenseExpired, type LicenseService } from "./license";
 import type { NodeGroupService } from "./node_group";
 import type { RedisService } from "./redis";
 import type { SystemConfigService } from "./system_config";
@@ -850,7 +850,7 @@ export class TunnelService {
 
   async getAllAvailableTunnels(): Promise<AvailableTunnel[]> {
     const license = await this.licenseService.getLicense();
-    if (!license || new Date(license.expired_at) < new Date()) {
+    if (!license || licenseExpired(license.expired_at)) {
       return [];
     }
     const tunnels = await db.tunnel.findMany({
@@ -977,7 +977,7 @@ export class TunnelService {
     out_node_group_id: number | null,
   ): Promise<FilterableTunnel[]> {
     const license = await this.licenseService.getLicense();
-    if (!license || new Date(license.expired_at) < new Date()) {
+    if (!license || licenseExpired(license.expired_at)) {
       return [];
     }
     const tunnels = await db.tunnel.findMany({

@@ -36,6 +36,42 @@ func TestRoundRobinWeight(t *testing.T) {
 	}
 }
 
+func TestStrategyAliases(t *testing.T) {
+	nodes := []Node{{Addr: "127.0.0.1:1"}, {Addr: "127.0.0.1:2"}}
+	for _, name := range []string{"rr", "ha", "no-such", "parallel"} {
+		b := balancer(name, nodes...)
+		if b.strategy != "round" {
+			t.Fatalf("%s -> %s", name, b.strategy)
+		}
+		a, _ := b.Next(addr(1))
+		c, _ := b.Next(addr(2))
+		if a == c {
+			t.Fatalf("%s did not rotate: %s", name, a)
+		}
+	}
+	if balancer("random", nodes...).strategy != "rand" {
+		t.Fatal("random")
+	}
+	if balancer("leastconn", nodes...).strategy != "lc" {
+		t.Fatal("leastconn")
+	}
+	if balancer("leastlatency", nodes...).strategy != "ll" {
+		t.Fatal("leastlatency")
+	}
+	lat := balancer("leastlatency", nodes...)
+	lat.Observe("127.0.0.1:1", time.Second)
+	lat.Observe("127.0.0.1:2", time.Millisecond)
+	if got, _ := lat.Next(addr(1)); got != "127.0.0.1:2" {
+		t.Fatalf("leastlatency %s", got)
+	}
+	empty := newBalancer(nil, nodes)
+	a, _ := empty.Next(addr(1))
+	c, _ := empty.Next(addr(2))
+	if empty.strategy != "round" || a == c {
+		t.Fatalf("empty %s %s %s", empty.strategy, a, c)
+	}
+}
+
 func TestFifoSkipsBackup(t *testing.T) {
 	b := balancer("fifo",
 		Node{Addr: "127.0.0.1:9", Metadata: map[string]any{"backup": true}},

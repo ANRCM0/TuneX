@@ -35,8 +35,9 @@ const (
 	ConfigDirName  = ".relayx-agent"
 	ConfigFileName = "config"
 
-	// DefaultPprofPort mirrors the upstream --pprof-port default (6060).
-	DefaultPprofPort = 6060
+	// DefaultPprofPort mirrors the upstream --pprof-port default: 0 (disabled).
+	// Pprof only starts when the flag/env asks for it.
+	DefaultPprofPort = 0
 
 	// EnvConfigSecret / EnvConfigSecretAlt let the deployment override the
 	// Fernet key without a flag.
@@ -87,8 +88,6 @@ func New() *Config {
 	return &Config{
 		ConfigSecret:  DefaultConfigSecret,
 		LicenseSecret: DefaultLicenseSecret,
-		// Upstream's cobra flag defaults --pprof-port to 6060, so a default
-		// start does expose the pprof endpoint on 127.0.0.1:6060.
 		PprofPort: DefaultPprofPort,
 	}
 }

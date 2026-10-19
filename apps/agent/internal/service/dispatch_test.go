@@ -91,6 +91,16 @@ func TestApplyProtocolHandlers(t *testing.T) {
 			wantTyp: "wss/relay",
 		},
 		{
+			name:    "relay over ws",
+			doc:     `{"services":[{"name":"ws-1","addr":"127.0.0.1:0","handler":{"type":"relay"},"listener":{"type":"ws"}}]}`,
+			wantTyp: "ws/relay",
+		},
+		{
+			name:    "relay over mws",
+			doc:     `{"services":[{"name":"mws-1","addr":"127.0.0.1:0","handler":{"type":"relay"},"listener":{"type":"mws"}}]}`,
+			wantTyp: "mws/relay",
+		},
+		{
 			name:    "relay over mtcp",
 			doc:     `{"services":[{"name":"mtcp-1","addr":"127.0.0.1:0","handler":{"type":"relay"},"listener":{"type":"mtcp"}}]}`,
 			wantTyp: "mtcp/relay",

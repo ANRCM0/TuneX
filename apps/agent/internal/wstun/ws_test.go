@@ -91,6 +91,53 @@ func TestMWSSReusesSession(t *testing.T) {
 	roundTrip(t, second, "mwss-2")
 }
 
+func TestWSAndMWSWithoutTLS(t *testing.T) {
+	plain := &Server{
+		Name:  "relayx",
+		Plain: true,
+		Serve: func(conn net.Conn) {
+			defer conn.Close()
+			_, _ = io.Copy(conn, conn)
+		},
+	}
+	if err := plain.Listen("127.0.0.1:0"); err != nil {
+		t.Fatalf("Listen: %v", err)
+	}
+	t.Cleanup(func() { _ = plain.Close() })
+	conn, err := Dial("ws", plain.Addr().String(), "", "")
+	if err != nil {
+		t.Fatalf("ws Dial: %v", err)
+	}
+	defer conn.Close()
+	roundTrip(t, conn, "ws-plain")
+
+	muxed := &Server{
+		Name:  "relayx",
+		Plain: true,
+		Mux:   true,
+		Serve: func(conn net.Conn) {
+			defer conn.Close()
+			_, _ = io.Copy(conn, conn)
+		},
+	}
+	if err := muxed.Listen("127.0.0.1:0"); err != nil {
+		t.Fatalf("Listen mux: %v", err)
+	}
+	t.Cleanup(func() { _ = muxed.Close() })
+	first, err := Dial("mws", muxed.Addr().String(), "", DefaultPath)
+	if err != nil {
+		t.Fatalf("mws Dial: %v", err)
+	}
+	defer first.Close()
+	second, err := Dial("mws", muxed.Addr().String(), "", DefaultPath)
+	if err != nil {
+		t.Fatalf("mws second: %v", err)
+	}
+	defer second.Close()
+	roundTrip(t, first, "mws-1")
+	roundTrip(t, second, "mws-2")
+}
+
 func TestWrongPathIsRejected(t *testing.T) {
 	srv := echoServer(t, false, "/ws")
 	if _, err := Dial("wss", srv.Addr().String(), "relayx", "/nope"); err == nil {

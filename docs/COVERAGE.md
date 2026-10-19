@@ -45,6 +45,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | --- | --- |
 | Plan price rule (coupon, clamp, setup fee, commission base) | `tests/unit/plan-pricing.test.ts` |
 | Plan purchase end to end (balance, order, user plan, stock, referral) | `tests/unit/plan-purchase.test.ts` |
+| Callback short-circuit, stacked bonus, renewal scan, observer rate sum | `tests/unit/money-gaps.test.ts` |
 | Topup settlement idempotency and referral payout | `tests/unit/topup-settlement.test.ts` |
 | Commission wallet, withdrawals, transfers | `tests/unit/withdraw.test.ts` |
 | Balance/commission admin adjustments and logs | `tests/unit/roles-balance.test.ts` |
@@ -69,6 +70,10 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Notification channels, rendering, business messages | `tests/unit/notify.test.ts` |
 | Telegram API and StackAuth REST clients | `tests/unit/telegram-stackauth.test.ts` |
 | Admin guards behaviour (`$super`/`$staff`, read/write) | `tests/unit/admin-guards.test.ts` |
+| Local cron runner when Redis is unset | `tests/unit/local-scheduler.test.ts` |
+| Redis-backed lock (SET NX PX) | `tests/unit/redis-lock.test.ts` |
+| Health probes, sysinfo heartbeat, topup creation, observer node stats | `tests/unit/ops-gaps.test.ts` |
+| Socket register rejection, register block, `listen_error` | `tests/unit/socket-handlers.test.ts` |
 
 ## Agent: protocol and runtime
 

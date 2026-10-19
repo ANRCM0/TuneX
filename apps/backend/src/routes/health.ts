@@ -8,8 +8,18 @@ import { client } from "../services/redis";
 /** Upstream: src/routes/health.ts (98 lines) — ported verbatim. */
 const app = new Hono();
 
-function eventNamesToObj(emitter: { eventNames(): (string | symbol)[]; listenerCount(e: string | symbol): number }) {
-  return Object.fromEntries(emitter.eventNames().map((e) => [String(e), emitter.listenerCount(e)]));
+function eventNamesToObj(emitter: unknown): Record<string, number> {
+  const candidate = emitter as {
+    eventNames?: () => (string | symbol)[];
+    listenerCount?: (e: string | symbol) => number;
+  };
+  // The in-process Redis stand-in has no EventEmitter surface; upstream's ioredis does.
+  if (typeof candidate.eventNames !== "function" || typeof candidate.listenerCount !== "function") {
+    return {};
+  }
+  return Object.fromEntries(
+    candidate.eventNames().map((e) => [String(e), candidate.listenerCount!(e)]),
+  );
 }
 
 app.get("/", async (c) => {

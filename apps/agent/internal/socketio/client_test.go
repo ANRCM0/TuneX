@@ -342,3 +342,60 @@ func TestCloseIsIdempotent(t *testing.T) {
 		t.Fatalf("Emit after Close = %v", err)
 	}
 }
+
+func TestDisconnectEventFiresHandler(t *testing.T) {
+	fired := make(chan string, 1)
+	srv := testServer(t, func(conn *websocket.Conn) {
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`0{"sid":"s7"}`))
+		_, _, _ = conn.ReadMessage()
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`40`))
+		// Socket.IO DISCONNECT packet (41) from the server.
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`41`))
+		time.Sleep(100 * time.Millisecond)
+	})
+
+	client := dial(t, srv.URL, Config{})
+	client.On("disconnect", func([]json.RawMessage) (any, error) {
+		fired <- "disconnect"
+		return nil, nil
+	})
+	<-client.Connected()
+
+	select {
+	case <-fired:
+	case <-time.After(3 * time.Second):
+		t.Fatal("disconnect handler was not called")
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for !client.Closed() {
+		if time.Now().After(deadline) {
+			t.Fatal("client not closed after a disconnect packet")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestEngineCloseFiresDisconnectHandler(t *testing.T) {
+	fired := make(chan struct{}, 1)
+	srv := testServer(t, func(conn *websocket.Conn) {
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`0{"sid":"s8"}`))
+		_, _, _ = conn.ReadMessage()
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`40`))
+		// Engine.IO CLOSE packet (1).
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`1`))
+		time.Sleep(100 * time.Millisecond)
+	})
+
+	client := dial(t, srv.URL, Config{})
+	client.On("disconnect", func([]json.RawMessage) (any, error) {
+		fired <- struct{}{}
+		return nil, nil
+	})
+	<-client.Connected()
+
+	select {
+	case <-fired:
+	case <-time.After(3 * time.Second):
+		t.Fatal("disconnect handler was not called on engine close")
+	}
+}

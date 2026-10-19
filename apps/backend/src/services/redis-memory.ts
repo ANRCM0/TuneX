@@ -344,3 +344,56 @@ export class MemoryLock {
     }
   }
 }
+
+/** The subset of the Redis client a distributed lock needs. */
+export interface LockClient {
+  set(key: string, value: string, ...args: (string | number)[]): Promise<"OK" | null>;
+  get(key: string): Promise<string | null>;
+  del(...keys: string[]): Promise<number>;
+}
+
+/**
+ * Redlock-shaped lock over SET NX PX. Upstream builds `redlock` over the shared
+ * ioredis client and passes `LOCK_EXPIRE` (5 s) as the TTL; this acquires every
+ * resource in sorted order with the same TTL and releases only the key it still
+ * owns. The TTL is what a multi-process deployment relies on: a crashed holder
+ * does not block the next renewal forever.
+ */
+export class RedisLock {
+  constructor(
+    private readonly client: LockClient,
+    private readonly prefix = "lock:",
+  ) {}
+
+  async using<T>(resources: string[], ttlMs: number, callback: () => Promise<T> | T): Promise<T> {
+    const keys = [...resources].sort().map((resource) => `${this.prefix}${resource}`);
+    const held: { key: string; token: string }[] = [];
+    try {
+      for (const key of keys) {
+        const token = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const deadline = Date.now() + ttlMs;
+        let acquired = false;
+        while (Date.now() < deadline) {
+          if ((await this.client.set(key, token, "PX", ttlMs, "NX")) === "OK") {
+            acquired = true;
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+        if (!acquired) {
+          throw new Error(`lock busy: ${key}`);
+        }
+        held.push({ key, token });
+      }
+      return await callback();
+    } finally {
+      for (let i = held.length - 1; i >= 0; i -= 1) {
+        const { key, token } = held[i];
+        if ((await this.client.get(key)) === token) {
+          await this.client.del(key);
+        }
+      }
+    }
+  }
+}
+

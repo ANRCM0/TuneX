@@ -8,8 +8,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/relayx/agent/internal/logx"
@@ -24,9 +27,9 @@ const upgradeTimeout = 10 * time.Minute
 // aead.dev/minisign + minio/selfupdate with all-zero options — i.e. with
 // signature verification effectively disabled.
 //
-// The replica performs the same download and atomic replacement, but does not
-// restart itself: like upstream, the newly written binary is used on the next
-// start (a supervisor such as systemd owns the restart).
+// The replica downloads, replaces the binary, then re-execs in place. A matching
+// running version is skipped. A matching on-disk version restarts without
+// downloading again. The upgrade lock is relayx-agent.lock beside the binary.
 func (s *session) handleUpgrade(args []json.RawMessage) (any, error) {
 	if len(args) < 1 {
 		return nil, errors.New("upgrade: missing url")
@@ -41,21 +44,109 @@ func (s *session) handleUpgrade(args []json.RawMessage) (any, error) {
 	if url == "" {
 		return nil, errors.New("upgrade: empty url")
 	}
+	if version != "" && version == s.a.version {
+		logx.Infof("panel: already running target version %s, skipping upgrade", version)
+		return map[string]any{"node_id": s.a.nodeID, "version": version, "skipped": true}, nil
+	}
 
-	artifact := fmt.Sprintf("%s-%s-%s", url, runtime.GOOS, runtime.GOARCH)
+	self, err := executablePath()
+	if err != nil {
+		return nil, fmt.Errorf("upgrade: locate executable: %w", err)
+	}
+	self, err = filepath.EvalSymlinks(self)
+	if err != nil {
+		return nil, fmt.Errorf("upgrade: resolve executable: %w", err)
+	}
+	if disk, err := readDiskVersion(self); err == nil && version != "" && disk == version {
+		logx.Infof("panel: binary on disk already %s, restarting", version)
+		return s.finishUpgrade(self, version)
+	}
+
+	lock, lockErr := lockUpgrade(filepath.Dir(self))
+	if lockErr != nil {
+		logx.Warnf("panel: upgrade lock: %v; restarting anyway", lockErr)
+		return s.finishUpgrade(self, version)
+	}
+	if disk, err := readDiskVersion(self); err == nil && version != "" && disk == version {
+		unlockUpgrade(lock)
+		logx.Infof("panel: binary updated by a concurrent upgrader to %s, restarting", version)
+		return s.finishUpgrade(self, version)
+	}
+
+	artifact := binaryURL(url)
 	logx.Infof("panel: upgrade requested to version %q from %s", version, artifact)
-
 	path, err := s.a.downloadBinary(artifact)
 	if err != nil {
+		unlockUpgrade(lock)
 		logx.Errorf("panel: upgrade failed: %v", err)
 		return nil, err
 	}
-	logx.Infof("panel: upgrade staged at %s (version %q); restart required to activate", path, version)
+	unlockUpgrade(lock)
+	logx.Infof("panel: upgraded %s to version %q", path, version)
+	return s.finishUpgrade(path, version)
+}
+
+func (s *session) finishUpgrade(path, version string) (any, error) {
+	if reexecErr := replaceProcess(path); reexecErr != nil {
+		logx.Errorf("panel: re-exec %s: %v", path, reexecErr)
+	}
 	return map[string]any{"node_id": s.a.nodeID, "version": version, "path": path}, nil
 }
 
+// upgradeArch is appended to the download URL. Tests clear it to hit a local server.
+var upgradeArch = runtime.GOOS + "-" + runtime.GOARCH
+
+func binaryURL(prefix string) string {
+	if upgradeArch == "" {
+		return prefix
+	}
+	return prefix + "-" + upgradeArch
+}
+
+var readDiskVersion = func(path string) (string, error) {
+	out, err := exec.Command(path, "--version").CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	fields := strings.Fields(string(out))
+	if len(fields) == 0 {
+		return "", fmt.Errorf("unexpected --version output: %q", out)
+	}
+	return fields[len(fields)-1], nil
+}
+
+// replaceProcess swaps this process for path. Tests replace it; the real call
+// does not return on success.
+var replaceProcess = func(path string) error {
+	return syscall.Exec(path, os.Args, os.Environ())
+}
+
+func lockUpgrade(dir string) (*os.File, error) {
+	f, err := os.OpenFile(filepath.Join(dir, "relayx-agent.lock"), os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		return nil, err
+	}
+	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	return f, nil
+}
+
+func unlockUpgrade(f *os.File) {
+	if f == nil {
+		return
+	}
+	_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+	_ = f.Close()
+}
+
+// executablePath is a seam for tests: replacing the running binary in a test
+// would clobber the test binary itself.
+var executablePath = os.Executable
+
 func (a *Agent) downloadBinary(url string) (string, error) {
-	self, err := os.Executable()
+	self, err := executablePath()
 	if err != nil {
 		return "", fmt.Errorf("upgrade: locate executable: %w", err)
 	}

@@ -32,6 +32,12 @@ export interface LicenseContent {
   content: string;
 }
 
+/** True when the license timestamp is strictly before now. Accepts a Date or an ISO string. */
+export function licenseExpired(expiredAt: string | Date, now = new Date()): boolean {
+  const at = expiredAt instanceof Date ? expiredAt : new Date(expiredAt);
+  return at.getTime() < now.getTime();
+}
+
 export interface LicenseHistoryItem {
   id: string;
   created_at: string;

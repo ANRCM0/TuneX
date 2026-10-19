@@ -41,11 +41,14 @@ interface Field {
 interface Schema {
   models: Map<string, Field[]>;
   enums: Map<string, string[]>;
+  /** Block attributes (`@@unique`, `@@index`, `@@map`) per model, normalised. */
+  blocks: Map<string, string[]>;
 }
 
 function parsePrisma(source: string): Schema {
   const models = new Map<string, Field[]>();
   const enums = new Map<string, string[]>();
+  const blocks = new Map<string, string[]>();
   let current: string | null = null;
   let kind: "model" | "enum" | null = null;
 
@@ -69,8 +72,12 @@ function parsePrisma(source: string): Schema {
       if (!line.trim().startsWith("@@")) enums.get(current)!.push(line.trim());
       continue;
     }
+    if (line.trim().startsWith("@@")) {
+      blocks.set(current, [...(blocks.get(current) ?? []), line.trim().replace(/\s+/g, " ")]);
+      continue;
+    }
     const tokens = line.trim().split(/\s+/);
-    if (tokens.length < 2 || tokens[0].startsWith("@@")) continue;
+    if (tokens.length < 2) continue;
     const [name, rawType] = tokens;
     const attrs = tokens.slice(2).join(" ");
     const defaultMatch = /@default\(((?:[^()]|\([^()]*\))*)\)/.exec(attrs);
@@ -84,7 +91,7 @@ function parsePrisma(source: string): Schema {
       default: defaultMatch ? defaultMatch[1] : null,
     });
   }
-  return { models, enums };
+  return { models, enums, blocks };
 }
 
 const replicaSchema = parsePrisma(readFileSync(REPLICA_SCHEMA, "utf8"));
@@ -165,6 +172,18 @@ describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upst
             differences.push(`${model}.${name}.${key}: upstream=${JSON.stringify(field[key])} replica=${JSON.stringify(mine[key])}`);
           }
         }
+      }
+    }
+    expect(differences).toEqual([]);
+  });
+
+  it("matches block attributes (unique, index, map)", () => {
+    const differences: string[] = [];
+    for (const model of upstream.models.keys()) {
+      const theirs = [...(upstream.blocks.get(model) ?? [])].sort();
+      const ours = [...(replicaSchema.blocks.get(model) ?? [])].sort();
+      if (JSON.stringify(theirs) !== JSON.stringify(ours)) {
+        differences.push(`${model}: upstream=${JSON.stringify(theirs)} replica=${JSON.stringify(ours)}`);
       }
     }
     expect(differences).toEqual([]);

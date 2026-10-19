@@ -14,10 +14,14 @@ import (
 
 // Balancer picks a forwarder address per connection. The panel's
 // load_balance_type is written as selector.strategy: round, rand, fifo, hash,
-// lc (least connections), ll (least observed dial time).
-// A node marked backup is used only when every node is a backup. Weight
-// (metadata.weight, default 1, capped at 64) repeats an address in the ring
-// used by round, rand and hash. fifo always returns the first candidate.
+// lc (least connections), ll (least observed dial time). The agent also
+// accepts rr/ha as round, random as rand, leastconn as lc and leastlatency
+// as ll. An empty or unknown name falls back to round, matching gost; fifo
+// is only the explicit name. parallel is not implemented and uses that
+// same fallback. A node marked backup is used only when every node is a
+// backup. Weight (metadata.weight, default 1, capped at 64) repeats an
+// address in the ring used by round, rand and hash. fifo always returns
+// the first candidate.
 type Balancer struct {
 	strategy string
 	order    []string
@@ -443,15 +447,34 @@ func candidates(nodes []Node) []Node {
 
 func strategyOf(raw json.RawMessage) string {
 	if len(raw) == 0 {
-		return "fifo"
+		return "round"
 	}
 	var sel struct {
 		Strategy string `json:"strategy"`
 	}
-	if err := json.Unmarshal(raw, &sel); err != nil || sel.Strategy == "" {
-		return "fifo"
+	if err := json.Unmarshal(raw, &sel); err != nil {
+		return "round"
 	}
-	return sel.Strategy
+	return canonicalStrategy(sel.Strategy)
+}
+
+// canonicalStrategy maps gost aliases onto the six strategies this balancer
+// implements. Empty and unknown names, including parallel, become round.
+func canonicalStrategy(name string) string {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "fifo":
+		return "fifo"
+	case "rand", "random":
+		return "rand"
+	case "hash":
+		return "hash"
+	case "lc", "leastconn":
+		return "lc"
+	case "ll", "leastlatency":
+		return "ll"
+	default:
+		return "round"
+	}
 }
 
 func nodeWeight(n Node) int {

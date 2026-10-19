@@ -444,6 +444,7 @@ func (c *Client) dispatch(data []byte) {
 		_ = c.writeRaw("3" + string(data[1:]))
 	case enginePong, engineNoop:
 	case engineClose:
+		c.emitDisconnect()
 		c.fail(nil)
 	case engineMessage:
 		if len(data) < 2 {
@@ -455,6 +456,15 @@ func (c *Client) dispatch(data []byte) {
 	}
 }
 
+// emitDisconnect runs a registered "disconnect" handler, mirroring the
+// socket.io client which emits the event before the connection is torn down.
+// The handler's reply and error are ignored: the transport is already gone.
+func (c *Client) emitDisconnect() {
+	if h, ok := c.handler("disconnect"); ok {
+		_, _ = h(nil)
+	}
+}
+
 func (c *Client) dispatchSocketIO(data []byte) {
 	if len(data) == 0 {
 		return
@@ -463,6 +473,7 @@ func (c *Client) dispatchSocketIO(data []byte) {
 	case sioConnect:
 		logx.Debugf("socketio: namespace connected %s", truncate(data[1:], 120))
 	case sioDisconnect:
+		c.emitDisconnect()
 		c.fail(nil)
 	case sioEvent:
 		c.handleEvent(data[1:])

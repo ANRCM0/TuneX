@@ -196,4 +196,12 @@ describe("other endpoints", () => {
     vi.stubGlobal("fetch", async () => jsonResponse({ error: "boom" }, 500));
     await expect(service.getHistory()).rejects.toMatchObject({ status: 500, message: "boom" });
   });
+
+  it("compares an ISO expired_at as a timestamp", async () => {
+    const { licenseExpired } = await import("../../apps/backend/src/services/license");
+    const now = new Date("2020-01-01T00:00:00.000Z");
+    expect(licenseExpired("2000-01-01T00:00:00.000Z", now)).toBe(true);
+    expect(licenseExpired("2099-01-01T00:00:00.000Z", now)).toBe(false);
+    expect(licenseExpired(new Date("2099-01-01T00:00:00.000Z"), now)).toBe(false);
+  });
 });

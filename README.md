@@ -137,6 +137,7 @@ Mounted in `apps/backend/src/app.ts`.
 - [docs/PARITY.md](docs/PARITY.md) — full route diff (verify task)
 - [docs/VERIFY.md](docs/VERIFY.md) — verification matrix, live E2E harness, known gaps
 - [docs/COVERAGE.md](docs/COVERAGE.md) — which suite covers which layer, and what is intentionally not covered
+- [docs/REPLICATION.md](docs/REPLICATION.md) — remaining replication phases
 
 ## Legal / provenance
 
