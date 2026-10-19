@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts serve",
     "start": "tsx src/index.ts serve",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --testTimeout=20000"
+    "test": "vitest run --testTimeout=30000"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

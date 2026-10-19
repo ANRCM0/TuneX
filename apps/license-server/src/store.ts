@@ -107,6 +107,9 @@ export class LicenseStore {
     this.contentMode = options.contentMode ?? "plain";
     this.fernetSecret = options.fernetSecret ?? RELAYX_AGENT_LICENSE_SECRET;
     this.db = new DatabaseSync(dbPath);
+    // Concurrent CLI processes (and the test suite) share one file; wait for the
+    // writer instead of failing with SQLITE_BUSY.
+    this.db.exec("PRAGMA busy_timeout = 5000");
     this.db.exec(SCHEMA);
   }
 
