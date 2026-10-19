@@ -15,20 +15,15 @@
  * The suite runs `prisma db push --skip-generate` into a temporary file, then sets
  * DATABASE_URL before importing the Prisma client and the services.
  */
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createTempDatabase, type TempDatabase } from "../helpers/temp-db";
 import type { PrismaClient } from "../../apps/backend/src/db";
 import type { LicenseService } from "../../apps/backend/src/services/license";
 import type { SystemConfigService } from "../../apps/backend/src/services/system_config";
 import type { TopupService } from "../../apps/backend/src/services/topup";
 
-const ROOT = join(process.cwd());
-const SCHEMA = join(ROOT, "apps/backend/prisma/schema.prisma");
-const workDir = mkdtempSync(join(tmpdir(), "relayx-topup-"));
-const databaseUrl = `file:${join(workDir, "test.db")}`;
+const temp: TempDatabase = createTempDatabase("topup");
+const databaseUrl = temp.url;
 
 let db: PrismaClient;
 let settleTopupOrder: typeof import("../../apps/backend/src/services/topup-settlement").settleTopupOrder;
@@ -71,12 +66,6 @@ async function makeOrder(userId: number, overrides: Partial<{ price: number; bon
 
 beforeAll(async () => {
   process.env.DATABASE_URL = databaseUrl;
-  execFileSync(
-    join(ROOT, "node_modules", ".bin", "prisma"),
-    ["db", "push", "--skip-generate", `--schema=${SCHEMA}`],
-    { env: { ...process.env, DATABASE_URL: databaseUrl }, stdio: "pipe" },
-  );
-
   const dbModule = await import("../../apps/backend/src/db");
   db = dbModule.db;
   ({ settleTopupOrder } = await import("../../apps/backend/src/services/topup-settlement"));
@@ -98,7 +87,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db?.$disconnect();
-  rmSync(workDir, { recursive: true, force: true });
+  temp.cleanup();
 });
 
 describe("settleTopupOrder", () => {
@@ -263,5 +252,47 @@ describe("processReferralCommission", () => {
     expect((await db.user.findUniqueOrThrow({ where: { id: parent.id } })).commission_balance).toBe(10);
     delete configValues.REFERRAL_COMMISSION_RATE;
     delete configValues.REFERRAL_FIRST_ONLY;
+  });
+});
+
+describe("markAsPaid", () => {
+  it("settles a pending order and pays the referral in topup mode", async () => {
+    configValues.REFERRAL_MODE = "topup";
+    configValues.REFERRAL_COMMISSION_RATE = 10;
+    licenseType = "business";
+    const parent = await makeUser();
+    const child = await makeUser(parent.id);
+    const order = await makeOrder(child.id, { price: 100, bonus: 5 });
+
+    await service.markAsPaid(order.id);
+
+    expect((await db.user.findUniqueOrThrow({ where: { id: child.id } })).balance).toBe(105);
+    expect((await db.user.findUniqueOrThrow({ where: { id: parent.id } })).commission_balance).toBe(10);
+    expect((await db.topupOrder.findUniqueOrThrow({ where: { id: order.id } })).status).toBe("success");
+    delete configValues.REFERRAL_MODE;
+    delete configValues.REFERRAL_COMMISSION_RATE;
+  });
+
+  it("does not pay the referral in plan mode", async () => {
+    configValues.REFERRAL_MODE = "plan";
+    configValues.REFERRAL_COMMISSION_RATE = 10;
+    const parent = await makeUser();
+    const child = await makeUser(parent.id);
+    const order = await makeOrder(child.id, { price: 100, bonus: 0 });
+
+    await service.markAsPaid(order.id);
+
+    expect((await db.user.findUniqueOrThrow({ where: { id: parent.id } })).commission_balance).toBe(0);
+    delete configValues.REFERRAL_MODE;
+    delete configValues.REFERRAL_COMMISSION_RATE;
+  });
+
+  it("complains about a missing or already-settled order", async () => {
+    const user = await makeUser();
+    const order = await makeOrder(user.id);
+    await service.markAsPaid(order.id);
+
+    await expect(service.markAsPaid(order.id)).rejects.toMatchObject({ status: 404 });
+    await expect(service.markAsPaid(order.id + 9999)).rejects.toMatchObject({ status: 404 });
   });
 });
