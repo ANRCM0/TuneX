@@ -99,7 +99,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | `ping`, `mierux` | 69.7% | `quicx` | 68.9% |
 | `shadowsocks` | 67.3% | `service` | 64.1% |
 | `gostcfg` | 56.0% | `wireguard` | 55.7% |
-| `socks5` | 55.6% | `cmd/relayx-agent` | 52.1% |
+| `socks5` | 61.4% | `cmd/relayx-agent` | 52.1% |
 | `panel` | 48.3% | | |
 
 ## Deliberately not covered
