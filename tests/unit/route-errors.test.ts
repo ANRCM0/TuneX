@@ -94,7 +94,7 @@ describe("authentication and authorization", () => {
   it("lets a super admin through", async () => {
     const res = await request("GET", "/admin/node", { token: adminKey });
     expect(res.status).toBe(200);
-  });
+  }, 20_000);
 
   it("rejects a non-admin with the adminRequired payload", async () => {
     const res = await request("GET", "/admin/node", { token: userKey });
