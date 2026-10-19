@@ -1,6 +1,7 @@
 package socks5
 
 import (
+	"errors"
 	"net"
 	"strconv"
 	"sync"
@@ -325,8 +326,11 @@ func addrFrom(host string, port uint16) socksaddr.Addr {
 
 func parsePort(s string) (uint16, error) {
 	n, err := strconv.Atoi(s)
-	if err != nil || n < 0 || n > 65535 {
+	if err != nil {
 		return 0, err
+	}
+	if n < 0 || n > 65535 {
+		return 0, errors.New("socks5: udp port out of range")
 	}
 	return uint16(n), nil
 }
