@@ -533,6 +533,11 @@ func (c *Client) handleEvent(data []byte) {
 }
 
 func ackPacket(ackID int, body []any) string {
+	// A nil slice marshals to `null`; the protocol expects an argument array,
+	// so normalise it before encoding.
+	if body == nil {
+		body = []any{}
+	}
 	b, err := json.Marshal(body)
 	if err != nil {
 		b = []byte("[]")
