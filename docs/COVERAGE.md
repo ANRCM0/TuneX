@@ -19,7 +19,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 
 | Suite | Count | Notes |
 | --- | --- | --- |
-| Workspace vitest (`pnpm test`) | 39 files / 407 tests | 31 unit files, 6 license-server files, 1 live smoke that self-skips when the backend is down |
+| Workspace vitest (`pnpm test`) | 40 files / 410 tests | 31 unit files, 6 license-server files, 1 live smoke that self-skips when the backend is down |
 | License server (dedicated run) | 6 files / 44 tests | Fernet wire compatibility, CLI, HTTP routes, store |
 | Go (`go test ./...`) | 33 packages, all covered | table below |
 | Live E2E | 1 | license → config push → TCP forward → observer → exact traffic accounting → OpenAPI document |

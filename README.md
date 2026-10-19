@@ -107,13 +107,13 @@ Repo scripts (not pnpm scripts):
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 10 files, 81 passed (includes the live smoke test against a running backend)
+- `pnpm test` — 40 files, 410 passed (the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok
-- Live agent end-to-end: Fernet config with 2 services applied, TCP `127.0.0.1:18080 → 127.0.0.1:19081` echoed `pong:hello-relayx`, observer posted and `tunnel.traffic` / `userPlan.traffic_used` incremented
+- Live agent end-to-end (`scripts/e2e-local.sh`): Fernet config with 2 services applied, TCP forward echoed through the tunnel, the observer reached the backend through the deployment `/api` prefix, `tunnel.traffic` / `userPlan.traffic_used` incremented by exactly `0.00390625` GiB, and `/openapi.json` served 116 paths
 
-`docs/PARITY.md` is the route-by-route diff and is written by the verify pass. If that file is missing, the verify task has not landed yet.
+`docs/PARITY.md` is the route-by-route diff and is written by the verify pass. If that file is missing, the verify task has not landed yet. `docs/COVERAGE.md` maps each layer to the suite that checks it.
 
 ## Route groups
 
