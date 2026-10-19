@@ -26,8 +26,8 @@ router.post(
     summary: "佣金余额划转到余额",
     tags: ["佣金"],
     responses: {
-      200: {
-        description: "成功将佣金余额划转到余额",
+      204: {
+        description: "划转成功",
       },
     },
   }),
@@ -46,8 +46,8 @@ router.post(
     summary: "申请佣金提现",
     tags: ["佣金"],
     responses: {
-      200: {
-        description: "成功申请佣金提现",
+      201: {
+        description: "提现申请创建成功",
         content: {
           "application/json": {
             schema: resolver(WithdrawRequestSchema),
@@ -72,7 +72,7 @@ router.get(
     tags: ["佣金"],
     responses: {
       200: {
-        description: "成功获取提现记录",
+        description: "提现记录列表",
         content: {
           "application/json": {
             schema: resolver(

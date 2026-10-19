@@ -25,7 +25,7 @@ router.get(
     tags: ["支付"],
     responses: {
       200: {
-        description: "成功获取支付方式",
+        description: "成功",
         content: {
           "application/json": {
             schema: resolver(PaymentSchema.pick({ id: true, name: true, method: true, type: true, fixed_fee: true, percent_fee: true }).array()),

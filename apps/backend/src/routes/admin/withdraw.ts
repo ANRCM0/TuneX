@@ -22,7 +22,7 @@ router.get(
     tags: ["提现管理"],
     responses: {
       200: {
-        description: "成功获取所有提现申请",
+        description: "提现申请列表",
         content: {
           "application/json": {
             schema: resolver(
@@ -50,8 +50,8 @@ router.post(
     summary: "批准提现申请",
     tags: ["提现管理"],
     responses: {
-      200: {
-        description: "提现申请已批准",
+      204: {
+        description: "操作成功",
       },
     },
   }),
@@ -71,8 +71,8 @@ router.post(
     summary: "拒绝提现申请",
     tags: ["提现管理"],
     responses: {
-      200: {
-        description: "提现申请已拒绝",
+      204: {
+        description: "操作成功",
       },
     },
   }),

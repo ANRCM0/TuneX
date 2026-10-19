@@ -29,6 +29,7 @@ live E2E.
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
+| Route documentation parity | `vitest run tests/unit/route-docs.test.ts` | describeRoute presence, summaries, status codes and response descriptions identical to the decompile for all 160 registrations |
 | Route validator parity | `vitest run tests/unit/route-validators.test.ts` | all 160 upstream registrations found with identical `json`/`query`/`param` validator targets |
 | Schema parity | `vitest run tests/unit/schema-parity.test.ts` | 23 models / 18 enums / 297 fields identical to the decompiled schema; generated Zod covers every scalar column with matching nullability |
 | Guard parity | `vitest run tests/unit/route-guards.test.ts` | upstream `use(...)` chain reproduced in order; 160/160 routes derive it (7 documented api-map exceptions); 81/81 admin keys; 11 public routes and 9 bypass regexes exact |
@@ -36,7 +37,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 16 files, 149 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 17 files, 155 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS

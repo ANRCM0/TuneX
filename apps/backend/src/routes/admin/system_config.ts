@@ -13,9 +13,9 @@ const router = new Hono<AppEnv>();
 router.get(
   "/",
   describeRoute({
-    summary: "获取全部系统配置",
+    summary: "获取所有系统配置",
     tags: ["Admin / System Config"],
-    responses: { 200: { description: "成功获取全部系统配置" } },
+    responses: { 200: { description: "成功" } },
   }),
   async (c) => {
     return c.json(await systemConfigService.getAllConfigs());
@@ -27,7 +27,7 @@ router.patch(
   describeRoute({
     summary: "更新系统配置",
     tags: ["Admin / System Config"],
-    responses: { 204: { description: "更新成功" } },
+    responses: { 204: { description: "成功" } },
   }),
   zValidator("json", SystemConfigUpdateSchema),
   async (c) => {
@@ -41,7 +41,7 @@ router.post(
   describeRoute({
     summary: "发送测试邮件",
     tags: ["Admin / System Config"],
-    responses: { 204: { description: "发送成功" } },
+    responses: { 204: { description: "成功" } },
   }),
   zValidator("json", z.object({ email: z.string().email().optional() })),
   async (c) => {

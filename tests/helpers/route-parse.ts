@@ -17,6 +17,19 @@ export const API_MAP = `${ANALYSIS}work/api_map.json`;
 
 export type Registration = [method: string, path: string, targets: string[]];
 
+/** What `describeRoute({...})` declares for one registration. */
+export interface DocResponse {
+  code: number;
+  description: string;
+}
+
+export interface DocInfo {
+  hasDescribeRoute: boolean;
+  summary: string | null;
+  statusCodes: number[];
+  responses: DocResponse[];
+}
+
 /** Split an argument list on top-level commas. */
 export function splitTopLevel(args: string): string[] {
   const out: string[] = [];
@@ -45,8 +58,8 @@ export function splitTopLevel(args: string): string[] {
   return out.map((s) => s.trim()).filter(Boolean);
 }
 
-/** Index of the `)` that closes the `(` at `open`. */
-export function findClose(source: string, open: number): number {
+/** Index of the bracket that closes the one at `open` (same kind). */
+export function findMatching(source: string, open: number, openChar = "(", closeChar = ")"): number {
   let depth = 0;
   let quote: string | null = null;
   for (let i = open; i < source.length; i++) {
@@ -57,13 +70,76 @@ export function findClose(source: string, open: number): number {
       continue;
     }
     if (ch === '"' || ch === "'" || ch === "`") quote = ch;
-    else if (ch === "(") depth++;
-    else if (ch === ")") {
+    else if (ch === openChar) depth++;
+    else if (ch === closeChar) {
       depth--;
       if (depth === 0) return i;
     }
   }
-  throw new Error(`unbalanced call at offset ${open}`);
+  throw new Error(`unbalanced ${openChar} at offset ${open}`);
+}
+
+/** Index of the `)` that closes the `(` at `open`. */
+export function findClose(source: string, open: number): number {
+  return findMatching(source, open, "(", ")");
+}
+
+/** Top-level three-digit keys of the `responses: { … }` object in a describeRoute arg. */
+function statusCodesOf(describeArg: string): number[] {
+  const responsesAt = describeArg.indexOf("responses");
+  if (responsesAt === -1) return [];
+  const open = describeArg.indexOf("{", responsesAt);
+  if (open === -1) return [];
+  const close = findMatching(describeArg, open, "{", "}");
+  const body = describeArg.slice(open + 1, close);
+  const codes: number[] = [];
+  let depth = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === "{" || ch === "[") depth++;
+    else if (ch === "}" || ch === "]") depth--;
+    else if (depth === 0 && /\d/.test(ch)) {
+      const match = /^(\d{3})\s*:/.exec(body.slice(i));
+      if (match) {
+        codes.push(Number(match[1]));
+        i += match[0].length - 1;
+      }
+    }
+  }
+  return codes;
+}
+
+export interface ParsedRegistration {
+  method: string;
+  path: string;
+  targets: string[];
+  docs: DocInfo;
+}
+
+function responsesOf(describeArg: string): DocResponse[] {
+  const responsesAt = describeArg.indexOf("responses");
+  if (responsesAt === -1) return [];
+  const open = describeArg.indexOf("{", responsesAt);
+  if (open === -1) return [];
+  const close = findMatching(describeArg, open, "{", "}");
+  const body = describeArg.slice(open + 1, close);
+  const out: DocResponse[] = [];
+  for (const match of body.matchAll(/"?([0-9]{3})"?\s*:\s*\{\s*description:\s*"((?:[^"\\]|\\.)*)"/g)) {
+    out.push({ code: Number(match[1]), description: match[2] });
+  }
+  return out;
+}
+
+function docsIn(rest: string[]): DocInfo {
+  const arg = rest.find((candidate) => candidate.startsWith("describeRoute("));
+  if (!arg) return { hasDescribeRoute: false, summary: null, statusCodes: [], responses: [] };
+  const summary = /summary:\s*"([^"]*)"/.exec(arg)?.[1] ?? null;
+  return {
+    hasDescribeRoute: true,
+    summary,
+    statusCodes: statusCodesOf(arg),
+    responses: responsesOf(arg),
+  };
 }
 
 /**
@@ -72,8 +148,8 @@ export function findClose(source: string, open: number): number {
  * Only `router.*` / `app.*` are treated as registrations: `c.get("ip")` inside a
  * handler must not become a phantom route.
  */
-export function registrationsIn(source: string): Registration[] {
-  const out: Registration[] = [];
+export function registrationsWithDocs(source: string): ParsedRegistration[] {
+  const out: ParsedRegistration[] = [];
   for (const match of source.matchAll(/(?:router|app)\.(get|post|put|patch|delete|on)\(/g)) {
     const verb = match[1];
     const open = match.index! + match[0].length - 1;
@@ -102,9 +178,15 @@ export function registrationsIn(source: string): Registration[] {
     const targets = rest.flatMap((arg) =>
       [...arg.matchAll(/zValidator\(\s*"(\w+)"/g)].map((m) => m[1]),
     );
-    for (const method of methods) out.push([method, path, targets.sort()]);
+    const docs = docsIn(rest);
+    for (const method of methods) out.push({ method, path, targets: targets.sort(), docs });
   }
   return out;
+}
+
+/** Backwards-compatible projection used by the validator/tables suites. */
+export function registrationsIn(source: string): Registration[] {
+  return registrationsWithDocs(source).map(({ method, path, targets }) => [method, path, targets]);
 }
 
 /** identifier -> module specifier, from the single-import lines in app.ts. */
@@ -152,12 +234,11 @@ export function mountPrefixes(app: string): Map<string, string> {
   return prefixes;
 }
 
-/** Every registration mounted from a router module, keyed `METHOD /path`. */
-export function replicaRegistrations(): Map<string, string[]> {
+/** Walk every registration mounted from a router module. */
+function walkRegistrations(visit: (key: string, registration: ParsedRegistration) => void): void {
   const app = readFileSync(`${SRC}/app.ts`, "utf8");
   const imports = importsOf(app);
   const prefixes = mountPrefixes(app);
-  const registrations = new Map<string, string[]>();
 
   for (const [identifier, prefix] of prefixes) {
     const specifier = imports.get(identifier);
@@ -165,13 +246,26 @@ export function replicaRegistrations(): Map<string, string[]> {
     const file = modulePath(specifier);
     if (!file) throw new Error(`no file found for router ${identifier} (${specifier})`);
 
-    for (const [method, relativePath, targets] of registrationsIn(readFileSync(file, "utf8"))) {
-      const joined = `${prefix}${relativePath}`.replace(/\/+/g, "/");
+    for (const registration of registrationsWithDocs(readFileSync(file, "utf8"))) {
+      const joined = `${prefix}${registration.path}`.replace(/\/+/g, "/");
       const full = joined.length > 1 && joined.endsWith("/") ? joined.slice(0, -1) : joined;
-      registrations.set(`${method} ${full}`, targets);
+      visit(`${registration.method} ${full}`, registration);
     }
   }
+}
+
+/** Every registration mounted from a router module, keyed `METHOD /path`. */
+export function replicaRegistrations(): Map<string, string[]> {
+  const registrations = new Map<string, string[]>();
+  walkRegistrations((key, registration) => registrations.set(key, registration.targets));
   return registrations;
+}
+
+/** `describeRoute` metadata per mounted registration, keyed `METHOD /path`. */
+export function replicaDocumentation(): Map<string, DocInfo> {
+  const docs = new Map<string, DocInfo>();
+  walkRegistrations((key, registration) => docs.set(key, registration.docs));
+  return docs;
 }
 
 /** Route registrations declared directly on `app` in `app.ts` (`/docs`, `/openapi.json`). */

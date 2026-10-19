@@ -18,7 +18,7 @@ router.post(
     summary: "创建充值活动",
     tags: ["充值活动管理"],
     responses: {
-      200: {
+      201: {
         description: "充值活动创建成功",
         content: {
           "application/json": {
@@ -45,7 +45,7 @@ router.get(
     tags: ["充值活动管理"],
     responses: {
       200: {
-        description: "成功获取所有充值活动",
+        description: "充值活动获取成功",
         content: {
           "application/json": {
             schema: resolver(
@@ -91,8 +91,11 @@ router.patch(
     summary: "更新充值活动",
     tags: ["充值活动管理"],
     responses: {
-      200: {
+      204: {
         description: "充值活动更新成功",
+      },
+      404: {
+        description: "充值活动未找到",
       },
     },
   }),
@@ -115,7 +118,7 @@ router.delete(
     summary: "批量删除充值活动",
     tags: ["充值活动管理"],
     responses: {
-      200: {
+      204: {
         description: "充值活动删除成功",
       },
     },

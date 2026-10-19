@@ -27,7 +27,7 @@ router.get(
     tags: ["充值"],
     responses: {
       200: {
-        description: "成功获取当前活跃的充值活动",
+        description: "成功获取充值活动",
         content: {
           "application/json": {
             schema: resolver(TopupActivitySchema.array()),
@@ -74,7 +74,7 @@ router.post(
     tags: ["充值"],
     responses: {
       200: {
-        description: "充值订单创建成功",
+        description: "成功创建充值订单",
         content: {
           "application/json": {
             schema: resolver(z.object({ pay_url: z.string() })),
@@ -144,7 +144,7 @@ router.patch(
     summary: "取消充值订单",
     tags: ["充值"],
     responses: {
-      200: {
+      204: {
         description: "成功取消充值订单",
       },
     },

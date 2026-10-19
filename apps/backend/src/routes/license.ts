@@ -16,7 +16,7 @@ router.get(
     tags: ["License"],
     responses: {
       200: {
-        description: "成功获取 License",
+        description: "成功",
         content: { "application/json": { schema: resolver(LicenseResponseSchema) } },
       },
     },
@@ -39,7 +39,6 @@ router.get(
     summary: "通知 License",
     description: "强制从授权服务器刷新 License",
     tags: ["License"],
-    responses: { 204: { description: "刷新成功" } },
   }),
   async (c) => {
     await licenseService.getLicense(true);
@@ -53,7 +52,7 @@ router.get(
     summary: "获取优惠码",
     description: "校验并获取优惠码信息",
     tags: ["License"],
-    responses: { 200: { description: "成功获取优惠码" } },
+    responses: { 200: { description: "成功" } },
   }),
   zValidator(
     "query",

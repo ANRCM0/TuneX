@@ -23,7 +23,7 @@ router.get(
     tags: ["充值管理"],
     responses: {
       200: {
-        description: "成功获取充值订单列表",
+        description: "成功",
         content: {
           "application/json": {
             schema: resolver(TopupOrderResponseSchema),
@@ -46,7 +46,7 @@ router.patch(
     summary: "取消充值订单",
     tags: ["充值管理"],
     responses: {
-      200: {
+      204: {
         description: "成功取消充值订单",
       },
     },
@@ -65,7 +65,7 @@ router.patch(
     summary: "手动设置充值订单为已支付",
     tags: ["充值管理"],
     responses: {
-      200: {
+      204: {
         description: "成功设置充值订单为已支付",
       },
     },
@@ -85,7 +85,7 @@ router.get(
     tags: ["充值管理"],
     responses: {
       200: {
-        description: "成功获取充值统计数据",
+        description: "成功",
         content: {
           "application/json": {
             schema: resolver(TopupOrderStatsResponseSchema),

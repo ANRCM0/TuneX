@@ -21,7 +21,7 @@ router.get(
     tags: ["支付管理"],
     responses: {
       200: {
-        description: "成功获取所有支付配置",
+        description: "成功",
         content: {
           "application/json": {
             schema: resolver(PaymentResponseSchema),
@@ -68,8 +68,8 @@ router.post(
     summary: "创建新支付配置",
     tags: ["支付管理"],
     responses: {
-      200: {
-        description: "支付配置创建成功",
+      204: {
+        description: "成功",
       },
     },
   }),
@@ -99,8 +99,8 @@ router.delete(
     summary: "删除支付配置",
     tags: ["支付管理"],
     responses: {
-      200: {
-        description: "支付配置删除成功",
+      204: {
+        description: "成功",
       },
     },
   }),
@@ -124,8 +124,8 @@ router.patch(
     summary: "通过 ID 更新支付配置",
     tags: ["支付管理"],
     responses: {
-      200: {
-        description: "支付配置更新成功",
+      204: {
+        description: "成功",
       },
     },
   }),
@@ -157,8 +157,8 @@ router.patch(
     summary: "通过 ID 更新支付方式顺序",
     tags: ["支付管理"],
     responses: {
-      200: {
-        description: "支付方式顺序更新成功",
+      204: {
+        description: "成功",
       },
     },
   }),

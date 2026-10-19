@@ -18,7 +18,7 @@ router.post(
     summary: "创建优惠券",
     tags: ["优惠券管理"],
     responses: {
-      200: {
+      201: {
         description: "优惠券创建成功",
         content: {
           "application/json": {
@@ -45,7 +45,7 @@ router.get(
     tags: ["优惠券管理"],
     responses: {
       200: {
-        description: "成功获取所有优惠券",
+        description: "优惠券获取成功",
         content: {
           "application/json": {
             schema: resolver(PlanCouponSchema.array()),
@@ -90,8 +90,11 @@ router.patch(
     summary: "更新优惠券",
     tags: ["优惠券管理"],
     responses: {
-      200: {
+      204: {
         description: "优惠券更新成功",
+      },
+      404: {
+        description: "优惠券未找到",
       },
     },
   }),
@@ -114,7 +117,7 @@ router.delete(
     summary: "批量删除优惠券",
     tags: ["优惠券管理"],
     responses: {
-      200: {
+      204: {
         description: "优惠券删除成功",
       },
     },

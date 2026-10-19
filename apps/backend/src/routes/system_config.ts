@@ -10,10 +10,10 @@ const router = new Hono<AppEnv>();
 router.get(
   "/site",
   describeRoute({
-    summary: "获取站点配置",
+    summary: "获取系统站点配置",
     description: "获取站点公开配置",
     tags: ["System Config"],
-    responses: { 200: { description: "成功获取站点配置" } },
+    responses: { 200: { description: "成功" } },
   }),
   async (c) => {
     return c.json(
@@ -37,7 +37,7 @@ router.get(
     summary: "获取系统配置",
     description: "按名称获取系统配置，名称以逗号分隔",
     tags: ["System Config"],
-    responses: { 200: { description: "成功获取系统配置" } },
+    responses: { 200: { description: "成功" } },
   }),
   zValidator("query", z.object({ name: z.string() })),
   async (c) => {

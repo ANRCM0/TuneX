@@ -25,7 +25,7 @@ router.post(
     summary: "创建套餐",
     tags: ["套餐管理"],
     responses: {
-      200: {
+      201: {
         description: "套餐创建成功",
         content: {
           "application/json": {
@@ -65,7 +65,7 @@ router.get(
     tags: ["套餐管理"],
     responses: {
       200: {
-        description: "成功获取所有套餐",
+        description: "套餐获取成功",
         content: {
           "application/json": {
             schema: resolver(PlanSchema.extend({ node_group_ids: z.array(z.number()) }).array()),
@@ -121,8 +121,8 @@ router.patch(
     summary: "通过 ID 更新套餐顺序",
     tags: ["套餐管理"],
     responses: {
-      200: {
-        description: "套餐顺序更新成功",
+      204: {
+        description: "成功",
       },
     },
   }),
@@ -142,7 +142,7 @@ router.patch(
     summary: "更新套餐",
     tags: ["套餐管理"],
     responses: {
-      200: {
+      204: {
         description: "套餐更新成功",
       },
     },
@@ -188,7 +188,7 @@ router.delete(
     summary: "批量删除套餐",
     tags: ["套餐管理"],
     responses: {
-      200: {
+      204: {
         description: "套餐删除成功",
       },
     },
@@ -208,7 +208,7 @@ router.get(
     tags: ["套餐管理"],
     responses: {
       200: {
-        description: "成功获取套餐订单",
+        description: "套餐订单获取成功",
         content: {
           "application/json": {
             schema: resolver(
@@ -247,7 +247,7 @@ router.get(
     tags: ["套餐管理"],
     responses: {
       200: {
-        description: "成功获取订阅统计数据",
+        description: "成功",
         content: {
           "application/json": {
             schema: resolver(OrderStatsResponseSchema),

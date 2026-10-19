@@ -29,7 +29,7 @@ The 6 extras are real upstream mounts that the api map records outside the `rout
 
 ## What this diff does not prove
 
-- Response bodies are only spot-checked; error payloads and status codes are asserted where a test exists, not for all 160 routes.
+- Response *body schemas* (`content` blocks) are only spot-checked. The rest of the OpenAPI surface — `describeRoute` presence, operation summary, documented status codes and their descriptions — is compared per route; see "Documentation parity".
 - Handler bodies are not compared, only their declarations: the app-level guard chain ("Guard parity") and the per-route validator targets ("Validator parity").
 - Aggregation SQL is covered by `tests/unit/date.test.ts` (the helper strings, plus a SQLite check that 2024-12-31 16:00:00Z buckets as 2025-01-01 / 2025-01 / 2025 in Asia/Shanghai).
 
@@ -67,6 +67,19 @@ Not covered here: middleware registered inside route files (`zValidator`, per-ha
 - `GET /health` 200, `GET /plan` 200, `GET /admin/plan` 200, `GET /topup` 200 with the seeded admin key.
 - Agent register: `handshake-node` / version `0.13.23` landed in `node`. The ack included `type: business`. The license body is plaintext, so the agent did not decrypt it (see `docs/DEVIATIONS.md`).
 - `POST /api/tunnel/observer` 200 `{"ok":true}` and `POST /tunnel/observer` 400 on an empty body: the server entry strips the gateway `/api` prefix (see `docs/DEVIATIONS.md` item 19). Guards and route table are unchanged.
+
+## Documentation parity (automated 2026-10-19)
+
+`tests/unit/route-docs.test.ts` parses every replica `describeRoute({...})` block and compares it with `api_map.json` (`openapiDoc`, `operationSummary`, `documentedStatusCodes`) plus the response descriptions read from the decompiled registration that `evidence` points at.
+
+| Check | Result |
+| --- | --- |
+| `describeRoute` presence | 158/160, matching `openapiDoc`; the two `router.on([...])` callback routes have none, as upstream |
+| Operation summaries | identical for all 160 |
+| Status codes | identical for all 160 — distribution `200`×75, `204`×70, `201`×7, `204+404`×2, `204+400`×1, none×5 |
+| Response descriptions | identical for every documented entry |
+
+This closed 21 wrong success codes (`200` where upstream documents and the handler returns `204`/`201`), two missing `404` entries on the admin coupon/activity updates, two summary strings and 30+ description strings. The wiring and handlers were already correct; only the published contract drifted.
 
 ## Validator parity (automated 2026-10-19)
 
