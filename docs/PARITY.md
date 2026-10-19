@@ -29,8 +29,8 @@ The 6 extras are real upstream mounts that the api map records outside the `rout
 
 ## What this diff does not prove
 
-- Middleware registered inside route files (`zValidator` targets, per-handler `getRequestIP`) is not compared to `api_map.json`'s per-route chain. The app-level guard chain is — see "Guard parity" below.
 - Response bodies are only spot-checked; error payloads and status codes are asserted where a test exists, not for all 160 routes.
+- Handler bodies are not compared, only their declarations: the app-level guard chain ("Guard parity") and the per-route validator targets ("Validator parity").
 - Aggregation SQL is covered by `tests/unit/date.test.ts` (the helper strings, plus a SQLite check that 2024-12-31 16:00:00Z buckets as 2025-01-01 / 2025-01 / 2025 in Asia/Shanghai).
 
 ## Guard parity (re-derived 2026-10-19)
@@ -67,6 +67,20 @@ Not covered here: middleware registered inside route files (`zValidator`, per-ha
 - `GET /health` 200, `GET /plan` 200, `GET /admin/plan` 200, `GET /topup` 200 with the seeded admin key.
 - Agent register: `handshake-node` / version `0.13.23` landed in `node`. The ack included `type: business`. The license body is plaintext, so the agent did not decrypt it (see `docs/DEVIATIONS.md`).
 - `POST /api/tunnel/observer` 200 `{"ok":true}` and `POST /tunnel/observer` 400 on an empty body: the server entry strips the gateway `/api` prefix (see `docs/DEVIATIONS.md` item 19). Guards and route table are unchanged.
+
+## Validator parity (automated 2026-10-19)
+
+`tests/unit/route-validators.test.ts` rebuilds the mount tree from `app.ts` (single-import identifiers, the `adminRoutes` chain, the top-level `routes` chain), parses `router.<verb>(path, …)` and `router.on([verbs], path, …)` in all 31 router modules, and compares the `zValidator("json"|"query"|"param")` targets with `requestSchemas[].in` in `api_map.json`.
+
+| Check | Result |
+| --- | --- |
+| Upstream registrations found | 160/160 (they collapse to the same 157 distinct method+path keys) |
+| Target lists | identical for every route |
+| Totals | `json` 62, `query` 61, `param` 47 on both sides |
+| Multi-method | `router.on(["POST", "GET"], "/:id/callback")` contributes both verbs |
+| Parser guard | a route-file call must be `router.*`/`app.*`, so `c.get("ip")` is not counted as a registration |
+
+Mutation: turning one `zValidator("json")` into `"query"` fails two cases.
 
 ## Schema parity (automated, 2026-10-19)
 
