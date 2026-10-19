@@ -26,12 +26,7 @@ router.post(
     tags: ["套餐管理"],
     responses: {
       201: {
-        description: "套餐创建成功",
-        content: {
-          "application/json": {
-            schema: resolver(PlanSchema),
-          },
-        },
+        description: "套餐创建成功"
       },
     },
   }),

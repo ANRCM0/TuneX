@@ -19,12 +19,7 @@ router.post(
     tags: ["充值活动管理"],
     responses: {
       201: {
-        description: "充值活动创建成功",
-        content: {
-          "application/json": {
-            schema: resolver(TopupActivitySchema),
-          },
-        },
+        description: "充值活动创建成功"
       },
     },
   }),

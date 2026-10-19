@@ -79,6 +79,8 @@ Not covered here: middleware registered inside route files (`zValidator`, per-ha
 | Status codes | identical for all 160 — distribution `200`×75, `204`×70, `201`×7, `204+404`×2, `204+400`×1, none×5 |
 | Response descriptions | identical for every documented entry |
 
+The runtime document is exercised too: `GET /openapi.json` returns 200 with 116 paths (the 118 upstream path templates minus `/docs` and `/openapi.json` themselves), and `scripts/e2e-local.sh` asserts the document is served and that `/bot` still publishes the raw JSON object.
+
 This closed 21 wrong success codes (`200` where upstream documents and the handler returns `204`/`201`), two missing `404` entries on the admin coupon/activity updates, two summary strings and 30+ description strings. The wiring and handlers were already correct; only the published contract drifted.
 
 ## Validator parity (automated 2026-10-19)

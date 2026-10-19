@@ -32,7 +32,8 @@
     "nodemailer": "^7.0.9",
     "pino": "^10.4.0",
     "socket.io": "4.8.3",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-openapi": "^4.2.4"
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.11",

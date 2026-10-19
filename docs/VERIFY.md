@@ -29,6 +29,7 @@ live E2E.
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
+| Response schema parity | `vitest run tests/unit/route-response-schemas.test.ts` | 64 routed responses declare the same schema expression as the decompile (`exports_external`/`resolver` aliases normalised) |
 | Route documentation parity | `vitest run tests/unit/route-docs.test.ts` | describeRoute presence, summaries, status codes and response descriptions identical to the decompile for all 160 registrations |
 | Route validator parity | `vitest run tests/unit/route-validators.test.ts` | all 160 upstream registrations found with identical `json`/`query`/`param` validator targets |
 | Schema parity | `vitest run tests/unit/schema-parity.test.ts` | 23 models / 18 enums / 297 fields identical to the decompiled schema; generated Zod covers every scalar column with matching nullability |
@@ -37,7 +38,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 17 files, 155 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 18 files, 158 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
@@ -62,7 +63,8 @@ Steps and assertions:
 3. **Config push** — the agent must log `license accepted`, `config received (fernet): 2 service(s)` (the panel emits `tcp-` and `udp-` for a non-UDP forward), and `config applied: 2/2`.
 4. **TCP data plane** — a client writing `e2e-probe` to the tunnel port must read `pong:e2e-probe` from the echo target.
 5. **Observer path** — the agent's 5s observer loop must reach the backend through the deployment `/api` prefix: backend access log contains `"url":"/tunnel/observer"`, and the agent log has no `observer post … 401`.
-6. **Traffic accounting** — a manual `POST /api/tunnel/observer` carrying 2 MiB in + 2 MiB out must increase `Tunnel.traffic` and `UserPlan.traffic_used` by `4 MiB / 1024³ = 0.00390625` GiB (exact float comparison within `1e-9`).
+6. **OpenAPI document** — `GET /openapi.json` returns 200; `/bot` publishes the raw JSON object and `/tunnel/observer`, `/admin/plan/coupon/{id}`, `/user/info` are present.
+7. **Traffic accounting** — a manual `POST /api/tunnel/observer` carrying 2 MiB in + 2 MiB out must increase `Tunnel.traffic` and `UserPlan.traffic_used` by `4 MiB / 1024³ = 0.00390625` GiB (exact float comparison within `1e-9`).
 
 The fixture/check command is `apps/backend/scripts/e2e-fixtures.ts`:
 

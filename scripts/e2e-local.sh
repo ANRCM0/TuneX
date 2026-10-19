@@ -273,6 +273,26 @@ if grep -q 'observer post .*401' "$AGENT_LOG"; then
   fail "agent observer POST was rejected with 401"
 fi
 
+say "assert OpenAPI document"
+curl -fsS "$SITE_URL/openapi.json" -o "$WORK_DIR/openapi.json" || fail "GET /openapi.json failed"
+node -e '
+  const fs = require("node:fs");
+  const doc = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  const paths = Object.keys(doc.paths ?? {});
+  const need = ["/bot", "/tunnel/{id}/test", "/admin/plan/coupon/{id}", "/user/info"];
+  const missing = need.filter((p) => !paths.includes(p));
+  if (missing.length) {
+    console.error("missing paths: " + missing.join(", "));
+    process.exit(1);
+  }
+  const bot = doc.paths["/bot"].get.responses["200"].content["application/json"].schema;
+  if (bot?.type !== "object" || !bot.properties?.bind_key) {
+    console.error("bot schema is not the raw JSON object");
+    process.exit(1);
+  }
+  console.log(`  paths=${paths.length} bot=${JSON.stringify(Object.keys(bot.properties))}`);
+' "$WORK_DIR/openapi.json" || fail "OpenAPI document is incomplete"
+
 say "assert observer traffic accounting"
 BEFORE="$(DATABASE_URL="$DATABASE_URL" E2E_TOKEN="$E2E_TOKEN" \
   pnpm --filter @relayx/backend exec tsx scripts/e2e-fixtures.ts traffic)"

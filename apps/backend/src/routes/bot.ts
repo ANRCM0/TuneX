@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { z } from "zod";
-import { describeRoute, resolver } from "../openapi";
+import { describeRoute } from "../openapi";
 import { redisService } from "../services/redis";
 import { telegramService } from "../services/telegram";
 import type { AppEnv } from "../types";
@@ -24,12 +23,13 @@ router.get(
         description: "Bot 信息",
         content: {
           "application/json": {
-            schema: resolver(
-              z.object({
-                username: z.string(),
-                bind_key: z.string(),
-              }),
-            ),
+            schema: {
+              type: "object",
+              properties: {
+                username: { type: "string" },
+                bind_key: { type: "string" },
+              },
+            } as never,
           },
         },
       },

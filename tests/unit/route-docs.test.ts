@@ -112,9 +112,9 @@ describe.skipIf(!PRESENT)("route documentation parity", () => {
     const differences = api
       .map((route) => {
         const expected = upstreamResponses(route.evidence).sort((a, b) => a.code - b.code);
-        const observed = [...docs.get(`${route.method} ${route.path}`)!.responses].sort(
-          (a, b) => a.code - b.code,
-        );
+        const observed = [...docs.get(`${route.method} ${route.path}`)!.responses]
+          .map(({ code, description }) => ({ code, description }))
+          .sort((a, b) => a.code - b.code);
         return { route: `${route.method} ${route.path}`, expected, observed };
       })
       .filter((row) => JSON.stringify(row.expected) !== JSON.stringify(row.observed));

@@ -19,12 +19,7 @@ router.post(
     tags: ["优惠券管理"],
     responses: {
       201: {
-        description: "优惠券创建成功",
-        content: {
-          "application/json": {
-            schema: resolver(PlanCouponSchema),
-          },
-        },
+        description: "优惠券创建成功"
       },
     },
   }),

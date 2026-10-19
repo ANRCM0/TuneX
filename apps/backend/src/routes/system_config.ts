@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { SystemConfigName } from "@prisma/client";
-import { describeRoute, zValidator } from "../openapi";
+import { describeRoute, resolver, zValidator } from "../openapi";
 import { systemConfigService } from "../services/system_config";
+import { SystemConfigResponseSchema } from "../schemas/response";
 import type { AppEnv } from "../types";
 
 const router = new Hono<AppEnv>();
@@ -13,7 +14,12 @@ router.get(
     summary: "获取系统站点配置",
     description: "获取站点公开配置",
     tags: ["System Config"],
-    responses: { 200: { description: "成功" } },
+    responses: {
+      200: {
+        description: "成功",
+        content: { "application/json": { schema: resolver(SystemConfigResponseSchema) } },
+      },
+    },
   }),
   async (c) => {
     return c.json(
@@ -37,7 +43,12 @@ router.get(
     summary: "获取系统配置",
     description: "按名称获取系统配置，名称以逗号分隔",
     tags: ["System Config"],
-    responses: { 200: { description: "成功" } },
+    responses: {
+      200: {
+        description: "成功",
+        content: { "application/json": { schema: resolver(SystemConfigResponseSchema) } },
+      },
+    },
   }),
   zValidator("query", z.object({ name: z.string() })),
   async (c) => {

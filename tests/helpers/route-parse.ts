@@ -21,6 +21,8 @@ export type Registration = [method: string, path: string, targets: string[]];
 export interface DocResponse {
   code: number;
   description: string;
+  /** Zod/JSON-schema expression inside the entry's `content`, if declared. */
+  schema: string | null;
 }
 
 export interface DocInfo {
@@ -116,6 +118,18 @@ export interface ParsedRegistration {
   docs: DocInfo;
 }
 
+/** The `schema: …` expression of one response entry, unwrapped from its call. */
+function schemaOf(entry: string): string | null {
+  const at = entry.search(/schema\s*:/);
+  if (at === -1) return null;
+  for (let i = at; i < entry.length; i++) {
+    if (entry[i] === "(") return entry.slice(i + 1, findMatching(entry, i, "(", ")")).trim();
+    if (entry[i] === "{") return entry.slice(i, findMatching(entry, i, "{", "}") + 1);
+    if (entry[i] === ",") break;
+  }
+  return null;
+}
+
 function responsesOf(describeArg: string): DocResponse[] {
   const responsesAt = describeArg.indexOf("responses");
   if (responsesAt === -1) return [];
@@ -123,9 +137,23 @@ function responsesOf(describeArg: string): DocResponse[] {
   if (open === -1) return [];
   const close = findMatching(describeArg, open, "{", "}");
   const body = describeArg.slice(open + 1, close);
+
   const out: DocResponse[] = [];
-  for (const match of body.matchAll(/"?([0-9]{3})"?\s*:\s*\{\s*description:\s*"((?:[^"\\]|\\.)*)"/g)) {
-    out.push({ code: Number(match[1]), description: match[2] });
+  const entryStart = /[ \t]*"?([0-9]{3})"?\s*:\s*\{/y;
+  let index = 0;
+  while (index < body.length) {
+    entryStart.lastIndex = index;
+    const match = entryStart.exec(body);
+    if (!match) {
+      index++;
+      continue;
+    }
+    const entryOpen = body.indexOf("{", match.index);
+    const entryClose = findMatching(body, entryOpen, "{", "}");
+    const entry = body.slice(match.index, entryClose + 1);
+    const description = /description:\s*"((?:[^"\\]|\\.)*)"/.exec(entry)?.[1] ?? "";
+    out.push({ code: Number(match[1]), description, schema: schemaOf(entry) });
+    index = entryClose + 1;
   }
   return out;
 }

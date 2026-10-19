@@ -2,8 +2,9 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { SystemConfigName } from "@prisma/client";
-import { describeRoute, zValidator } from "../../openapi";
+import { describeRoute, resolver, zValidator } from "../../openapi";
 import { SystemConfigUpdateSchema } from "../../schemas/request";
+import { SystemConfigResponseSchema } from "../../schemas/response";
 import { systemConfigService } from "../../services/system_config";
 import { emailService } from "../../services/email";
 import type { AppEnv } from "../../types";
@@ -15,7 +16,12 @@ router.get(
   describeRoute({
     summary: "获取所有系统配置",
     tags: ["Admin / System Config"],
-    responses: { 200: { description: "成功" } },
+    responses: {
+      200: {
+        description: "成功",
+        content: { "application/json": { schema: resolver(SystemConfigResponseSchema) } },
+      },
+    },
   }),
   async (c) => {
     return c.json(await systemConfigService.getAllConfigs());
