@@ -137,9 +137,14 @@ func checksum(b []byte) uint16 {
 
 // tcpFallback times a TCP handshake; 80 then 443 are the ports upstream uses
 // when it cannot open a raw socket.
+// tcpFallbackPorts is the probe order used when raw sockets are denied: 80 then
+// 443, matching upstream. Tests point it at a local listener so the fallback is
+// exercised on hosts where loopback has no web server.
+var tcpFallbackPorts = []string{"80", "443"}
+
 func tcpFallback(ctx context.Context, target net.IP, timeout time.Duration) (float64, error) {
 	var lastErr error
-	for _, port := range []string{"80", "443"} {
+	for _, port := range tcpFallbackPorts {
 		d := net.Dialer{Timeout: timeout}
 		start := time.Now()
 		conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(target.String(), port))

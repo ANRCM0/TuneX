@@ -63,7 +63,8 @@ jobs:
       - name: go vet
         run: go vet ./...
       - name: go test
-        run: go test ./...
+        # -p 1: the openvpn package can block when every package runs in parallel
+        run: go test -p 1 ./...
       - name: go build
         run: go build -o ../../dist/relayx-agent ./cmd/relayx-agent
 

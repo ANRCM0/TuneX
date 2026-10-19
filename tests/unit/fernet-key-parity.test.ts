@@ -29,18 +29,20 @@ function agentDefault(): string {
   return match[1];
 }
 
-function envValue(): string {
+function envValue(): string | null {
+  // `.env` is gitignored: a CI checkout or a standalone clone has none.
+  if (!existsSync(`${ROOT}.env`)) return null;
   const source = readFileSync(`${ROOT}.env`, "utf8");
   const match = /^CONFIG_SECRET=(.+)$/m.exec(source);
-  if (!match) throw new Error("CONFIG_SECRET missing from .env");
-  return match[1].trim();
+  return match ? match[1].trim() : null;
 }
 
 describe("panel/agent Fernet key parity", () => {
   it("uses one valid 32-byte key everywhere", () => {
     const key = backendDefault();
     expect(key).toBe(agentDefault());
-    expect(key).toBe(envValue());
+    const localEnv = envValue();
+    if (localEnv !== null) expect(key).toBe(localEnv);
 
     const decoded = Buffer.from(key, "base64url");
     expect(decoded).toHaveLength(32);

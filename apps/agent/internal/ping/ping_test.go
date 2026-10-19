@@ -3,6 +3,7 @@ package ping
 import (
 	"context"
 	"errors"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -58,6 +59,31 @@ func TestIsPermission(t *testing.T) {
 }
 
 func TestPingLoopback(t *testing.T) {
+	// When ICMP is denied (unprivileged CI runners) Ping falls back to a TCP
+	// handshake on tcpFallbackPorts; point it at a listener we own so the test
+	// does not depend on a web server running on loopback.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	defer ln.Close()
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			_ = c.Close()
+		}
+	}()
+	_, port, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		t.Fatalf("split: %v", err)
+	}
+	old := tcpFallbackPorts
+	tcpFallbackPorts = []string{port}
+	t.Cleanup(func() { tcpFallbackPorts = old })
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	res, err := Ping(ctx, "127.0.0.1", 3*time.Second)

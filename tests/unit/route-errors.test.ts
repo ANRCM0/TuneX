@@ -44,6 +44,9 @@ function request(method: string, path: string, options: { token?: string; body?:
 
 beforeAll(async () => {
   // Keep `showRoutes` from dumping the table into the test output.
+  // These suites force production; the config layer then requires a secret.
+  // Use the recovered key so a checkout without a .env still runs.
+  process.env.CONFIG_SECRET ??= "KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4=";
   process.env.NODE_ENV = "production";
   process.env.LOG_LEVEL = "silent";
   process.env.SITE_URL = "https://panel.example.test";

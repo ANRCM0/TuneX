@@ -69,7 +69,7 @@ step "agent: go vet"
 (cd apps/agent && go vet ./...)
 
 step "agent: go test"
-(cd apps/agent && go test ./...)
+(cd apps/agent && go test -p 1 ./...)
 
 step "agent: build"
 pnpm agent:build

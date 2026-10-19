@@ -140,7 +140,11 @@ describe("replica schema structural invariants", () => {
 });
 
 describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upstream", () => {
-  const upstream = parsePrisma(readFileSync(UPSTREAM_SCHEMA, "utf8"));
+  // The describe body still runs when skipped (Vitest only skips the cases), so the
+  // read must not assume the evidence tree exists.
+  const upstream = existsSync(UPSTREAM_SCHEMA)
+    ? parsePrisma(readFileSync(UPSTREAM_SCHEMA, "utf8"))
+    : { models: new Map<string, Field[]>(), enums: new Map<string, string[]>(), blocks: new Map<string, string[]>() };
 
   it("declares the same models and enums", () => {
     expect([...replicaSchema.models.keys()].sort()).toEqual([...upstream.models.keys()].sort());
