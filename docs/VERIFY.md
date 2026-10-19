@@ -26,7 +26,7 @@ live E2E.
 | Agent static | `cd apps/agent && go vet ./...` | no vet diagnostics |
 | Agent units | `cd apps/agent && go test ./...` | forward, Shadowsocks, SOCKS5, relay/BIND, QUIC/TLS/WSS/MTCP, REALITY, mieru, WireGuard, OpenVPN, panel, gost config parsing |
 | Agent build | `pnpm agent:build` | `dist/relayx-agent --version` prints `relayx-agent version 0.13.23` |
-| Route parity | see `docs/PARITY.md` | 0 upstream `METHOD path` missing |
+| Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
 | Route validator parity | `vitest run tests/unit/route-validators.test.ts` | all 160 upstream registrations found with identical `json`/`query`/`param` validator targets |
 | Schema parity | `vitest run tests/unit/schema-parity.test.ts` | 23 models / 18 enums / 297 fields identical to the decompiled schema; generated Zod covers every scalar column with matching nullability |
@@ -35,7 +35,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 14 files, 126 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 15 files, 130 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS

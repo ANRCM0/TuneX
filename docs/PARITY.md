@@ -2,7 +2,7 @@
 
 Compared on 2026-10-17 against `relayx-analysis/work/api_map.json` (`routes` length 160, 157 distinct method+path pairs).
 
-The replica's Hono tree was enumerated with `node --import tsx` importing `apps/backend/src/app.ts` and reading `app.routes` (methods other than `ALL` dropped, then unique `METHOD path`).
+The replica's Hono tree was first enumerated with `node --import tsx` importing `apps/backend/src/app.ts` and reading `app.routes` (methods other than `ALL` dropped, then unique `METHOD path`). It is now rebuilt from source by `tests/unit/route-table.test.ts`, which fails if any upstream path goes missing, if an extra path appears that is not one of the six below, or if the totals drift.
 
 ## Route counts
 
