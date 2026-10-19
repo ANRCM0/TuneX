@@ -280,3 +280,151 @@ describe("getInNodeConfig", () => {
     expect(config.chains.map((c) => c.name)).toEqual(["8"]);
   });
 });
+
+describe("pure helpers", () => {
+  it("picks a connect IP by family", () => {
+    expect(service.getConnectIP("1.2.3.4,::1", "ipv4" as never)).toBe("1.2.3.4");
+    expect(service.getConnectIP("1.2.3.4,::1", "ipv6" as never)).toBe("::1");
+    expect(service.getConnectIP("1.2.3.4,::1", "auto" as never)).toBe("1.2.3.4");
+    // The split does not trim, so a spaced entry matches only via "auto".
+    expect(service.getConnectIP("1.2.3.4, ::1", "ipv6" as never)).toBeUndefined();
+    expect(service.getConnectIP("::1", "ipv4" as never)).toBeUndefined();
+    // An empty value is returned verbatim for "auto", but never for a family.
+    expect(service.getConnectIP("", "auto" as never)).toBe("");
+    expect(service.getConnectIP("", "ipv4" as never)).toBeUndefined();
+  });
+
+  it("takes the smaller of two optional limits", () => {
+    expect(service.minLimit(5, 3)).toBe(3);
+    expect(service.minLimit(5, null)).toBe(5);
+    expect(service.minLimit(null, 7)).toBe(7);
+    expect(service.minLimit(null, null)).toBeUndefined();
+    // `a ?? b` keeps a deliberate 0 (recovered behaviour).
+    expect(service.minLimit(0, 4)).toBe(0);
+  });
+
+  it("strips private keys from a listen protocol", () => {
+    expect(
+      service.sanitizeListenProtocol({
+        type: "wireguard",
+        privateKey: "secret",
+        key: "secret2",
+        mtu: 1420,
+        peers: [],
+      }),
+    ).toEqual({ type: "wireguard", mtu: 1420, peers: [] });
+    expect(service.sanitizeListenProtocol(null)).toBeNull();
+    expect(service.sanitizeListenProtocol([1, 2])).toBeNull();
+  });
+});
+
+describe("getTunnelChainsFromTunnel", () => {
+  const nodes = [
+    { id: 1, node_id: "node-1", connect_ip: "10.0.0.1", weight: 1, backup: false },
+    { id: 2, node_id: "node-2", connect_ip: "10.0.0.2", weight: 9, backup: true },
+    { id: 3, node_id: "node-3", connect_ip: "", weight: 5, backup: false },
+  ];
+  const tunnel = {
+    ip_type: "ipv4",
+    tunnel_chains: [
+      {
+        id: 10,
+        node_type: "in",
+        node_group_id: 1,
+        node_group: { load_balance_type: "round", nodes },
+      },
+      {
+        id: 11,
+        node_type: "out",
+        node_group_id: 2,
+        node_group: { load_balance_type: "hash", nodes },
+      },
+    ],
+  };
+
+  it("splits in and out hops, sorts by weight and skips unusable nodes", () => {
+    const { in_hops, out_hops } = service.getTunnelChainsFromTunnel(tunnel as never, {
+      "1:tcp": "1001",
+      "2:tcp": "1002",
+      "3:tcp": "1003",
+    });
+    expect(in_hops).toHaveLength(1);
+    expect(in_hops[0]).toMatchObject({ name: "hop-10", selector: { strategy: "round" } });
+    expect((in_hops[0].nodes as unknown[]).map((n) => (n as { name: string }).name)).toEqual([
+      "node-2",
+      "node-1",
+    ]);
+    expect((in_hops[0].nodes as { addr: string }[])[0].addr).toBe("10.0.0.2:1002");
+    expect(out_hops[0]).toMatchObject({ name: "hop-11", selector: { strategy: "hash" } });
+  });
+
+  it("drops nodes without a cached port", () => {
+    const { in_hops } = service.getTunnelChainsFromTunnel(tunnel as never, { "1:tcp": "1001" });
+    expect((in_hops[0].nodes as unknown[]).length).toBe(1);
+  });
+});
+
+describe("getOutNodeConfig", () => {
+  async function outConfig(tunnels: unknown[], portRange: string | null = null) {
+    return (await service.getOutNodeConfig(
+      groupId,
+      portRange,
+      tunnels as never,
+      {},
+      new Map(),
+    )) as { services: Json[] };
+  }
+
+  it("emits one WAIT_LISTEN service per tunnel type", async () => {
+    const config = await outConfig([
+      makeTunnel({ id: 1, out_node_group_id: groupId, out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] } }),
+      makeTunnel({
+        id: 2,
+        tunnel_type: "udp",
+        out_node_group_id: groupId,
+        out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] },
+      }),
+    ], ":30000-40000");
+    expect(config.services.map((s) => s.name).sort()).toEqual(["tcp", "udp"]);
+    const tcp = config.services.find((s) => s.name === "tcp")!;
+    expect(tcp).toMatchObject({
+      addr: ":WAIT_LISTEN:30000-40000",
+      listener: { type: "tcp", metadata: {} },
+      handler: { type: "relay", metadata: { nodelay: true } },
+    });
+    const udp = config.services.find((s) => s.name === "udp")!;
+    expect(udp).toMatchObject({
+      listener: { type: "udp", metadata: { keepalive: true } },
+      handler: { type: "ssu" },
+    });
+  });
+
+  it("adds the relayx listener key", async () => {
+    const config = await outConfig([
+      makeTunnel({
+        tunnel_type: "relayx",
+        out_node_group_id: groupId,
+        out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] },
+      }),
+    ]);
+    const relayx = config.services.find((s) => s.name === "relayx")!;
+    expect(relayx.listener).toMatchObject({ type: "relayx" });
+    expect((relayx.listener as { metadata: { key: string } }).metadata.key).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+
+  it("adds a tcp service when a chain references the out group", async () => {
+    const config = await outConfig([
+      makeTunnel({
+        category: "remote_port_forward",
+        out_node_group_id: groupId,
+        out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] },
+        tunnel_chains: [
+          { id: 5, node_type: "out", node_group_id: groupId, node_group: { node_type: "out", nodes: [] } },
+        ],
+      }),
+    ]);
+    expect(config.services.map((s) => s.name)).toContain("tcp");
+  });
+});
