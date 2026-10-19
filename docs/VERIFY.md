@@ -24,7 +24,7 @@ live E2E.
 | Backend + shared units | `pnpm test` | Vitest suites (date, DNS, OpenVPN, license wire shapes, pay/coupon helpers, …) |
 | License server | `pnpm --filter @relayx/license-server test` | Fernet wire compatibility with the Python reference, CLI, HTTP routes |
 | Agent static | `cd apps/agent && go vet ./...` | no vet diagnostics |
-| Agent units | `cd apps/agent && go test ./...` | forward, Shadowsocks, SOCKS5, relay/BIND, QUIC/TLS/WSS/MTCP, REALITY, mieru, WireGuard, OpenVPN, panel, gost config parsing |
+| Agent units | `cd apps/agent && go test ./...` | forward, Shadowsocks, SOCKS5, relay/BIND, QUIC/TLS/WSS/MTCP, REALITY, mieru, WireGuard, OpenVPN, panel, gost config parsing, Fernet interop, CLI/config file, SOCKS address codec, self-signed TLS, mtcp session reuse |
 | Agent build | `pnpm agent:build` | `dist/relayx-agent --version` prints `relayx-agent version 0.13.23` |
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
