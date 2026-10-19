@@ -136,6 +136,7 @@ Mounted in `apps/backend/src/app.ts`.
 - [docs/AGENT.md](docs/AGENT.md) — build and run the node agent
 - [docs/PARITY.md](docs/PARITY.md) — full route diff (verify task)
 - [docs/VERIFY.md](docs/VERIFY.md) — verification matrix, live E2E harness, known gaps
+- [docs/COVERAGE.md](docs/COVERAGE.md) — which suite covers which layer, and what is intentionally not covered
 
 ## Legal / provenance
 
