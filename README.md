@@ -11,7 +11,8 @@ A reconstruction of the RelayX tunnel panel, built from the decompiled binary an
 | `apps/agent` | Go node agent |
 | `packages/shared` | Shared package (workspace) |
 | `tests` | Vitest unit tests |
-| `docs` | Conventions, deviations, agent notes, parity |
+| `scripts` | `verify.sh` and the live `e2e-local.sh` harness |
+| `docs` | Conventions, deviations, agent notes, parity, verification |
 
 Architecture: Hono on Node, Prisma against SQLite, Socket.IO for node agents, BullMQ when Redis is configured, and a business-license gate on pay / ticket / commission / parts of `/admin`.
 
@@ -93,9 +94,17 @@ Details and the implemented-vs-stubbed table: [docs/AGENT.md](docs/AGENT.md).
 
 Backend-only: `pnpm --filter @relayx/backend zod:generate` regenerates scalar zod models. License server: `dev`, `start`, `typecheck`, `test`.
 
+Repo scripts (not pnpm scripts):
+
+| Script | Effect |
+| --- | --- |
+| `bash scripts/verify.sh` | install + prisma push + typecheck + unit tests + license tests + `go vet`/`go test` + agent build |
+| `bash scripts/verify.sh --e2e` | the same, then the live full-stack E2E |
+| `bash scripts/e2e-local.sh` | boots a private license server, backend, echo target and agent on a throwaway database, then asserts the config push, TCP forwarding, observer path and traffic accounting |
+
 ## Tests
 
-Run `pnpm test` and `pnpm typecheck` for current counts. Latest full pass on a fresh SQLite database:
+Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0
 - `pnpm test` — 10 files, 81 passed (includes the live smoke test against a running backend)
@@ -126,6 +135,7 @@ Mounted in `apps/backend/src/app.ts`.
 - [docs/DEVIATIONS.md](docs/DEVIATIONS.md) — where it differs from the decompile
 - [docs/AGENT.md](docs/AGENT.md) — build and run the node agent
 - [docs/PARITY.md](docs/PARITY.md) — full route diff (verify task)
+- [docs/VERIFY.md](docs/VERIFY.md) — verification matrix, live E2E harness, known gaps
 
 ## Legal / provenance
 

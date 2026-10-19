@@ -7,6 +7,7 @@
   },
   "include": [
     "src/**/*.ts",
+    "scripts/**/*.ts",
     "../../packages/shared/src/**/*.d.ts"
   ]
 }

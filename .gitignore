@@ -14,3 +14,7 @@ apps/license-server/*.db
 apps/license-server/*.db-journal
 apps/license-server/*.db-wal
 apps/license-server/*.db-shm
+
+.e2e/
+.gocache/
+.gopath/

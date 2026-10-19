@@ -1,0 +1,97 @@
+# Verification
+
+This is the verification contract for the replica. It records what is checked,
+with which command, and what "green" looks like. `docs/PARITY.md` covers the
+route/schema diff against the decompile; this file covers behaviour.
+
+## TL;DR
+
+```bash
+bash scripts/verify.sh          # typecheck + unit + license + go vet/test + agent build
+bash scripts/verify.sh --e2e    # same, then the live full-stack E2E
+bash scripts/e2e-local.sh       # only the live E2E
+```
+
+Both scripts exit non-zero on the first failure and print the failing logs.
+CI (`.github/workflows/ci.yml`) runs the same three groups: Node, Go, and the
+live E2E.
+
+## Automated checks
+
+| Area | Command | Assertion |
+| --- | --- | --- |
+| Workspace types | `pnpm -r typecheck` | backend/shared/license-server `tsc --noEmit` exit 0 |
+| Backend + shared units | `pnpm test` | Vitest suites (date, DNS, OpenVPN, license wire shapes, pay/coupon helpers, …) |
+| License server | `pnpm --filter @relayx/license-server test` | Fernet wire compatibility with the Python reference, CLI, HTTP routes |
+| Agent static | `cd apps/agent && go vet ./...` | no vet diagnostics |
+| Agent units | `cd apps/agent && go test ./...` | forward, Shadowsocks, SOCKS5, relay/BIND, QUIC/TLS/WSS/MTCP, REALITY, mieru, WireGuard, OpenVPN, panel, gost config parsing |
+| Agent build | `pnpm agent:build` | `dist/relayx-agent --version` prints `relayx-agent version 0.13.23` |
+| Route parity | see `docs/PARITY.md` | 0 upstream `METHOD path` missing |
+
+Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
+
+- `pnpm -r typecheck` — exit 0
+- `pnpm test` — 10 files, 81 passed (the live smoke case self-skips when the backend is down)
+- `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
+- `go vet ./...`, `go test ./...` — clean
+- `scripts/e2e-local.sh` — PASS
+
+## Live full-stack E2E (`scripts/e2e-local.sh`)
+
+The script owns the whole stack and cleans up after itself. It uses:
+
+| Component | Default | Override |
+| --- | --- | --- |
+| Backend | `127.0.0.1:3000` | `BACKEND_PORT` |
+| License server | `127.0.0.1:3100` | `LICENSE_PORT` |
+| Tunnel listen | `127.0.0.1:18080` | `E2E_LISTEN_PORT` |
+| Echo target | `127.0.0.1:19081` | `E2E_ECHO_PORT` |
+| SQLite database | `apps/backend/prisma/e2e.db` | `DATABASE_URL` |
+| Work dir | `.e2e/` (gitignored) | `E2E_KEEP=1` keeps it |
+
+Steps and assertions:
+
+1. **License** — `issue --type business` for `http://127.0.0.1:<backend port>` into a throwaway `license.db`; the license server must answer `GET /health`.
+2. **Database** — `db:reset` + `seed` with the deterministic admin key; fixtures insert the minimum world the tunnel exporter accepts: an `e2e-plan`, the admin's unexpired `UserPlan`, an `in` node group (`allow_listen_protocol`), and one TCP port-forward tunnel. Without the plan, `filterAvailableTunnels` (`apps/backend/src/services/tunnel.ts:915`) silently exports `0 service(s)` — the fixtures exist to catch exactly that.
+3. **Config push** — the agent must log `license accepted`, `config received (fernet): 2 service(s)` (the panel emits `tcp-` and `udp-` for a non-UDP forward), and `config applied: 2/2`.
+4. **TCP data plane** — a client writing `e2e-probe` to the tunnel port must read `pong:e2e-probe` from the echo target.
+5. **Observer path** — the agent's 5s observer loop must reach the backend through the deployment `/api` prefix: backend access log contains `"url":"/tunnel/observer"`, and the agent log has no `observer post … 401`.
+6. **Traffic accounting** — a manual `POST /api/tunnel/observer` carrying 2 MiB in + 2 MiB out must increase `Tunnel.traffic` and `UserPlan.traffic_used` by `4 MiB / 1024³ = 0.00390625` GiB (exact float comparison within `1e-9`).
+
+The fixture/check command is `apps/backend/scripts/e2e-fixtures.ts`:
+
+```bash
+cd apps/backend
+DATABASE_URL="file:./e2e.db" pnpm exec tsx scripts/e2e-fixtures.ts setup
+DATABASE_URL="file:./e2e.db" pnpm exec tsx scripts/e2e-fixtures.ts traffic
+```
+
+## What is intentionally not covered
+
+These need hardware, external accounts or a deployment layer that this repo
+does not include:
+
+- **Live DNS providers** — Cloudflare/Huawei clients are exercised against mocks only (`tests/unit/dns.test.ts`).
+- **Kernel WireGuard** — the userspace device is tested in-process; the `wg`/`ip` path needs the kernel module.
+- **OpenVPN TUN traffic** — the control channel, key method 2 and `PUSH_REPLY` are tested with the official OpenVPN 2.6 client, but this container has no `CAP_NET_ADMIN`, so the client stops at `TUNSETIFF`.
+- **StackAuth cookie login** — no StackAuth project is configured; the `ref` cookie `parent_id` fix was checked at the service level.
+- **Telegram bot transport** — no bot token; startup logs the skip line.
+- **BullMQ with Redis** — the server boots without Redis and `/queuedash` reports `connected: false`.
+- **Docker/Compose deployment** — no Docker daemon here; the license-server Dockerfile was not built.
+- **h2/h3/http3, obfs4, vmess, tun handlers** — these are not in the upstream agent's gost registry (`relayx-analysis/reports/AGENT_SERVICE.md` §3 lists exactly 10 handlers and 15 listeners), so the panel cannot produce such services. The agent reports them as `listen_error` stubs; see `docs/AGENT.md`.
+
+## Reproducing the live checks by hand
+
+If you want the pieces rather than the harness:
+
+```bash
+pnpm install && pnpm db:generate && pnpm db:push && pnpm seed
+pnpm --filter @relayx/license-server start &            # :3100
+pnpm start &                                            # :3000
+RELAYX_BASE_URL=http://127.0.0.1:3000 \
+RELAYX_API_KEY=a34d563e-9efe-4047-9e20-05a9678ef5fb \
+  pnpm test:e2e
+```
+
+The smoke test skips when nothing is listening on `RELAYX_BASE_URL`, which is
+why `pnpm test` is safe to run with no stack.
