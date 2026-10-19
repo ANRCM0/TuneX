@@ -99,7 +99,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | `bypass` | 70.4% | `admit` | 70.2% |
 | `ping`, `mierux` | 69.7% | `quicx` | 68.9% |
 | `shadowsocks` | 68.5% | `service` | 64.1% |
-| `gostcfg` | 73.4% | `wireguard` | 55.7% |
+| `gostcfg` | 73.4% | `wireguard` | 59.2% |
 | `socks5` | 61.4% | `cmd/relayx-agent` | 52.1% |
 | `panel` | 60.7% | | |
 

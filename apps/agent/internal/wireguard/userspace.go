@@ -3,6 +3,7 @@ package wireguard
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -47,7 +48,15 @@ func (m *Manager) upUserspace() error {
 	}
 	ct := newChanTUN(m.conf.Interface, mtu)
 	dev := device.NewDevice(ct, conn.NewDefaultBind(), device.NewLogger(device.LogLevelError, "wireguard: "))
-	if err := dev.IpcSet(ipcConfig(m.conf)); err != nil {
+	ipc := ipcConfig(m.conf)
+	if ipc == "" {
+		// ipcConfig only returns "" when a key does not decode; without this the
+		// device would come up with no private key at all.
+		dev.Close()
+		_ = ct.Close()
+		return errors.New("wireguard: userspace config: invalid private or peer key")
+	}
+	if err := dev.IpcSet(ipc); err != nil {
 		dev.Close()
 		_ = ct.Close()
 		return fmt.Errorf("wireguard: userspace config: %w", err)
@@ -71,8 +80,12 @@ func (m *Manager) upUserspace() error {
 func (u *userspaceWG) Close() {
 	u.once.Do(func() {
 		close(u.stop)
-		u.dev.Close()
-		_ = u.tun.Close()
+		if u.dev != nil {
+			u.dev.Close()
+		}
+		if u.tun != nil {
+			_ = u.tun.Close()
+		}
 		if u.nat != nil {
 			u.nat.Close()
 		}
