@@ -29,6 +29,7 @@ live E2E.
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
+| DNS orchestration | `vitest run tests/unit/dns-orchestration.test.ts` | provider CRUD/filters/cascade delete, in-group validation and custom lines, owner-scoped update/delete, record pairing in syncIpSet |
 | Commission wallet + withdrawals | `vitest run tests/unit/withdraw.test.ts` | withdraw creation debit/log/ticket, min amount/method/balance gates, approve vs reject refund, transfer between wallets with both logs, admin filters |
 | Ticket service | `vitest run tests/unit/tickets.test.ts` | create/list/thread ownership, status updates, user and admin replies with notification payloads, telegram routing by ownership/super-admin |
 | Node and node-group services | `vitest run tests/unit/node-groups.test.ts` | port-range parsing quirks, group create/update ordering and owner scoping, plan-based group visibility (all-in, explicit list, custom), out-group allow-list, node id uniqueness, liveness window, scoped cascade delete |
@@ -50,7 +51,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 30 files, 331 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 31 files, 340 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
