@@ -8,7 +8,7 @@
 | --- | --- |
 | `ghcr.io/<owner>/tunex-backend` | 面板与 HTTP/Socket.IO 控制面 |
 | `ghcr.io/<owner>/tunex-license-server` | 自建授权服务器 |
-| `ghcr.io/<owner>/tunex-agent` | 节点 agent |
+| `ghcr.io/<owner>/tunex-node-agent` | 节点 agent |
 
 推 `master` 出 `dev` 标签，推 `v*` 出正式版本。本文命令里的 `${TUNEX_TAG}` 默认 `latest`，生产建议钉死版本号，例如 `TUNEX_TAG=0.0.1`。
 
@@ -154,7 +154,7 @@ Caddy 读取仓库根目录的 `Caddyfile`，用 `TUNEX_DOMAIN` 申请证书并�
 ```bash
 docker run -d --name tunex-agent --restart unless-stopped \
   --network host \
-  ghcr.io/anrcm0/tunex-agent:${TUNEX_TAG} \
+  ghcr.io/anrcm0/tunex-node-agent:${TUNEX_TAG} \
   -s https://panel.example.com \
   -t <节点组 token> \
   -n node-1 \

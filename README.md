@@ -122,7 +122,7 @@ Some suites compare the replica against the reverse-engineering evidence tree (`
 | Image | Dockerfile | Context |
 | --- | --- | --- |
 | `ghcr.io/<owner>/tunex-backend` | `apps/backend/Dockerfile` | repository root |
-| `ghcr.io/<owner>/tunex-agent` | `apps/agent/Dockerfile` | `apps/agent` |
+| `ghcr.io/<owner>/tunex-node-agent` | `apps/agent/Dockerfile` | `apps/agent` |
 | `ghcr.io/<owner>/tunex-license-server` | `apps/license-server/Dockerfile` | `apps/license-server` |
 
 A push to `master`/`main` publishes `dev` and `dev-<sha>`; a `v*` tag publishes the semver tags (`0.0.1`, `0.0`, `0`) plus `latest`. The backend image applies the Prisma schema on start (`DB_PUSH_ON_START=0` disables that, `SEED_ON_START=1` seeds the super admin).

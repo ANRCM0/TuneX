@@ -62,12 +62,17 @@ jobs:
       matrix:
         include:
           - component: backend
+            image: tunex-backend
             context: .
             dockerfile: apps/backend/Dockerfile
+          # `tunex-agent` already exists under this account (linked to another
+          # repository), and GITHUB_TOKEN cannot write a package it does not own.
           - component: agent
+            image: tunex-node-agent
             context: apps/agent
             dockerfile: apps/agent/Dockerfile
           - component: license-server
+            image: tunex-license-server
             context: apps/license-server
             dockerfile: apps/license-server/Dockerfile
     steps:
@@ -87,7 +92,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner }}/tunex-${{ matrix.component }}
+          images: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner }}/${{ matrix.image }}
           tags: |
             type=raw,value=dev,enable=${{ needs.prepare.outputs.is_release == 'false' }}
             type=sha,format=short,prefix=dev-,enable=${{ needs.prepare.outputs.is_release == 'false' }}
