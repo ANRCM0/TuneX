@@ -97,7 +97,8 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | `tlstun` | 74.7% | `limit` | 73.9% |
 | `relay` | 73.4% | `forward` | 71.1% |
 | `bypass` | 70.4% | `admit` | 70.2% |
-| `ping`, `mierux` | 69.7% | `quicx` | 68.9% |
+| `ping` | 69.7% |
+| `mierux` | 88.5% | `quicx` | 75.6% |
 | `shadowsocks` | 68.5% | `service` | 65.2% |
 | `gostcfg` | 73.4% | `wireguard` | 59.2% |
 | `socks5` | 64.2% | `cmd/relayx-agent` | 52.1% |

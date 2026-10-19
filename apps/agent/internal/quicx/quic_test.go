@@ -91,3 +91,22 @@ func TestQUICLargePayload(t *testing.T) {
 	}
 	roundTrip(t, conn, payload)
 }
+
+func TestListenValidationAndIdleState(t *testing.T) {
+	srv := &Server{}
+	if srv.Addr() != nil {
+		t.Fatal("Addr before Listen is not nil")
+	}
+	if err := srv.Close(); err != nil {
+		t.Fatalf("Close before Listen: %v", err)
+	}
+	if err := srv.Listen("not-an-address"); err == nil {
+		t.Fatal("invalid listen address accepted")
+	}
+}
+
+func TestDialRejectsBadAddress(t *testing.T) {
+	if _, err := Dial("127.0.0.1:notaport", "relayx"); err == nil {
+		t.Fatal("invalid address accepted")
+	}
+}
