@@ -27,12 +27,13 @@ live E2E.
 | Agent units | `cd apps/agent && go test ./...` | forward, Shadowsocks, SOCKS5, relay/BIND, QUIC/TLS/WSS/MTCP, REALITY, mieru, WireGuard, OpenVPN, panel, gost config parsing |
 | Agent build | `pnpm agent:build` | `dist/relayx-agent --version` prints `relayx-agent version 0.13.23` |
 | Route parity | see `docs/PARITY.md` | 0 upstream `METHOD path` missing |
+| Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
 | Guard parity | `vitest run tests/unit/route-guards.test.ts` | upstream `use(...)` chain reproduced in order; 160/160 routes derive it (7 documented api-map exceptions); 81/81 admin keys; 11 public routes and 9 bypass regexes exact |
 
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 11 files, 87 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 12 files, 114 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
