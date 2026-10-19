@@ -75,7 +75,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Area | Suite |
 | --- | --- |
 | Config document parsing, accessors, targets/chain resolution | `internal/gostcfg` (`parse_test.go` + balance/observer tests) |
-| Manager dispatch for every listener the panel emits, stubs, reconciliation | `internal/service` (`dispatch_test.go` + manager tests) |
+| Manager dispatch, port conflicts/retry, stubs, reconciliation | `internal/service` (`dispatch_test.go`, `ports_test.go`, manager tests) |
 | TCP forward, Shadowsocks TCP/UDP, SOCKS5, relay CONNECT/BIND, WireGuard, OpenVPN, mieru, VLESS/REALITY, QUIC, TLS/mTLS, WSS/MWSS, MTCP | per-package Go tests (table below) |
 | Control plane: register → license → fernet config → listener report | `internal/panel/session_test.go` (fake panel) + live E2E |
 | Socket.IO protocol, ack/ping/reconnect backoff | `internal/socketio` |
@@ -98,7 +98,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | `relay` | 73.4% | `forward` | 71.1% |
 | `bypass` | 70.4% | `admit` | 70.2% |
 | `ping`, `mierux` | 69.7% | `quicx` | 68.9% |
-| `shadowsocks` | 68.5% | `service` | 64.1% |
+| `shadowsocks` | 68.5% | `service` | 65.2% |
 | `gostcfg` | 73.4% | `wireguard` | 59.2% |
 | `socks5` | 61.4% | `cmd/relayx-agent` | 52.1% |
 | `panel` | 60.7% | | |
