@@ -29,6 +29,7 @@ live E2E.
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
+| Tunnel config generation | `vitest run tests/unit/tunnel-config.test.ts` | in-node document: tls/observer header, tcp+udp service pair, forwarder weight order, WAIT_LISTEN, listen-protocol handlers, limits, bypass/admission, remote-forward relay, udp-only and wireguard services |
 | Stats aggregates | `vitest run tests/unit/stats.test.ts` | throwaway SQLite: overview counts, Shanghai day/month/year bucketing around midnight, traffic sums and node-group filter, live-today Redis append only for day buckets |
 | Plan purchase | `vitest run tests/unit/plan-purchase.test.ts` | throwaway SQLite: debit/order/log/user-plan/stock, coupon, setup-fee waiver, balance/stock/status/renewable gates, plan-mode referral on the pre-fee amount, lifetime traffic |
 | Topup settlement + referral | `vitest run tests/unit/topup-settlement.test.ts` | throwaway SQLite: single credit on settle, replay returns false, mismatched snapshot 409, referral rate/first-only/licence/parent gates |
@@ -43,7 +44,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 23 files, 236 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 24 files, 247 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
