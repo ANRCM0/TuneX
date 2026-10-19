@@ -24,6 +24,44 @@ export interface SortItem {
   desc?: boolean;
 }
 
+/** The coupon terms the pricing helper needs (a `PlanCoupon` row or a stub). */
+export interface PlanCouponTerms {
+  type: CouponType;
+  value: number;
+}
+
+export interface PlanPriceInput {
+  price: number;
+  coupon: PlanCouponTerms | null;
+  setup_fee?: number | null;
+  /** True when the user already owns this plan, which waives the setup fee. */
+  samePlan: boolean;
+}
+
+/**
+ * Recovered pricing rule (`relayx-analysis/work/modules/038__src__services__plan.ts`):
+ * apply the coupon to the list price, clamp at zero, then add the setup fee unless the
+ * user is re-subscribing to the plan they already hold. The referral commission is paid
+ * on `priceBeforeSetupFee`, so both numbers are returned.
+ */
+export function computePlanPrice(input: PlanPriceInput): { price: number; priceBeforeSetupFee: number } {
+  let price = input.price;
+  if (input.coupon) {
+    price =
+      input.coupon.type === CouponType.percentage
+        ? price * (1 - input.coupon.value / 100)
+        : price - input.coupon.value;
+  }
+  if (price < 0) {
+    price = 0;
+  }
+  const priceBeforeSetupFee = price;
+  if (input.setup_fee && !input.samePlan) {
+    price += input.setup_fee;
+  }
+  return { price, priceBeforeSetupFee };
+}
+
 /**
  * Upstream: src/services/plan.ts (375 lines) — ported 1:1.
  *
@@ -172,23 +210,18 @@ export class PlanService {
           throw new HTTPException(409, { message: "套餐库存不足" });
         }
         let coupon: PlanCoupon | null = null;
-        price = plan.price;
         if (code) {
           coupon = await this.planCouponService.getCoupon(code, plan.billing_cycle, user.id);
-          if (coupon.type === CouponType.percentage) {
-            price = price * (1 - coupon.value / 100);
-          } else {
-            price = price - coupon.value;
-          }
-        }
-        if (price < 0) {
-          price = 0;
         }
         const samePlan = oldUserPlan?.plan_id === plan_id;
-        const priceBeforeSetupFee = price;
-        if (plan.setup_fee && !samePlan) {
-          price += plan.setup_fee;
-        }
+        const priced = computePlanPrice({
+          price: plan.price,
+          coupon,
+          setup_fee: plan.setup_fee,
+          samePlan,
+        });
+        price = priced.price;
+        const priceBeforeSetupFee = priced.priceBeforeSetupFee;
         const currentUser = await tx.user.findUnique({
           where: { id: user.id },
           select: { balance: true },
