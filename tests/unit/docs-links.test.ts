@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const DOC_FILES = ["README.md", "docs/AGENT.md", "docs/COVERAGE.md", "docs/CONVENTIONS.md", "docs/DEVIATIONS.md", "docs/PARITY.md", "docs/REPLICATION.md", "docs/VERIFY.md"];
+const DOC_FILES = ["README.md", "docs/AGENT.md", "docs/COVERAGE.md", "docs/CONVENTIONS.md", "docs/DEPLOY.md", "docs/DEVIATIONS.md", "docs/PARITY.md", "docs/REPLICATION.md", "docs/VERIFY.md"];
 
 interface Link {
   file: string;

@@ -8,6 +8,11 @@ set -euo pipefail
 
 cd /app
 
+# `docker compose run --rm backend <cmd>` reaches this branch (for example the seed).
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
 if [ "${DB_PUSH_ON_START:-1}" = "1" ]; then
   echo "[entrypoint] applying prisma schema to ${DATABASE_URL}"
   pnpm --filter @relayx/backend exec prisma db push \

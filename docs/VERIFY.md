@@ -40,6 +40,7 @@ live E2E.
 | Email service | `vitest run tests/unit/email-service.test.ts` | config mapping/defaults, SMTP/Resend detection, SMTP payload via a fake transporter, Resend body and failure booleans |
 | Coupons and unpaid orders | `vitest run tests/unit/coupons-orders.test.ts` | coupon existence/cycle/validity/total-use/per-user gates, pending-only cancellation |
 | System config and user bridge | `vitest run tests/unit/config-user.test.ts` | defaults vs stored JSON, null-as-absent, upsert, getConfigs backfill vs getAll asymmetry, StackAuth create/update payloads and guards |
+| CONFIG_SECRET guard | `vitest run tests/unit/config-secret.test.ts` | explicit value wins, development falls back, production throws when unset or blank |
 | Roles and balance adjustments | `vitest run tests/unit/roles-balance.test.ts` | permission sanitising, role create/update/delete collisions and in-use guard, balance/commission increments with admin logs, negative rollback, log filters |
 | DNS orchestration | `vitest run tests/unit/dns-orchestration.test.ts` | provider CRUD/filters/cascade delete, in-group validation and custom lines, owner-scoped update/delete, record pairing in syncIpSet |
 | Commission wallet + withdrawals | `vitest run tests/unit/withdraw.test.ts` | withdraw creation debit/log/ticket, min amount/method/balance gates, approve vs reject refund, transfer between wallets with both logs, admin filters |

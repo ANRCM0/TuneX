@@ -1,0 +1,92 @@
+# TuneX deployment stack.
+#
+#   docker compose up -d backend license redis
+#   docker compose run --rm backend pnpm --filter @relayx/backend seed
+#   docker compose --profile proxy up -d caddy
+#
+# Full walkthrough: docs/DEPLOY.md. Values come from `.env`.
+
+name: tunex
+
+services:
+  backend:
+    image: ${TUNEX_IMAGE_PREFIX:-ghcr.io/anrcm0}/tunex-backend:${TUNEX_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: file:/data/relayx.db
+      LICENSE_URL: http://license:8899
+      REDIS_URL: redis://redis:6379
+      PORT: "3000"
+    volumes:
+      - backend_data:/data
+    ports:
+      # Loopback only: Caddy (or your own proxy) terminates TLS in front.
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      license:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  license:
+    image: ${TUNEX_IMAGE_PREFIX:-ghcr.io/anrcm0}/tunex-license-server:${TUNEX_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      LICENSE_HOST: 0.0.0.0
+      LICENSE_PORT: "8899"
+      LICENSE_DB: /data/license.db
+      # fernet keeps `content` decryptable by agents; see docs/DEPLOY.md.
+      LICENSE_CONTENT_MODE: fernet
+    volumes:
+      - license_data:/data
+    # No host port: only the panel and the operator (via `compose run`) reach it.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["proxy"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      TUNEX_DOMAIN: ${TUNEX_DOMAIN:-panel.example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_data:
+  license_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

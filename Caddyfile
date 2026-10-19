@@ -1,0 +1,37 @@
+# Reverse proxy for the panel. Caddy obtains and renews the certificate.
+#
+#   TUNEX_DOMAIN=panel.example.com docker compose --profile proxy up -d caddy
+#
+# WebSocket upgrades (Socket.IO) are proxied without extra configuration.
+
+{$TUNEX_DOMAIN} {
+	encode zstd gzip
+
+	# Uncomment to restrict the admin surface to known networks. The panel has
+	# no built-in rate limiting, so keep login and callbacks behind something
+	# that can throttle (fail2ban, a WAF, or a Caddy rate-limit plugin).
+	# @internal {
+	# 	not remote_ip 203.0.113.0/24
+	# }
+	# handle @internal {
+	# 	respond "forbidden" 403
+	# }
+
+	reverse_proxy backend:3000 {
+		# The panel builds self-referential URLs with /api; the backend strips
+		# one leading /api itself, so pass the path through unchanged.
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

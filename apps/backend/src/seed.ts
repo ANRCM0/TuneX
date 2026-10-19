@@ -2,35 +2,59 @@
  * Database seed.
  *
  * Upstream ships no decompiled seed module, so this is a faithful reconstruction of what
- * it must do: make sure at least one super admin exists (`authRequired` auto-promotes the
- * first account it ever sees, but a fresh database also needs a usable API key) and
- * materialise the `SystemConfig` defaults so the admin UI has rows to render.
+ * it must do: make sure at least one super admin exists and materialise the
+ * `SystemConfig` defaults so the admin UI has rows to render.
+ *
+ * Credentials:
+ *   - a new admin gets a random API key unless SEED_ADMIN_API_KEY is set;
+ *   - an existing super admin keeps its key (`SEED_ADMIN_ROTATE_KEY=1` replaces it).
+ *
+ * The key is printed once on the line after the email — capture it, it is the bearer
+ * credential for the admin API.
  *
  * Usage: pnpm seed
  */
+import { randomUUID } from "node:crypto";
 import { prisma } from "./db";
 import { DefaultConfig } from "./services/system_config";
 import { SystemConfigName } from "@prisma/client";
 
+const DEFAULT_ADMIN_EMAIL = "admin@relayx.local";
+
 async function main(): Promise<void> {
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@relayx.local";
-  // Deterministic by default so a fresh clone (db:reset → db:push → seed) has a known
-  // admin key for `tests/e2e/smoke.test.ts`. Override with SEED_ADMIN_API_KEY.
-  const apiKey =
-    process.env.SEED_ADMIN_API_KEY ?? "a34d563e-9efe-4047-9e20-05a9678ef5fb";
+  const production = (process.env.NODE_ENV ?? "production") === "production";
+  const email = process.env.SEED_ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL;
+  if (production && email === DEFAULT_ADMIN_EMAIL) {
+    console.warn(
+      `[seed] SEED_ADMIN_EMAIL is unset: creating the placeholder admin ${DEFAULT_ADMIN_EMAIL}. ` +
+        "Set a real address before exposing the panel.",
+    );
+  }
 
-  const existing = await prisma.user.findFirst({
-    where: { super_admin: true },
-  });
+  const existing = await prisma.user.findFirst({ where: { super_admin: true } });
+  const rotate = process.env.SEED_ADMIN_ROTATE_KEY === "1";
+  const requestedKey = process.env.SEED_ADMIN_API_KEY;
 
-  const admin = existing
-    ? await prisma.user.update({
-        where: { id: existing.id },
-        data: { super_admin: true, status: "active" },
-      })
-    : await prisma.user.create({
-        data: { api_key: apiKey, email, super_admin: true, status: "active" },
-      });
+  let admin;
+  let generatedKey = false;
+  if (existing) {
+    const apiKey = requestedKey ?? (rotate ? randomUUID() : undefined);
+    admin = await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        super_admin: true,
+        status: "active",
+        ...(apiKey ? { api_key: apiKey } : {}),
+      },
+    });
+    generatedKey = Boolean(rotate && !requestedKey);
+  } else {
+    const apiKey = requestedKey ?? randomUUID();
+    generatedKey = !requestedKey;
+    admin = await prisma.user.create({
+      data: { api_key: apiKey, email, super_admin: true, status: "active" },
+    });
+  }
 
   // `createMany({ skipDuplicates: true })` is not supported on SQLite, so upsert each row.
   for (const [name, value] of Object.entries(DefaultConfig)) {
@@ -44,6 +68,9 @@ async function main(): Promise<void> {
 
   console.log("seeded super admin:", admin.email);
   console.log("api_key:", admin.api_key);
+  if (generatedKey) {
+    console.log("[seed] this key was generated now and will not be shown again; store it securely");
+  }
 }
 
 main()

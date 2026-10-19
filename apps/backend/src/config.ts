@@ -26,7 +26,10 @@ export const STACK_API_URL = process.env.STACK_API_URL || "";
 export const REDIS_URL = process.env.REDIS_URL || "";
 export const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 export const DIAG_TOKEN = process.env.DIAG_TOKEN || "";
-export const LICENSE_URL = process.env.LICENSE_URL || "https://license.relayx.cc";
+// The replica points at a self-hosted license server by default (see docs/DEPLOY.md).
+// Upstream's `https://license.relayx.cc` is a third-party deployment the operator does
+// not control; set LICENSE_URL explicitly to use it.
+export const LICENSE_URL = process.env.LICENSE_URL || "http://127.0.0.1:8899";
 export const AGENT_VERSION_URL = "https://dl.relayx.cc/VERSION";
 export const AGENT_DOWNLOAD_URL = "https://dl.relayx.cc/relayx-agent";
 
@@ -45,15 +48,35 @@ export const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
 /** Port the HTTP server listens on. */
 export const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 /**
- * Secret used to encrypt payment gateway configs at rest.
+ * Secret used to encrypt payment gateway configs at rest and to decrypt the
+ * config pushed to agents.
  *
  * `fernet.Secret` rejects anything that is not exactly 32 url-safe base64-encoded
  * bytes, and `services/fernet.ts` constructs it at import time — an invalid value
- * here aborts the whole process. Upstream shipped no default (the variable is
- * mandatory in production); the default below is the exact Fernet key the recovered
- * panel hardcodes (`work/modules/006__src__services__fernet.ts:2`) and the one the
- * upstream agent carries as key1, so panel and agent decrypt each other's configs
- * without extra configuration. Override it in production.
+ * aborts the whole process.
+ *
+ * Production requires an explicit value. The recovered upstream key below is only
+ * a development fallback: it is published in the analysis tree, so any deployment
+ * that keeps it can have its node configs decrypted by anyone with this repository.
+ * Generate a real one with:
+ *
+ *   node -e 'console.log(require("crypto").randomBytes(32).toString("base64url"))'
+ *
+ * and set both `CONFIG_SECRET` (panel) and the agent's `--config-secret` to it.
  */
-export const CONFIG_SECRET =
-  process.env.CONFIG_SECRET || "KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4=";
+export const RECOVERED_FERNET_KEY = "KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4=";
+
+/** Resolve `CONFIG_SECRET`, refusing to boot in production when it is unset. */
+export function resolveConfigSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const provided = (env.CONFIG_SECRET ?? "").trim();
+  if (provided) return provided;
+  if ((env.NODE_ENV ?? "production") === "production") {
+    throw new Error(
+      "CONFIG_SECRET is required when NODE_ENV=production; generate one with " +
+        "`node -e 'console.log(require(\"crypto\").randomBytes(32).toString(\"base64url\"))'`",
+    );
+  }
+  return RECOVERED_FERNET_KEY;
+}
+
+export const CONFIG_SECRET = resolveConfigSecret();

@@ -17,8 +17,8 @@ const ANALYSIS = fileURLToPath(new URL("../../../relayx-analysis/", import.meta.
 
 function backendDefault(): string {
   const source = readFileSync(`${ROOT}apps/backend/src/config.ts`, "utf8");
-  const match = /export const CONFIG_SECRET\s*=\s*\n?\s*process\.env\.CONFIG_SECRET \|\| "([^"]+)"/.exec(source);
-  if (!match) throw new Error("CONFIG_SECRET default not found in backend config");
+  const match = /export const RECOVERED_FERNET_KEY = "([^"]+)"/.exec(source);
+  if (!match) throw new Error("RECOVERED_FERNET_KEY not found in backend config");
   return match[1];
 }
 

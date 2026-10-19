@@ -107,11 +107,25 @@ Repo scripts (not pnpm scripts):
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 40 files, 410 passed (the live smoke case self-skips when no backend is listening)
+- `pnpm test` — 46 files, 437 passed (the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok
 - Live agent end-to-end (`scripts/e2e-local.sh`): Fernet config with 2 services applied, TCP forward echoed through the tunnel, the observer reached the backend through the deployment `/api` prefix, `tunnel.traffic` / `userPlan.traffic_used` incremented by exactly `0.00390625` GiB, and `/openapi.json` served 116 paths
+
+Some suites compare the replica against the reverse-engineering evidence tree (`relayx-analysis/`). That tree is not part of this repository, so in a standalone clone those `describe.skipIf` blocks skip instead of failing; the counts above are from a checkout that has it as a sibling directory.
+
+## Container images
+
+`.github/workflows/docker.yml` builds three images with GitHub Actions:
+
+| Image | Dockerfile | Context |
+| --- | --- | --- |
+| `ghcr.io/<owner>/tunex-backend` | `apps/backend/Dockerfile` | repository root |
+| `ghcr.io/<owner>/tunex-agent` | `apps/agent/Dockerfile` | `apps/agent` |
+| `ghcr.io/<owner>/tunex-license-server` | `apps/license-server/Dockerfile` | `apps/license-server` |
+
+A push to `master`/`main` publishes `dev` and `dev-<sha>`; a `v*` tag publishes the semver tags (`0.0.1`, `0.0`, `0`) plus `latest`. The backend image applies the Prisma schema on start (`DB_PUSH_ON_START=0` disables that, `SEED_ON_START=1` seeds the super admin).
 
 `docs/PARITY.md` is the route-by-route diff and is written by the verify pass. If that file is missing, the verify task has not landed yet. `docs/COVERAGE.md` maps each layer to the suite that checks it.
 
@@ -132,6 +146,7 @@ Mounted in `apps/backend/src/app.ts`.
 ## Docs
 
 - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — how the replica is structured
+- [docs/DEPLOY.md](docs/DEPLOY.md) — deploy the stack, self-host the license server, back up
 - [docs/DEVIATIONS.md](docs/DEVIATIONS.md) — where it differs from the decompile
 - [docs/AGENT.md](docs/AGENT.md) — build and run the node agent
 - [docs/PARITY.md](docs/PARITY.md) — full route diff (verify task)
@@ -141,4 +156,4 @@ Mounted in `apps/backend/src/app.ts`.
 
 ## Legal / provenance
 
-This tree was reconstructed from a decompiled binary and the analysis notes next to it. It is not the original product, not a drop-in claim of ownership, and not endorsed by the upstream authors. Do not point the default Fernet key or the seeded admin key at anything you care about.
+This tree was reconstructed from a decompiled binary and the analysis notes next to it. It is not the original product, not a drop-in claim of ownership, and not endorsed by the upstream authors. Production requires an explicit `CONFIG_SECRET`; the seeded admin key is generated per install and printed once (see [docs/DEPLOY.md](docs/DEPLOY.md)).

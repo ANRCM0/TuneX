@@ -12,6 +12,10 @@ concurrency:
 env:
   NODE_VERSION: "24"
   PNPM_VERSION: "11.7.0"
+  # CI runs with NODE_ENV unset, which the panel treats as production, so the
+  # config layer requires an explicit secret. This value is throwaway.
+  CONFIG_SECRET: "KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4="
+  SEED_ADMIN_EMAIL: "admin@ci.local"
 
 jobs:
   node:

@@ -63,6 +63,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Tickets (ownership, replies, Telegram routing) | `tests/unit/tickets.test.ts` |
 | Roles (permission sanitising, in-use guard) | `tests/unit/roles-balance.test.ts` |
 | System config (defaults, upsert, `getAllConfigs` asymmetry) | `tests/unit/config-user.test.ts` |
+| Production `CONFIG_SECRET` guard | `tests/unit/config-secret.test.ts` |
 | In-memory Redis (expiry, hashes, pub/sub, pipeline, lock) | `tests/unit/redis-memory.test.ts` |
 | StackAuth user bridge | `tests/unit/config-user.test.ts` |
 | License client (cache, refresh, error mapping) | `tests/unit/license-client.test.ts` |
