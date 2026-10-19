@@ -29,6 +29,7 @@ live E2E.
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
+| Ticket service | `vitest run tests/unit/tickets.test.ts` | create/list/thread ownership, status updates, user and admin replies with notification payloads, telegram routing by ownership/super-admin |
 | Node and node-group services | `vitest run tests/unit/node-groups.test.ts` | port-range parsing quirks, group create/update ordering and owner scoping, plan-based group visibility (all-in, explicit list, custom), out-group allow-list, node id uniqueness, liveness window, scoped cascade delete |
 | Tunnel writes and queries | `vitest run tests/unit/tunnel-create.test.ts` | createTunnel insert/chains/order_by, per-user cap, port conflict/range, out-group and protocol gates, wireguard preparation; getTunnels scoping, filters, pagination, sorting, chain filter; listen-protocol defaults/reuse |
 | Route error payloads | `vitest run tests/unit/route-errors.test.ts` | in-process app: 401 bearer shape, 403 Forbidden, zod 400 body, 409 catch-all on payment delete, 404 unknown path |
@@ -48,7 +49,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 28 files, 311 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 29 files, 321 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
