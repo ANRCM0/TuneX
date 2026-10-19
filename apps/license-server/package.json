@@ -1,6 +1,6 @@
 {
   "name": "@relayx/license-server",
-  "version": "0.14.2",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Self-hosted RelayX license server (wire-compatible replacement for https://license.relayx.cc).",

@@ -1,7 +1,7 @@
 {
   "name": "relayx",
   "private": true,
-  "version": "0.14.2",
+  "version": "0.0.1",
   "description": "Clean-room replica of the RelayX tunnel-management panel, built from the reverse-engineering evidence in relayx-analysis/.",
   "type": "module",
   "engines": {

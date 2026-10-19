@@ -1,6 +1,6 @@
 {
   "name": "@relayx/shared",
-  "version": "0.14.2",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "exports": {
