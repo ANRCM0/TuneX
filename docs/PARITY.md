@@ -29,9 +29,38 @@ The 6 extras are real upstream mounts that the api map records outside the `rout
 
 ## What this diff does not prove
 
-- Guard parity (auth vs admin vs business license) was not re-derived route by route. Mount order in `apps/backend/src/app.ts` follows `112__src__app.ts`: `/queuedash` and `/health` before `authRequired`; `/admin/*` gets `adminRequired` and `adminPermissionGuard`.
+- Guard parity is re-derived route by route in `tests/unit/route-guards.test.ts` — see "Guard parity" below. That covers the app-level `use(...)` chain only, not middleware registered inside route files.
 - Zod nullability was not diffed for every schema. Field presence was.
 - Aggregation SQL is covered by `tests/unit/date.test.ts` (the helper strings, plus a SQLite check that 2024-12-31 16:00:00Z buckets as 2025-01-01 / 2025-01 / 2025 in Asia/Shanghai).
+
+## Guard parity (re-derived 2026-10-19)
+
+`tests/unit/route-guards.test.ts` cross-checks three sources: the replica's `app.use(...)` wiring parsed from `apps/backend/src/app.ts`, the decompiled upstream wiring (`relayx-analysis/work/modules/112__src__app.ts:34-73`), and the per-route `middlewareChain` in `relayx-analysis/work/api_map.json`.
+
+Results:
+
+| Check | Result |
+| --- | --- |
+| Ordered `use(path, guards…)` list vs upstream | identical: `authRequired` on `*`, `adminRequired` + `adminPermissionGuard` on `/admin/*`, nine `businessLicenseRequired` entries, `superAdminRequired` before `businessLicenseRequired` on `/admin/role` and `/admin/role/*` |
+| Top-level mount prefixes vs upstream | identical, including the two `/license` registrations and `/queuedash` + `/health` before `authRequired` |
+| Derived guard chain for the 160 upstream registrations | 153 exact; 7 differ only by `businessLicenseRequired` (see below) |
+| `resolveAdminRoute` vs upstream `adminResource` | 81/81 same `key` and `matchedPrefix`, including `$staff` for `GET /admin/node/group/summary` and `$super` for the four `/admin/role` routes. No admin route resolves to `undefined`, which `adminPermissionGuard` turns into a 403 for every non-super-admin |
+| Public routes vs `noAuthPathsRegex` | the 11 upstream-public registrations match; none of the other 149 do; the nine regexes match upstream's nine |
+
+### Seven routes where `api_map.json` over-reports licensing
+
+Hono's non-wildcard `use(path, mw)` is an exact-path match. The upstream bundle compiles a literal segment to `[^/]+`-style tokens and a trailing `*` to `(?:|/.*)` (`work/backend_bundle.ts.js:213864-213871`); the installed hono 4.13.13 behaves the same (`/admin/pay` fires for `/admin/pay`, not `/admin/pay/1`). Upstream and replica register the identical lines, so runtime behaviour matches — the annotation is what is wrong:
+
+| Route | `api_map.json` | Actually wired (both sides) |
+| --- | --- | --- |
+| `PATCH`/`DELETE /admin/pay/:id`, `PATCH /admin/pay/:id/order` | `licenceGated` | `authRequired, adminRequired, adminPermissionGuard` |
+| `PATCH /admin/plan/coupon/:id` | `licenceGated` | same |
+| `PATCH /admin/topup/activity/:id` | `licenceGated` | same |
+| `GET`/`POST /pay/:id/callback` | `licenceGated` + public | `authRequired` only (public via `^/pay/.*/callback`) |
+
+Wiring evidence: `112__src__app.ts:63-73` vs `apps/backend/src/app.ts:130-140`. The test pins the set of seven and fails if it changes; a mutation of any one `use(...)` line fails two tests.
+
+Not covered here: middleware registered inside route files (`zValidator`, per-handler `getRequestIP`) and the actual 401/403/402 responses. Those are exercised at the HTTP level by `tests/e2e/smoke.test.ts` and `scripts/e2e-local.sh`.
 
 ## Runtime checks the same day
 
