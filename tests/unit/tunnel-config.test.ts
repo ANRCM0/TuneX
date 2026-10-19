@@ -271,6 +271,114 @@ describe("getInNodeConfig", () => {
     });
   });
 
+  it("wires a vless listener through reality with the user map", async () => {
+    const config = await inConfig(
+      [
+        makeTunnel({
+          listen_protocol: {
+            type: "vless",
+            uuid: "uuid-1",
+            privateKey: "reality-priv",
+            dest: "www.example.com",
+            shortId: "abcd",
+          },
+        }),
+      ],
+      null,
+      true,
+    );
+    const svc = config.services[0];
+    expect(svc.name).toBe("tcp-1");
+    expect(svc.handler).toMatchObject({
+      type: "vless",
+      metadata: { users: { user: "uuid-1" } },
+    });
+    expect(svc.listener).toMatchObject({
+      type: "reality",
+      metadata: {
+        privateKey: "reality-priv",
+        dest: "www.example.com:443",
+        shortId: "abcd",
+      },
+    });
+  });
+
+  it("uses the protocol username as the vless user key when present", async () => {
+    const config = await inConfig(
+      [makeTunnel({ listen_protocol: { type: "vless", username: "alice", uuid: "uuid-2" } })],
+      null,
+      true,
+    );
+    expect(config.services[0].handler).toMatchObject({
+      metadata: { users: { alice: "uuid-2" } },
+    });
+    expect(config.services[0].listener).toMatchObject({ metadata: { dest: "www.apple.com:443" } });
+  });
+
+  it("wires a mieru listener with its user map and defaults", async () => {
+    const config = await inConfig(
+      [makeTunnel({ listen_protocol: { type: "mieru", username: "mu", password: "mp" } })],
+      null,
+      true,
+    );
+    const svc = config.services[0];
+    expect(svc.name).toBe("mieru-1");
+    expect(svc.handler).toMatchObject({ type: "mieru" });
+    expect(svc.listener).toEqual({
+      type: "mieru",
+      metadata: { users: { mu: "mp" }, mtu: 1400, protocol: "tcp" },
+    });
+  });
+
+  it("drops a mieru tunnel without credentials", async () => {
+    const config = await inConfig(
+      [makeTunnel({ listen_protocol: { type: "mieru", username: "mu" } })],
+      null,
+      true,
+    );
+    expect(config.services).toEqual([]);
+  });
+
+  it("wires an openvpn listener through tungo with its PKI material", async () => {
+    const config = await inConfig(
+      [
+        makeTunnel({
+          listen_protocol: {
+            type: "openvpn",
+            udp: true,
+            ca: "CA-PEM",
+            cert: "CERT-PEM",
+            key: "KEY-PEM",
+            tlsCrypt: "TC-KEY",
+            server: "10.9.0.0/24",
+            cipher: "AES-128-GCM",
+            auth: "SHA1",
+            mtu: 1400,
+          },
+        }),
+      ],
+      null,
+      true,
+    );
+    const svc = config.services[0];
+    expect(svc.name).toBe("ovpn-1");
+    expect(svc.handler).toMatchObject({ type: "tungo" });
+    expect(svc.listener).toEqual({
+      type: "openvpn",
+      metadata: {
+        udp: true,
+        ca: "CA-PEM",
+        cert: "CERT-PEM",
+        key: "KEY-PEM",
+        tlsCrypt: "TC-KEY",
+        server: "10.9.0.0/24",
+        cipher: "AES-128-GCM",
+        auth: "SHA1",
+        mtu: "1400",
+      },
+    });
+  });
+
   it("includes only tunnels that belong to the requested in-node-group", async () => {
     const config = await inConfig([
       makeTunnel({ id: 7, in_node_group_id: groupId + 1 }),
