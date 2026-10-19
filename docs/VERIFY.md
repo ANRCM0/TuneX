@@ -29,6 +29,7 @@ live E2E.
 | Tunnel availability | `vitest run tests/unit/tunnel-availability.test.ts` | plan requirement, traffic quota (plan and per-user), per-user `max_tunnels`, shared in/out node groups, and the recovered "empty group list is unrestricted" quirk |
 | Route table parity | `vitest run tests/unit/route-table.test.ts` | 160 upstream registrations (157 distinct) all present; exactly the six documented extras; 163 replica paths |
 | Admin guard behaviour | `vitest run tests/unit/admin-guards.test.ts` | super-admin bypass; business-licence gate; `$super` rejected, `$staff` open; read vs write by method; longest-prefix resource resolution; missing licence passes |
+| Notifications | `vitest run tests/unit/notify.test.ts` | channel normalisation and admin defaults, telegram markdown escaping + ticket callback, email template escaping/buttons, topup/plan/ticket notifications and reply routing |
 | License client | `vitest run tests/unit/license-client.test.ts` | cache hit vs site change, forced refresh, null clears, 500 mapping, purchase payload, coupon/history error mapping, rebind guard |
 | Email service | `vitest run tests/unit/email-service.test.ts` | config mapping/defaults, SMTP/Resend detection, SMTP payload via a fake transporter, Resend body and failure booleans |
 | Coupons and unpaid orders | `vitest run tests/unit/coupons-orders.test.ts` | coupon existence/cycle/validity/total-use/per-user gates, pending-only cancellation |
@@ -56,7 +57,7 @@ live E2E.
 Latest observed run (2026-10-19, Node 24.22.0 / pnpm 11.7.0 / Go 1.27.1):
 
 - `pnpm -r typecheck` — exit 0
-- `pnpm test` — 36 files, 378 passed (the live smoke case self-skips when the backend is down)
+- `pnpm test` — 37 files, 387 passed (the live smoke case self-skips when the backend is down)
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...`, `go test ./...` — clean
 - `scripts/e2e-local.sh` — PASS
