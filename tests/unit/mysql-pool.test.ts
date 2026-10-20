@@ -12,7 +12,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   claimSlot,
   poolDatabaseName,
@@ -40,12 +40,19 @@ function deadPid(): number {
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   while (roots.length > 0) rmSync(roots.pop()!, { recursive: true, force: true });
 });
 
 describe("mysql test pool", () => {
   it("is opt-in, sized for the machine, and keyed on server plus schema", () => {
+    // Assert the switch instead of the ambient value, so the suite is valid in a
+    // RELAYX_TEST_DIALECT=mysql run too.
+    vi.stubEnv("RELAYX_TEST_DIALECT", "");
     expect(testDialect()).toBe("sqlite");
+    vi.stubEnv("RELAYX_TEST_DIALECT", "mysql");
+    expect(testDialect()).toBe("mysql");
+    vi.unstubAllEnvs();
     expect(poolSize()).toBeGreaterThanOrEqual(4);
     expect(poolSize()).toBeLessThanOrEqual(16);
     expect(schemaDigest()).toMatch(/^[0-9a-f]{10}$/);
