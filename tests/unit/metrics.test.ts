@@ -84,7 +84,10 @@ describe("HTTP instrumentation", () => {
     const local = await app.request("/metrics", {}, env);
     expect(local.status).toBe(200);
     expect(local.headers.get("content-type")).toContain("text/plain");
-    expect(await local.text()).toContain("relayx_http_requests_total");
+    const body = await local.text();
+    expect(body).toContain("relayx_http_requests_total");
+    // The scrape states whether the domain gauges are trustworthy.
+    expect(body).toContain("relayx_db_up 1");
 
     const foreign = await app.request("/metrics", {}, remote);
     expect(foreign.status).toBe(404);

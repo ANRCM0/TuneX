@@ -41,8 +41,11 @@ async function refreshGauges(): Promise<void> {
     setGauge("relayx_tunnels_total", tunnels);
     setGauge("relayx_tunnels_active", tunnelsActive);
     setGauge("relayx_tickets_open", ticketsOpen);
+    setGauge("relayx_db_up", 1);
   } catch {
-    // The endpoint must still answer when the database is mid-migration.
+    // The endpoint still answers when the database is mid-migration, but the scrape says so:
+    // `relayx_db_up 0` makes the empty gauges explicit instead of silent.
+    setGauge("relayx_db_up", 0);
   }
 }
 
