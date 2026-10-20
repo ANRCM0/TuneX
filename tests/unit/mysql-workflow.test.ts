@@ -66,6 +66,12 @@ describe("mysql workflow", () => {
     expect(helper).toContain("RELAYX_TEST_DIALECT");
     expect(helper).toContain("mysql-test-db.mjs");
     expect(helper).toContain("relayx_t_");
+    // Slots are claimed with an atomically created lock file, released on exit, and a busy
+    // pool degrades to a private database instead of deadlocking the run.
+    expect(helper).toContain('openSync(lockPath, "wx"');
+    expect(helper).toContain("releaseSlot");
+    expect(helper).toContain('process.once("exit"');
+    expect(helper).toContain("relayx_t_e${process.pid}");
     // The SQLite branch must keep working: it is the default checkout.
     expect(helper).toContain("mkdtempSync");
     expect(helper).toContain("schema.prisma");
