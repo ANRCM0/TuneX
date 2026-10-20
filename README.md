@@ -113,7 +113,7 @@ Repo scripts (not pnpm scripts):
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0 (backend, license server, shared, web)
-- `pnpm test` — 53 files, 491 passed (the live smoke case self-skips when no backend is listening)
+- `pnpm test` — 53 files, 496 passed (the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok

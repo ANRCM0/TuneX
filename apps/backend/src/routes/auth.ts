@@ -16,7 +16,13 @@ import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { SystemConfigName } from "@prisma/client";
-import { AUTH_MODE } from "../config";
+import {
+  AUTH_MODE,
+  AUTH_VERIFY_MODE,
+  AUTH_VERIFY_RESEND_SECONDS,
+  AUTH_VERIFY_TTL_SECONDS,
+  SITE_URL,
+} from "../config";
 import { db } from "../db";
 import { instance, TOKENS } from "../container";
 import type { RedisService } from "../services/redis";
@@ -26,6 +32,8 @@ import {
   AUTH_IS_HTTPS_COOKIE,
   AUTH_REFRESH_COOKIE,
   authCookies,
+  createEmailToken,
+  emailTokenMatches,
   hashPassword,
   issueTokens,
   parseTokenCookie,
@@ -35,6 +43,7 @@ import {
 import type { AppEnv, SessionUser } from "../types";
 
 const systemConfigService = () => instance.resolve<SystemConfigService>(TOKENS.SystemConfig);
+const mailService = () => instance.resolve<{ sendEmail: (to: string, subject: string, text: string, html?: string) => Promise<boolean> }>(TOKENS.Mail);
 const redisService = () => instance.resolve<RedisService>(TOKENS.Redis);
 
 const app = new Hono<AppEnv>();
@@ -188,20 +197,105 @@ app.get("/me", async (c) => {
 });
 
 /**
- * Mark the address verified.
+ * Send (or resend) the verification mail.
  *
- * StackAuth sends a signed link; the local mode has no mail transport, so the flag is set
- * directly for the signed-in user (documented deviation §30).
+ * Only meaningful in `email` mode with a configured provider. The response never leaks the
+ * token in that mode; when no provider is configured the endpoint falls back to returning it
+ * so a fresh checkout stays usable (`AUTH_VERIFY_MODE=direct` semantics).
  */
-app.post("/verify-email", async (c) => {
+app.post("/verify-email/request", async (c) => {
   assertLocalMode();
   const user = c.get("user");
   if (!user) throw new HTTPException(401, { message: "Unauthorized" });
+
+  const credential = await db.localCredential.findUnique({ where: { user_id: user.id } });
+  if (!credential) throw new HTTPException(400, { message: "该账户不支持邮箱验证" });
+  if (credential.email_verified) return c.json({ ok: true, alreadyVerified: true });
+
+  const now = Date.now();
+  if (credential.verification_sent_at && now - credential.verification_sent_at.getTime() < AUTH_VERIFY_RESEND_SECONDS * 1000) {
+    throw new HTTPException(429, { message: "发送过于频繁，请稍后再试" });
+  }
+
+  const { token, hash } = createEmailToken();
+  const expiresAt = new Date(now + AUTH_VERIFY_TTL_SECONDS * 1000);
   await db.localCredential.update({
     where: { user_id: user.id },
-    data: { email_verified: true },
+    data: {
+      verification_token_hash: hash,
+      verification_token_expires_at: expiresAt,
+      verification_sent_at: new Date(now),
+    },
   });
-  return c.json({ ok: true });
+
+  const link = `${SITE_URL}/handler/verify-email?token=${encodeURIComponent(token)}`;
+  const sent =
+    AUTH_VERIFY_MODE === "email"
+      ? await mailService().sendEmail(
+          user.email,
+          "验证你的 RelayX 邮箱",
+          `点击链接完成邮箱验证（${Math.round(AUTH_VERIFY_TTL_SECONDS / 3600)} 小时内有效）：${link}`,
+          `<p>点击下面的链接完成邮箱验证（${Math.round(AUTH_VERIFY_TTL_SECONDS / 3600)} 小时内有效）：</p><p><a href="${link}">${link}</a></p>`,
+        )
+      : false;
+
+  if (sent) return c.json({ ok: true, sent: true, expiresAt: expiresAt.toISOString() });
+
+  // No transport (or direct mode): hand the token back so the caller can finish the flow.
+  return c.json({
+    ok: true,
+    sent: false,
+    token,
+    link,
+    expiresAt: expiresAt.toISOString(),
+    hint: "未配置邮件服务：已直接返回验证链接（AUTH_VERIFY_MODE=direct）",
+  });
+});
+
+/**
+ * Complete the verification.
+ *
+ * With `{token}` the mailed link is honoured (hash + expiry). Without a token the call is
+ * the direct-mode shortcut, allowed only when no mail transport is configured — otherwise a
+ * caller could skip ownership proof by simply omitting the token.
+ */
+app.post("/verify-email", zValidator("json", z.object({ token: z.string().min(16).max(128).optional() }).partial()), async (c) => {
+  assertLocalMode();
+  const user = c.get("user");
+  if (!user) throw new HTTPException(401, { message: "Unauthorized" });
+
+  const credential = await db.localCredential.findUnique({ where: { user_id: user.id } });
+  if (!credential) throw new HTTPException(400, { message: "该账户不支持邮箱验证" });
+  if (credential.email_verified) return c.json({ ok: true, alreadyVerified: true });
+
+  const { token } = c.req.valid("json");
+
+  if (token) {
+    const expired =
+      credential.verification_token_expires_at !== null &&
+      credential.verification_token_expires_at.getTime() < Date.now();
+    if (expired || !emailTokenMatches(token, credential.verification_token_hash)) {
+      throw new HTTPException(400, { message: "验证链接无效或已过期" });
+    }
+    await db.localCredential.update({
+      where: { user_id: user.id },
+      data: {
+        email_verified: true,
+        verification_token_hash: null,
+        verification_token_expires_at: null,
+      },
+    });
+    return c.json({ ok: true });
+  }
+
+  if (AUTH_VERIFY_MODE !== "direct") {
+    throw new HTTPException(400, { message: "请使用邮件中的链接验证" });
+  }
+  await db.localCredential.update({
+    where: { user_id: user.id },
+    data: { email_verified: true, verification_token_hash: null, verification_token_expires_at: null },
+  });
+  return c.json({ ok: true, direct: true });
 });
 
 export default app;

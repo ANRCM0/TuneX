@@ -133,12 +133,12 @@ describe("replica schema structural invariants", () => {
     expect([...replicaSchema.models.keys()].sort()).toHaveLength(24);
     expect([...replicaSchema.enums.keys()].sort()).toHaveLength(18);
     const all = [...replicaSchema.models.values()].flat();
-    // +5 LocalCredential scalars (user_id, password_hash, email_verified, created_at,
-    // updated_at) and +1 User.credential relation.
-    expect(all).toHaveLength(304);
-    expect(all.filter((f) => !isRelation(f))).toHaveLength(246);
+    // +8 LocalCredential scalars (user_id, password_hash, email_verified, the three
+    // verification-token columns, created_at, updated_at) and +1 User.credential relation.
+    expect(all).toHaveLength(307);
+    expect(all.filter((f) => !isRelation(f))).toHaveLength(249);
     expect(all.filter(isRelation)).toHaveLength(58);
-    expect(all.filter((f) => f.nullable && !isRelation(f))).toHaveLength(56);
+    expect(all.filter((f) => f.nullable && !isRelation(f))).toHaveLength(59);
   });
 });
 

@@ -318,6 +318,11 @@ model LocalCredential {
   user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   password_hash  String
   email_verified Boolean  @default(false)
+  /// sha256 of the mailed verification token (the token itself is never stored).
+  verification_token_hash       String?
+  verification_token_expires_at DateTime?
+  /// Throttles the "resend" button.
+  verification_sent_at          DateTime?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 

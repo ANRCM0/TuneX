@@ -94,7 +94,11 @@ Each entry is something this replica does differently from the analysis tree (`/
     - the cookie value is **percent-encoded** (Hono's own cookie parser returns `null` for a
       raw JSON value containing quotes; the middleware decodes before `JSON.parse`);
     - tokens expire (24 h access / 30 d refresh) instead of being verified with a frozen clock;
-    - `/auth/verify-email` marks the address directly — there is no mail transport here;
+    - `/auth/verify-email` honours a mailed one-time token (`POST /auth/verify-email/request`
+      generates it, stores only its sha256 digest with a 24 h expiry and mails the link through
+      the existing `EmailService` — SMTP or Resend from `/admin/settings`). When no transport is
+      configured the endpoint returns the link instead, so a fresh checkout still completes the
+      flow; the direct shortcut is then allowed and refused as soon as a provider is set;
     - `AUTH_MODE=stack` restores the upstream path, so both modes stay available. Default is
       `local` when no StackAuth project is configured.
     Blast radius: `/auth/*` is added to `noAuthPathsRegex` for the four endpoints that must be

@@ -19,10 +19,10 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 
 | Suite | Count | Notes |
 | --- | --- | --- |
-| Workspace vitest (`pnpm test`) | 53 files / 491 tests | 36 unit files (incl. 5 web suites + local auth), 6 license-server files, 1 live smoke that self-skips when the backend is down |
+| Workspace vitest (`pnpm test`) | 53 files / 496 tests | 36 unit files (incl. 5 web suites + local auth), 6 license-server files, 1 live smoke that self-skips when the backend is down |
 | License server (dedicated run) | 6 files / 44 tests | Fernet wire compatibility, CLI, HTTP routes, store |
 | Go (`go test ./...`) | 33 packages, all covered | table below |
-| Live E2E | 1 | license → config push → TCP forward → observer → exact traffic accounting → OpenAPI document → **web console** (gate → sign-up → verify → `/api` round-trip) |
+| Live E2E | 1 | license → config push → TCP forward → observer → exact traffic accounting → OpenAPI document → **web console** (gate → sign-up → mailed-token verify → `/api` round-trip) |
 
 ## Backend: API surface
 
@@ -85,7 +85,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Install command flag order/spelling, multi-IP, upgrade/uninstall | `tests/unit/web-deploy-command.test.ts` |
 | Route manifest ↔ file tree, admin nesting | `tests/unit/web-routes.test.ts` |
 | Live console: gate, sign-up through the proxy, verify, `/api` round-trip | `scripts/e2e-local.sh` (web stage) |
-| Local auth: scrypt hashes, HS256 tokens, cookie shape, sign-up/sign-in/guards | `tests/unit/local-auth.test.ts` |
+| Local auth: scrypt hashes, HS256 tokens, cookie shape, sign-up/sign-in/guards, mailed verification token (send, throttle, expiry, direct-mode guard) | `tests/unit/local-auth.test.ts` |
 | i18n: every key resolves, no duplicate keys, `en` refines known keys, no hard-coded Chinese | `tests/unit/web-i18n.test.ts` |
 | Production build (Next standalone) | `scripts/verify.sh` step `web build` |
 

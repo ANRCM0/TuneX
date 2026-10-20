@@ -14,7 +14,7 @@
  * Consequences (documented in docs/DEVIATIONS.md §30): tokens cannot be validated by
  * StackAuth, and a mixed deployment must pick one mode with `AUTH_MODE`.
  */
-import { randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { AUTH_ACCESS_TTL_SECONDS, AUTH_REFRESH_TTL_SECONDS, AUTH_SECRET } from "../config";
@@ -132,4 +132,27 @@ export function authCookies(pair: TokenPair): { name: string; value: string; max
     { name: AUTH_COOKIE, value: tokenCookieValue(pair), maxAge: AUTH_REFRESH_TTL_SECONDS },
     { name: AUTH_REFRESH_COOKIE, value: pair.refreshToken, maxAge: AUTH_REFRESH_TTL_SECONDS },
   ];
+}
+
+// ── e-mail verification ────────────────────────────────────────────────────────
+
+/**
+ * A mailed verification token: 32 random bytes, base64url, stored only as a sha256 hex
+ * digest. Same construction as the session cookie — nothing secret is persisted.
+ */
+export function createEmailToken(): { token: string; hash: string } {
+  const token = randomBytes(32).toString("base64url");
+  return { token, hash: hashEmailToken(token) };
+}
+
+export function hashEmailToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+/** Constant-time comparison of two hex digests. */
+export function emailTokenMatches(token: string, storedHash: string | null | undefined): boolean {
+  if (!storedHash) return false;
+  const computed = Buffer.from(hashEmailToken(token), "hex");
+  const expected = Buffer.from(storedHash, "hex");
+  return computed.length === expected.length && timingSafeEqual(computed, expected);
 }

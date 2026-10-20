@@ -156,7 +156,8 @@ why `pnpm test` is safe to run with no stack.
 | `GET /home` anonymous | 307 → `/handler/sign-in` |
 | `POST /api/auth/sign-up` through the proxy | 201 + `stack-access` cookie |
 | `GET /home` with the unverified cookie | 307 → `/verify-email` |
-| `POST /api/auth/verify-email` | 200 |
+| `POST /api/auth/verify-email/request` | 200; with no transport, returns the one-time link |
+| `POST /api/auth/verify-email` with that token | 200 |
 | `GET /home` after verification | 200 |
 | `GET /verify-email` after verification | 307 → `/home` |
 | `GET /api/user/info` with the cookie | 200, email matches the sign-up |

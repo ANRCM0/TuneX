@@ -378,8 +378,25 @@ case "$LOCATION" in
   *) fail "unverified /home did not redirect to /verify-email (got '$LOCATION')" ;;
 esac
 
-curl -fsS -b "$JAR" -X POST "$WEB_URL/api/auth/verify-email" >/dev/null ||
-  fail "verify-email call failed"
+# No SMTP/Resend in the harness, so the endpoint returns the one-time link instead of
+# mailing it; follow that link the way a user would.
+VERIFY_LINK="$(curl -fsS -b "$JAR" -X POST "$WEB_URL/api/auth/verify-email/request" | node -e '
+  let raw = "";
+  process.stdin.on("data", (c) => (raw += c));
+  process.stdin.on("end", () => {
+    const body = JSON.parse(raw);
+    if (!body.link || !body.token) {
+      console.error("verification link was not returned (no mail transport expected here)");
+      process.exit(1);
+    }
+    console.log(body.link);
+  });
+')" || fail "verification link request failed"
+VERIFY_TOKEN="${VERIFY_LINK#*token=}"
+curl -fsS -b "$JAR" -X POST "$WEB_URL/api/auth/verify-email" \
+  -H 'content-type: application/json' -d "{\"token\":\"$VERIFY_TOKEN\"}" >/dev/null ||
+  fail "verify-email with the mailed token failed"
+printf '  verification link token accepted\n' 
 
 say "assert web console: verified session reaches the panel and the API"
 HOME_STATUS="$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' "$WEB_URL/home")"

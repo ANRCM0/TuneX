@@ -12,7 +12,7 @@
  *   - `/auth/sign-in` rejects a wrong password and an inactive user;
  *   - `/auth/me` is protected, and a session cookie authenticates a normal API call.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTempDatabase, type TempDatabase } from "../helpers/temp-db";
 import type { Hono } from "hono";
 import type { PrismaClient } from "../../apps/backend/src/db";
@@ -54,6 +54,10 @@ function cookieHeader(res: Response): string {
     .join("; ");
 }
 
+const mailCalls: Record<string, unknown>[] = [];
+/** What the stubbed transport returns; `false` simulates "no provider configured". */
+let mailResult = true;
+
 beforeAll(async () => {
   const localAuth = await import("../../apps/backend/src/services/local_auth");
   hashPassword = localAuth.hashPassword;
@@ -66,6 +70,17 @@ beforeAll(async () => {
   db = (await import("../../apps/backend/src/db")).db;
   const mod = await import("../../apps/backend/src/app");
   app = mod.default;
+
+  // Stub the mail transport AFTER importing the app: importing `services/email` registers
+  // the real factory, and the container is last-wins (same trap as route-errors.test.ts).
+  const container = await import("../../apps/backend/src/container");
+  container.register(container.TOKENS.Mail, () => ({
+    sendEmail: async (to: string, subject: string, text: string, html?: string) => {
+      mailCalls.push({ to, subject, text, html });
+      return mailResult;
+    },
+  }));
+
   await db.user.deleteMany();
 });
 
@@ -158,6 +173,131 @@ describe("sign-up / sign-in", () => {
     const res = await post("/auth/sign-up", { email: "third@example.com", password: "supersecret" });
     expect(res.status).toBe(403);
     await db.systemConfig.update({ where: { name: "ALLOW_REGISTER" }, data: { value: "true" } });
+  });
+});
+
+describe("email verification", () => {
+  // Each case starts without a mail provider and with an empty call log: the system
+  // config table is global to the fixture database.
+  beforeEach(async () => {
+    mailCalls.length = 0;
+    mailResult = true;
+    await db.systemConfig.upsert({
+      where: { name: "EMAIL_PROVIDER" },
+      update: { value: JSON.stringify("") },
+      create: { name: "EMAIL_PROVIDER", value: JSON.stringify("") },
+    });
+  });
+
+  /** Sign in and return the cookie for a fresh account. */
+  async function signInAs(email: string): Promise<string> {
+    const signup = await post("/auth/sign-up", { email, password: "supersecret" });
+    expect([201, 409]).toContain(signup.status);
+    const res = await post("/auth/sign-in", { email, password: "supersecret" });
+    expect(res.status).toBe(200);
+    return cookieHeader(res);
+  }
+
+  it("returns the link when the transport cannot send, then honours the token once", async () => {
+    mailResult = false; // transport unconfigured / failing
+    const cookie = await signInAs("verify-mail@example.com");
+    const res = await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { sent: boolean; token?: string; link?: string };
+    expect(body.sent).toBe(false);
+    expect(body.token).toBeTruthy();
+    expect(body.link).toContain("/handler/verify-email?token=");
+    expect(mailCalls).toHaveLength(1);
+
+    const verify = await app.request(
+      "/auth/verify-email",
+      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ token: body.token }) },
+      env,
+    );
+    expect(verify.status).toBe(200);
+    const me = await app.request("/auth/me", { headers: { cookie } }, env);
+    expect(((await me.json()) as { user: { email_verified: boolean } }).user.email_verified).toBe(true);
+
+    // The token is single-use: the stored hash is cleared.
+    const again = await app.request(
+      "/auth/verify-email",
+      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ token: body.token }) },
+      env,
+    );
+    expect(again.status).toBe(200); // already verified → idempotent
+  });
+
+  it("sends a real mail when a provider is configured", async () => {
+    const cookie = await signInAs("verify-provider@example.com");
+    await db.systemConfig.upsert({
+      where: { name: "EMAIL_PROVIDER" },
+      update: { value: JSON.stringify("resend") },
+      create: { name: "EMAIL_PROVIDER", value: JSON.stringify("resend") },
+    });
+    await db.systemConfig.upsert({
+      where: { name: "RESEND_API_KEY" },
+      update: { value: JSON.stringify("re_test") },
+      create: { name: "RESEND_API_KEY", value: JSON.stringify("re_test") },
+    });
+    await db.systemConfig.upsert({
+      where: { name: "RESEND_FROM" },
+      update: { value: JSON.stringify("from@example.test") },
+      create: { name: "RESEND_FROM", value: JSON.stringify("from@example.test") },
+    });
+
+    const res = await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { sent: boolean; token?: string };
+    expect(body.sent).toBe(true);
+    expect(body.token).toBeUndefined();
+    expect(mailCalls.length).toBe(1);
+    expect(String(mailCalls[0].to)).toBe("verify-provider@example.com");
+    expect(String(mailCalls[0].text)).toContain("/handler/verify-email?token=");
+  });
+
+  it("rejects a wrong token and an omitted token in email mode", async () => {
+    const cookie = await signInAs("verify-bad@example.com");
+    await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env);
+
+    const wrong = await app.request(
+      "/auth/verify-email",
+      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ token: "x".repeat(43) }) },
+      env,
+    );
+    expect(wrong.status).toBe(400);
+
+    const omitted = await app.request(
+      "/auth/verify-email",
+      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: "{}" },
+      env,
+    );
+    expect(omitted.status).toBe(400);
+  });
+
+  it("throttles a resend inside the window", async () => {
+    const cookie = await signInAs("verify-throttle@example.com");
+    await db.systemConfig.upsert({
+      where: { name: "EMAIL_PROVIDER" },
+      update: { value: JSON.stringify("") },
+      create: { name: "EMAIL_PROVIDER", value: JSON.stringify("") },
+    });
+    expect((await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env)).status).toBe(200);
+    expect((await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env)).status).toBe(429);
+  });
+
+  it("refuses the direct shortcut when a provider is configured", async () => {
+    const cookie = await signInAs("verify-direct@example.com");
+    await db.systemConfig.upsert({
+      where: { name: "EMAIL_PROVIDER" },
+      update: { value: JSON.stringify("resend") },
+      create: { name: "EMAIL_PROVIDER", value: JSON.stringify("resend") },
+    });
+    const res = await app.request(
+      "/auth/verify-email",
+      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: "{}" },
+      env,
+    );
+    expect(res.status).toBe(400);
   });
 });
 

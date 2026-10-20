@@ -675,6 +675,8 @@ export const messages = {
     "zh_e85ad6": "申请时间",
   },
   "app": {
+    "auth.resendMail": "重新发送验证邮件",
+    "auth.mailSent": "验证邮件已发送，请查收",
     "auth.signIn": "登录",
     "auth.signUp": "注册",
     "auth.signOut": "退出登录",

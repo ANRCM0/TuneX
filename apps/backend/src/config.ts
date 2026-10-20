@@ -64,6 +64,21 @@ export const AUTH_MODE: "local" | "stack" =
 export const AUTH_SECRET = process.env.AUTH_SECRET || "relayx-local-auth-dev-secret-change-me-0123456789";
 export const AUTH_ACCESS_TTL_SECONDS = Number.parseInt(process.env.AUTH_ACCESS_TTL_SECONDS || "86400", 10);
 export const AUTH_REFRESH_TTL_SECONDS = Number.parseInt(process.env.AUTH_REFRESH_TTL_SECONDS || "2592000", 10);
+/**
+ * How a local account proves it owns its address.
+ *
+ * `email` — mail a one-time link (needs SMTP or Resend configured in /admin/settings).
+ * `direct` — mark the address verified from the signed-in session (no mail transport).
+ *
+ * Defaults to `email`; `services/local_auth.ts` falls back to `direct` when no provider is
+ * configured so a fresh checkout is usable. Override with `AUTH_VERIFY_MODE`.
+ */
+export const AUTH_VERIFY_MODE: "email" | "direct" =
+  (process.env.AUTH_VERIFY_MODE as "email" | "direct" | undefined) ?? "email";
+/** Lifetime of a mailed verification link, in seconds. */
+export const AUTH_VERIFY_TTL_SECONDS = Number.parseInt(process.env.AUTH_VERIFY_TTL_SECONDS || "86400", 10);
+/** Minimum seconds between two verification mails for the same account. */
+export const AUTH_VERIFY_RESEND_SECONDS = Number.parseInt(process.env.AUTH_VERIFY_RESEND_SECONDS || "60", 10);
 
 /** Port the HTTP server listens on. */
 export const PORT = Number.parseInt(process.env.PORT || "3000", 10);

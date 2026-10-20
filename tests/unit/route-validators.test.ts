@@ -37,8 +37,9 @@ describe.skipIf(!PRESENT)("route validator parity", () => {
     // probes that `api_map.json` records outside its `routes` array. The 160
     // upstream registrations collapse to 157 because `/license` is mounted
     // twice; `router.on(["POST", "GET"], …)` contributes two keys of its own.
-    // +6 local-auth registrations (`/auth/sign-up|sign-in|sign-out|refresh|me|verify-email`).
-    expect(replicaRegistrations().size).toBe(167);
+    // +7 local-auth registrations
+    // (`/auth/sign-up|sign-in|sign-out|refresh|me|verify-email|verify-email/request`).
+    expect(replicaRegistrations().size).toBe(168);
   });
 
   it("finds every upstream registration", () => {

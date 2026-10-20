@@ -88,29 +88,7 @@ export default function HandlerPage() {
   }
 
   if (mode === "verify-email") {
-    return (
-      <Shell title={t("auth.verifyEmail")}>
-        <p className="text-muted-foreground text-sm">{t("auth.verifyHint")}</p>
-        <Button
-          className="w-full"
-          onClick={async () => {
-            const res = await fetch("/api/auth/verify-email", { method: "POST" });
-            if (res.ok) {
-              toast.success(t("auth.verified"));
-              router.push("/home");
-              router.refresh();
-            } else {
-              toast.error(t("auth.verifyFailed"));
-            }
-          }}
-        >
-          {t("auth.verifyNow")}
-        </Button>
-        <Button variant="ghost" className="w-full" onClick={() => router.push("/handler/sign-out")}>
-          {t("auth.signOut")}
-        </Button>
-      </Shell>
-    );
+    return <VerifyEmailCard token={search.get("token")} />;
   }
 
   const isSignUp = mode === "sign-up";
@@ -151,6 +129,94 @@ export default function HandlerPage() {
           </a>
         </p>
       </div>
+    </Shell>
+  );
+}
+
+
+/**
+ * Verification card.
+ *
+ * Two paths, matching the backend (`POST /auth/verify-email`):
+ *   - the mailed link lands here with `?token=…` and is verified automatically;
+ *   - without a token the card offers "resend", and when the backend has no mail transport
+ *     it returns the link directly (dev fallback) so the flow still completes.
+ */
+function VerifyEmailCard({ token }: { token: string | null }) {
+  const router = useRouter();
+  const [status, setStatus] = React.useState<"idle" | "sending" | "sent" | "verified" | "error">("idle");
+  const [devLink, setDevLink] = React.useState<string | null>(null);
+  const [message, setMessage] = React.useState<string>("");
+
+  const verify = React.useCallback(
+    async (value: string) => {
+      setStatus("sending");
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token: value }),
+      });
+      if (res.ok) {
+        setStatus("verified");
+        toast.success(t("auth.verified"));
+        setTimeout(() => {
+          router.push("/home");
+          router.refresh();
+        }, 600);
+      } else {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setStatus("error");
+        setMessage(data.error ?? t("auth.verifyFailed"));
+        toast.error(data.error ?? t("auth.verifyFailed"));
+      }
+    },
+    [router],
+  );
+
+  React.useEffect(() => {
+    if (token) void verify(token);
+  }, [token, verify]);
+
+  const resend = async () => {
+    setStatus("sending");
+    setDevLink(null);
+    const res = await fetch("/api/auth/verify-email/request", { method: "POST" });
+    const data = (await res.json().catch(() => ({}))) as { sent?: boolean; link?: string; hint?: string; error?: string };
+    if (!res.ok) {
+      setStatus("error");
+      setMessage(data.error ?? `HTTP ${res.status}`);
+      return;
+    }
+    if (data.sent) {
+      setStatus("sent");
+      toast.success(t("auth.mailSent"));
+      return;
+    }
+    setStatus("sent");
+    setDevLink(data.link ?? null);
+    setMessage(data.hint ?? "");
+  };
+
+  return (
+    <Shell title={t("auth.verifyEmail")}>
+      <p className="text-muted-foreground text-sm">
+        {status === "verified" ? t("auth.verified") : status === "sent" ? t("auth.mailSent") : t("auth.verifyHint")}
+      </p>
+      {devLink ? (
+        <div className="grid gap-1">
+          <a className="text-xs break-all underline" href={devLink}>
+            {devLink}
+          </a>
+          <p className="text-muted-foreground text-[11px]">{message}</p>
+        </div>
+      ) : null}
+      {status === "error" ? <p className="text-destructive text-xs">{message}</p> : null}
+      <Button className="w-full" disabled={status === "sending" || status === "verified"} onClick={() => void resend()}>
+        {status === "sending" ? t("auth.working") : t("auth.resendMail")}
+      </Button>
+      <Button variant="ghost" className="w-full" onClick={() => router.push("/handler/sign-out")}>
+        {t("auth.signOut")}
+      </Button>
     </Shell>
   );
 }

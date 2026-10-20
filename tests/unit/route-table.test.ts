@@ -41,6 +41,7 @@ const DOCUMENTED_EXTRAS = [
   "POST /auth/refresh",
   "GET /auth/me",
   "POST /auth/verify-email",
+  "POST /auth/verify-email/request",
 ];
 
 const PRESENT = existsSync(API_MAP);
@@ -72,6 +73,6 @@ describe.skipIf(!PRESENT)("route table parity", () => {
   });
 
   it("still has the documented replica count", () => {
-    expect(replicaTable.size).toBe(169);
+    expect(replicaTable.size).toBe(170);
   });
 });

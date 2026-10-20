@@ -49,6 +49,11 @@ How the pieces fit:
 * `src/app/handler/[...stack]/page.tsx` renders the four auth pages. Sign-up and sign-in
   post to `/api/auth/sign-in|sign-up`; the backend answers with the `stack-access` cookie
   (a percent-encoded `[refresh, access]` pair) and the page routes onward.
+* Email verification: the verify card posts to `/api/auth/verify-email/request`, which mails a
+  one-time link (`{SITE_URL}/handler/verify-email?token=…`) through the backend's `EmailService`.
+  The page verifies automatically when it lands with `?token=`; without a mail transport the
+  endpoint returns the link so the flow still completes. `AUTH_VERIFY_MODE=direct` keeps the
+  old "mark from the session" behaviour; `email` (the default) refuses that shortcut.
 * `src/proxy.ts` is the Next 16 server gate (formerly middleware). It asks the backend
   `GET /auth/me` with the incoming cookie, then applies the upstream rules: `/` and
   `/handler/*` pass; no session → `/handler/sign-in` (carrying `?ref`); verified user on

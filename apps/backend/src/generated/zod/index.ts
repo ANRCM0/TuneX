@@ -147,6 +147,9 @@ export const LocalCredentialSchema = z.object({
   user_id: z.number().int(),
   password_hash: z.string(),
   email_verified: z.boolean(),
+  verification_token_hash: z.string().nullable(),
+  verification_token_expires_at: z.date().nullable(),
+  verification_sent_at: z.date().nullable(),
   created_at: z.date(),
   updated_at: z.date(),
 });
