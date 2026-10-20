@@ -81,6 +81,8 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Concern                                                                       | Suite                                                |
 | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
 | Migration baseline, MySQL variant generation, drift (`prisma migrate diff`)   | `tests/unit/migrations.test.ts`                      |
+| Aggregate SQL dialect switch + "call sites never hand-write SQL" guard        | `tests/unit/date.test.ts`, `tests/unit/aggregate-dialect.test.ts` |
+| MySQL HTTP surface for the aggregates (CI, real `mysql:8.0`)                  | `apps/backend/scripts/mysql-endpoints-smoke.mjs`     |
 | Rate-limit windows per IP/account, 429 + `Retry-After`, window reset, lockout | `tests/unit/rate-limit.test.ts`                      |
 | Prometheus registry, label escaping, histogram buckets, `/metrics` gating     | `tests/unit/metrics.test.ts`                         |
 | Cloudflare DNS over loopback HTTP: zone lookup, list, create, patch, delete   | `tests/integration/cloudflare-dns.test.ts`           |

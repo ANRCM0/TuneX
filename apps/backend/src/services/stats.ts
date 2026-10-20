@@ -12,10 +12,11 @@ import { redisService, type RedisService } from "./redis";
  * `getDateGroupBy`) and the response shapes are unchanged.
  *
  * DEVIATION (for docs/DEVIATIONS.md): upstream interpolates the range bounds into the SQL
- * string (MySQL `'2026-10-17'` / `NOW() - INTERVAL n DAY`). SQLite has no `NOW()` or
- * `INTERVAL`, so the replica binds the bounds as parameters formatted in Asia/Shanghai by
- * `@relayx/shared/date`; `datetime(col/1000,'unixepoch','+8 hours')` compares
- * lexicographically against exactly that format.
+ * string (MySQL `'2026-10-17'` / `NOW() - INTERVAL n DAY`). The replica binds them as
+ * parameters formatted in Asia/Shanghai by `@relayx/shared/date`. That keeps the query
+ * engine-neutral, and it stays correct on both targets because `utils/date.ts` renders the
+ * column as text in exactly the same `YYYY-MM-DD HH:MM:SS` shape on SQLite and MySQL, so the
+ * comparison is text-to-text either way.
  */
 
 export type AggregateBy = "day" | "month" | "year";
@@ -49,9 +50,9 @@ export class StatsService {
   }
 
   /**
-   * Lower/upper bounds of the aggregation window, as `datetime(...)`-comparable local
-   * strings. An explicit bound keeps upstream's date-granularity semantics; the implicit
-   * lower bound is `NOW() - INTERVAL n DAY`.
+   * Lower/upper bounds of the aggregation window, as local wall-clock strings comparable
+   * with `toLocalTZ` on either dialect. An explicit bound keeps upstream's
+   * date-granularity semantics; the implicit lower bound is `NOW() - INTERVAL n DAY`.
    */
   private rangeConditions(
     column: string,

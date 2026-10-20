@@ -21,6 +21,7 @@ const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const WORKFLOW = join(ROOT, ".github/workflows/mysql.yml");
 const GENERATOR = join(ROOT, "apps/backend/scripts/gen-mysql-schema.mjs");
 const SMOKE = join(ROOT, "apps/backend/scripts/mysql-smoke.mjs");
+const ENDPOINT_SMOKE = join(ROOT, "apps/backend/scripts/mysql-endpoints-smoke.mjs");
 const MYSQL_SCHEMA = join(ROOT, "apps/backend/prisma/mysql/schema.prisma");
 const DATE_UTILS = join(ROOT, "apps/backend/src/utils/date.ts");
 
@@ -33,24 +34,48 @@ describe("mysql workflow", () => {
     expect(workflow).toContain("--health-cmd");
   });
 
-  it("applies the baseline, checks drift, then generates from the mysql schema", () => {
+  it("applies the baseline, checks drift, generates from the mysql schema, then boots it", () => {
     // Distinctive needles only: the header comment also mentions `prisma migrate diff`.
     const order = [
-      "pnpm db:mysql:deploy",
+      "run: pnpm db:mysql:deploy",
       "--from-migrations apps/backend/prisma/mysql/migrations",
-      "prisma generate --schema apps/backend/prisma/mysql/schema.prisma",
-      "scripts/mysql-smoke.mjs",
+      "run: npx prisma generate --schema apps/backend/prisma/mysql/schema.prisma",
+      "run: node scripts/mysql-smoke.mjs",
+      "run: node scripts/mysql-endpoints-smoke.mjs",
     ].map((needle) => workflow.indexOf(needle));
     expect(order.every((index) => index > -1)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it("fails the job when the SQLite-only helpers or the documented gap disappear", () => {
+  it("fails the job when either dialect branch or the documented gaps disappear", () => {
     expect(workflow).toContain('grep -q "unixepoch" apps/backend/src/utils/date.ts');
+    expect(workflow).toContain('grep -q "CONVERT_TZ" apps/backend/src/utils/date.ts');
     expect(workflow).toContain('grep -q "Known gaps" docs/MYSQL.md');
     const dateSource = readFileSync(DATE_UTILS, "utf8");
     expect(dateSource).toContain("unixepoch");
     expect(dateSource).toContain("strftime");
+    expect(dateSource).toContain("CONVERT_TZ");
+    expect(dateSource).toContain("DATE_FORMAT");
+  });
+
+  it("boots the backend on MySQL and hits every dialect-switched aggregate endpoint", () => {
+    expect(workflow).toContain("node scripts/mysql-endpoints-smoke.mjs");
+    const smoke = readFileSync(ENDPOINT_SMOKE, "utf8");
+    for (const path of [
+      "/admin/stats",
+      "/admin/stats/user",
+      "/admin/stats/traffic",
+      "/admin/plan/stats",
+      "/admin/topup/stats",
+      "/tunnel/traffic/stats",
+      "/user/referral/stats",
+    ]) {
+      expect(smoke, `endpoint smoke does not call ${path}`).toContain(path);
+    }
+    // The undated requests are what exercise `localNowMinusDays` / `utcNowMinusDays`, and
+    // the seeded super admin is the bearer identity for them.
+    expect(smoke).toContain("super_admin: true");
+    expect(smoke).toMatch(/aggregate_by=(day|month|year)/);
   });
 });
 
@@ -93,5 +118,23 @@ describe("smoke script guard", () => {
       status = (error as { status?: number }).status ?? 1;
     }
     expect(status).toBe(2);
+  });
+
+  it("refuses a non-mysql DATABASE_URL before it seeds or boots anything", () => {
+    let status = 0;
+    let stderr = "";
+    try {
+      execFileSync(process.execPath, [ENDPOINT_SMOKE], {
+        encoding: "utf8",
+        stdio: "pipe",
+        env: { ...process.env, DATABASE_URL: "file:./verify.db" },
+      });
+    } catch (error) {
+      const failure = error as { status?: number; stderr?: string };
+      status = failure.status ?? 1;
+      stderr = failure.stderr ?? "";
+    }
+    expect(status).toBe(2);
+    expect(stderr).toContain("must be a mysql:// URL");
   });
 });

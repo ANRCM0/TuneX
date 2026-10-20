@@ -14,10 +14,9 @@
  *   - unique constraints reject duplicates (email, node_group token, api_key);
  *   - relations and cascades behave (deleting a node group removes its nodes).
  *
- * Known gap this script does NOT paper over: the panel's own aggregate queries are SQLite
- * dialect (`datetime(col/1000,'unixepoch','+8 hours')`, `strftime`), so the stats endpoints
- * do not run on MySQL. That is tracked in docs/MYSQL.md and guarded by the SQLite-only
- * assertions in tests/unit/date.test.ts.
+ * Scope: this script proves the schema and client only. The aggregate endpoints are covered
+ * separately by `mysql-endpoints-smoke.mjs`, which boots the backend on this same client and
+ * calls them over HTTP; the dialect switch itself is in apps/backend/src/utils/date.ts.
  *
  * Usage: DATABASE_URL="mysql://user:pass@host:3306/db" node apps/backend/scripts/mysql-smoke.mjs
  */

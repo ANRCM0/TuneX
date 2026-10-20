@@ -31,7 +31,7 @@ import {
   TunnelTrafficResponseSchema,
   WhitelistResponseSchema,
 } from "../schemas/response";
-import { formatStatsDate, getDateGroupBy, getDateInterval, toLocalTZ } from "../utils/date";
+import { formatStatsDate, getDateGroupBy, getDateInterval, toLocalTZ, utcNowMinusDays } from "../utils/date";
 import type { AppEnv } from "../types";
 
 /**
@@ -693,7 +693,7 @@ router.get(
       whereConditions.push(`${localTrafficDate} >= '${formatDate(start_date)}'`);
     } else {
       const interval = getDateInterval(aggregate_by);
-      whereConditions.push(`${localTrafficDate} > datetime('now', '-${interval} days')`);
+      whereConditions.push(`${localTrafficDate} > ${utcNowMinusDays(interval)}`);
     }
     if (end_date) {
       whereConditions.push(`${localTrafficDate} <= '${formatDate(end_date)}'`);

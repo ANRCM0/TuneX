@@ -95,6 +95,7 @@ Details and the implemented-vs-stubbed table: [docs/AGENT.md](docs/AGENT.md).
 | `pnpm db:deploy`                             | Apply committed migrations (deployment)                      |
 | `pnpm db:drift`                              | Fail when migrations or the generated MySQL schema are stale |
 | `pnpm db:mysql:generate` / `db:mysql:deploy` | Regenerate / apply the MySQL variant                         |
+| `pnpm db:mysql:smoke` / `db:mysql:endpoints` | MySQL schema/client smoke / boot the panel and hit the aggregates |
 | `pnpm lint` / `pnpm format`                  | Prettier check / rewrite                                     |
 | `pnpm test:coverage`                         | Unit suite with the coverage gate                            |
 | `pnpm dev`                                   | Backend with `tsx watch`                                     |

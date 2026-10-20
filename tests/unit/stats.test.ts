@@ -4,8 +4,10 @@
  * The panel's admin dashboard reads three queries: `getOverview` (counts by status),
  * `getUserStats` (new users bucketed in Asia/Shanghai) and `getTrafficStats` (tunnel
  * traffic buckets plus today's live Redis counters). The date bucketing of the last two
- * depends on the SQLite `datetime(... '/1000', 'unixepoch', '+8 hours')` fragments in
- * `utils/date.ts`, so the fixtures use instants around a Shanghai midnight.
+ * depends on the fragments in `utils/date.ts` — this suite runs on SQLite, so it exercises
+ * the `datetime(... '/1000', 'unixepoch', '+8 hours')` branch; the fixtures use instants
+ * around a Shanghai midnight. `apps/backend/scripts/mysql-endpoints-smoke.mjs` runs the same
+ * endpoints on the MySQL branch in CI.
  *
  * Redis is stubbed: the live-today path is the only Redis dependency.
  */

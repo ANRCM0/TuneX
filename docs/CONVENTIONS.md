@@ -102,25 +102,24 @@ currently exist as placeholders that export `new Hono()`; replace their bodies, 
    already been pushed. If a field seems missing, check the analysis again — it is usually
    a relation or a JSON column.
 
-## 5. SQLite-specific rules
+## 5. Date columns and raw SQL
 
-The original ran on MySQL; the replica runs on SQLite through Prisma. Two consequences
-that silently corrupt date logic if ignored:
+The original ran on MySQL; the replica runs on SQLite by default and on MySQL through the
+generated variant. `apps/backend/src/utils/date.ts` owns the difference, so a route never has
+to know which engine it is on. Four rules:
 
-1. **`DateTime` columns are stored as INTEGER unix milliseconds.**
-   `typeof(created_at)` is `'integer'`, not `'text'`. Any raw SQL that formats or groups
-   dates must convert explicitly:
-   ```sql
-   datetime(created_at / 1000, 'unixepoch', '+8 hours')   -- local time string
-   strftime('%Y-%m', created_at / 1000, 'unixepoch', '+8 hours')  -- month bucket
-   strftime('%Y',    created_at / 1000, 'unixepoch', '+8 hours')  -- year bucket
-   ```
-   `apps/backend/src/utils/date.ts` already exports `toLocalTZ(column)` and
-   `getDateGroupBy(column, aggregate)` — **use those** instead of hand-writing the
-   expression.
-2. **`Json` columns are TEXT.** Prisma handles (de)serialisation for typed model access, but
-   raw SQL sees a JSON string.
-3. Prisma's SQLite connector does **not** support `createMany({ skipDuplicates: true })`.
+1. **Never hand-write a dialect.** Use `toLocalTZ(col)`, `getDateGroupBy(col, aggregate)`,
+   `localNowMinusDays(n)` or `utcNowMinusDays(n)`; do not write `datetime('now', …)`,
+   `strftime(…)`, `CONVERT_TZ(…)`, `DATE_FORMAT(…)` or `NOW()` in a route.
+   `tests/unit/aggregate-dialect.test.ts` fails if a consumer starts doing that.
+   The builders return text in one fixed `YYYY-MM-DD HH:MM:SS`-family shape on both engines,
+   which is why string bounds compare identically (`docs/MYSQL.md`).
+2. **SQLite stores `DateTime` as INTEGER unix milliseconds** (`typeof(created_at)` is
+   `'integer'`), MySQL as `DATETIME(3)` in UTC. The helpers normalise both to Asia/Shanghai
+   text; a raw query that compares a `DateTime` column without them is engine-specific.
+3. **`Json` columns are TEXT on SQLite.** Prisma handles (de)serialisation for typed model
+   access, but raw SQL sees a JSON string.
+4. Prisma's SQLite connector does **not** support `createMany({ skipDuplicates: true })`.
    Use a loop with `upsert`.
 
 ## 6. Verification expectations
