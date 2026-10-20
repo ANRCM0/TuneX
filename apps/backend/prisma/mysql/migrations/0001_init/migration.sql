@@ -2,9 +2,9 @@
 CREATE TABLE `node_group` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `token` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `port_range` VARCHAR(191) NULL,
-    `connect_ip` VARCHAR(191) NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `port_range` VARCHAR(255) NULL,
+    `connect_ip` VARCHAR(255) NULL,
     `node_type` ENUM('in', 'out') NOT NULL,
     `load_balance_type` ENUM('round', 'rand', 'fifo', 'hash', 'll', 'lc') NOT NULL DEFAULT 'round',
     `allow_listen_protocol` BOOLEAN NOT NULL DEFAULT false,
@@ -32,12 +32,12 @@ CREATE TABLE `node` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `weight` INTEGER NOT NULL DEFAULT 1,
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
-    `node_id` VARCHAR(191) NOT NULL,
-    `connect_ip` VARCHAR(191) NOT NULL,
-    `version` VARCHAR(191) NOT NULL DEFAULT 'unknown',
+    `node_id` VARCHAR(255) NOT NULL,
+    `connect_ip` VARCHAR(255) NOT NULL,
+    `version` VARCHAR(255) NOT NULL DEFAULT 'unknown',
     `backup` BOOLEAN NOT NULL DEFAULT false,
     `order_by` DOUBLE NOT NULL DEFAULT 1000,
-    `custom_line` VARCHAR(191) NULL,
+    `custom_line` VARCHAR(255) NULL,
     `dns_status` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE `node` (
 -- CreateTable
 CREATE TABLE `tunnel` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
     `tunnel_type` ENUM('tcp', 'mtcp', 'udp', 'relayx', 'mtls', 'mwss', 'wss', 'tls', 'quic') NOT NULL DEFAULT 'wss',
     `category` ENUM('port_forward', 'remote_port_forward') NOT NULL DEFAULT 'port_forward',
     `listen_ip` VARCHAR(191) NULL,
@@ -134,8 +134,8 @@ CREATE TABLE `local_credential` (
 -- CreateTable
 CREATE TABLE `admin_role` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `description` TEXT NULL,
     `permissions` JSON NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -164,7 +164,7 @@ CREATE TABLE `user_plan` (
 -- CreateTable
 CREATE TABLE `plan` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
     `description` VARCHAR(191) NULL,
     `original_price` DOUBLE NULL,
     `price` DOUBLE NOT NULL,
@@ -223,10 +223,10 @@ CREATE TABLE `topup_order` (
     `balance` DOUBLE NOT NULL DEFAULT 0,
     `bonus` DOUBLE NOT NULL DEFAULT 0,
     `payment_id` INTEGER NOT NULL,
-    `pay_url` VARCHAR(191) NOT NULL,
+    `pay_url` TEXT NOT NULL,
     `status` ENUM('pending', 'success', 'cancelled') NOT NULL DEFAULT 'pending',
-    `order_id` VARCHAR(191) NOT NULL,
-    `trade_id` VARCHAR(191) NULL,
+    `order_id` VARCHAR(255) NOT NULL,
+    `trade_id` VARCHAR(255) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -266,7 +266,7 @@ CREATE TABLE `tunnel_traffic` (
 CREATE TABLE `config` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` ENUM('MIN_TOPUP_AMOUNT', 'NOTICE', 'NOTICE_POPUP', 'NOTICE_POPUP_INTERVAL_HOURS', 'SITE_NAME', 'SITE_DESCRIPTION', 'ALLOW_REGISTER', 'LOGO_URL', 'HIDE_NODE_STATUS', 'AUTO_UPDATE_AGENT', 'CHATWOOT_BASE_URL', 'CHATWOOT_TOKEN', 'TUNNEL_TRAFFIC_RETENTION_DAYS', 'HIDE_FOOTER', 'HIDE_DOCS', 'LANDING_PAGE_URL', 'REFERRAL_COMMISSION_RATE', 'REFERRAL_FIRST_ONLY', 'REFERRAL_MODE', 'OBSERVER_PERIOD', 'EMAIL_PROVIDER', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'RESEND_API_KEY', 'RESEND_FROM', 'MIN_WITHDRAW_AMOUNT', 'WITHDRAW_METHODS', 'LIMIT_SCOPE', 'ENABLE_SUBSCRIPTION') NOT NULL,
-    `value` VARCHAR(191) NOT NULL,
+    `value` TEXT NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -279,11 +279,11 @@ CREATE TABLE `payment` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `fixed_fee` DOUBLE NULL,
     `percent_fee` DOUBLE NULL,
-    `name` VARCHAR(191) NOT NULL,
-    `url` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `url` VARCHAR(255) NOT NULL,
     `config` JSON NOT NULL,
     `method` ENUM('epay', 'bepusdt', 'heleket') NOT NULL,
-    `type` VARCHAR(191) NULL,
+    `type` VARCHAR(255) NULL,
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     `order_by` DOUBLE NOT NULL DEFAULT 1000,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -295,7 +295,7 @@ CREATE TABLE `payment` (
 -- CreateTable
 CREATE TABLE `plan_coupon` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `code` VARCHAR(191) NOT NULL,
+    `code` VARCHAR(255) NOT NULL,
     `type` ENUM('percentage', 'fixed') NOT NULL,
     `valid_cycle` ENUM('month', 'quarter', 'half_year', 'year', 'lifetime') NULL,
     `value` DOUBLE NOT NULL,
@@ -340,10 +340,10 @@ CREATE TABLE `withdraw_request` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
     `amount` DOUBLE NOT NULL,
-    `method` VARCHAR(191) NOT NULL,
-    `account` VARCHAR(191) NOT NULL,
+    `method` VARCHAR(255) NOT NULL,
+    `account` TEXT NOT NULL,
     `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
-    `remark` VARCHAR(191) NULL,
+    `remark` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -353,8 +353,8 @@ CREATE TABLE `withdraw_request` (
 -- CreateTable
 CREATE TABLE `ticket` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(191) NOT NULL,
-    `content` VARCHAR(191) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `content` TEXT NOT NULL,
     `status` ENUM('open', 'closed') NOT NULL DEFAULT 'open',
     `user_id` INTEGER NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -366,7 +366,7 @@ CREATE TABLE `ticket` (
 -- CreateTable
 CREATE TABLE `ticket_reply` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `content` VARCHAR(191) NOT NULL,
+    `content` TEXT NOT NULL,
     `is_admin` BOOLEAN NOT NULL DEFAULT false,
     `ticket_id` INTEGER NOT NULL,
     `user_id` INTEGER NOT NULL,
@@ -393,7 +393,7 @@ CREATE TABLE `in_node_group_dns` (
 -- CreateTable
 CREATE TABLE `dns_provider` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
     `type` ENUM('cloudflare', 'huawei') NOT NULL,
     `config` JSON NOT NULL,
     `user_id` INTEGER NOT NULL,

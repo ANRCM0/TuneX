@@ -131,6 +131,9 @@ Every vertical must, at minimum:
   focused vitest file, and report the exact commands and observed responses.
 - Confirm the SQLite DDL matches what its queries assume
   (`apps/backend/prisma/dev.db`, `sqlite3 dev.db .schema`).
+- If it touches raw SQL or Prisma semantics, also run `DATABASE_URL=mysql://… pnpm test:mysql`
+  (or let CI's `MySQL target` do it): the suites build their database through
+  `tests/helpers/temp-db.ts`, which switches to MySQL when `RELAYX_TEST_DIALECT=mysql`.
 
 The Lead runs the end-to-end pass. Use `pnpm db:reset && pnpm db:push && pnpm seed` to get
 a clean database.

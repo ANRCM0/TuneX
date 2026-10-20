@@ -10,9 +10,10 @@
  *   prisma/mysql/migrations/0001_init/…           generated once, then owned like any migration
  *   prisma/mysql/migrations/migration_lock.toml   generated
  *
- * Only the `datasource` block is rewritten; every model, field, default and relation is
- * identical to `prisma/schema.prisma` (which `tests/unit/schema-parity.test.ts` pins to the
- * decompiled upstream).
+ * The `datasource` block is rewritten and the native column types the SQLite port had to drop
+ * are restored from the recovered upstream schema (see NATIVE_TYPES). Every model, field,
+ * default and relation otherwise stays identical to `prisma/schema.prisma` (which
+ * `tests/unit/schema-parity.test.ts` pins to the decompiled upstream).
  *
  *   node scripts/gen-mysql-schema.mjs            # write schema + regenerate the baseline
  *   node scripts/gen-mysql-schema.mjs --check    # read-only: exit 1 when anything is stale
@@ -37,9 +38,82 @@ const FORCE = process.argv.includes("--force");
 
 const HEADER = `// RelayX data model — MySQL variant.
 //
-// GENERATED from ../schema.prisma by scripts/gen-mysql-schema.mjs. Only the datasource
-// block differs; the models are identical to the SQLite schema.
+// GENERATED from ../schema.prisma by scripts/gen-mysql-schema.mjs. The datasource block and
+// the native column types differ; everything else is identical to the SQLite schema.
 `;
+
+/**
+ * Native column types recovered from the upstream MySQL schema
+ * (relayx-analysis/work/prisma_schema.prisma). The SQLite port drops them because SQLite has
+ * none, so the MySQL variant restores them here.
+ *
+ * Without this every `String` becomes `VARCHAR(191)` on MySQL: too short for the prose columns
+ * upstream declared as TEXT (`Ticket.content`, `TicketReply.content`, `SystemConfig.value`,
+ * `WithdrawRequest.account`/`remark`, `AdminRole.description`, `TopupOrder.pay_url`) and one
+ * character narrower than upstream's `VARCHAR(255)` everywhere else. The backend suite running
+ * on MySQL is what surfaced this (`P2000: the provided value for the column is too long`).
+ */
+const NATIVE_TYPES = {
+  NodeGroup: {
+    name: "VarChar(255)",
+    port_range: "VarChar(255)",
+    connect_ip: "VarChar(255)",
+    bypass_list: "Json",
+  },
+  Node: {
+    node_id: "VarChar(255)",
+    connect_ip: "VarChar(255)",
+    version: "VarChar(255)",
+    custom_line: "VarChar(255)",
+  },
+  Tunnel: { name: "VarChar(255)" },
+  AdminRole: { name: "VarChar(255)", description: "Text" },
+  Plan: { name: "VarChar(255)" },
+  TopupOrder: { pay_url: "Text", order_id: "VarChar(255)", trade_id: "VarChar(255)" },
+  SystemConfig: { value: "Text" },
+  Payment: { name: "VarChar(255)", url: "VarChar(255)", type: "VarChar(255)" },
+  PlanCoupon: { code: "VarChar(255)" },
+  WithdrawRequest: { method: "VarChar(255)", account: "Text", remark: "Text" },
+  Ticket: { title: "VarChar(255)", content: "Text" },
+  TicketReply: { content: "Text" },
+  DNSProvider: { name: "VarChar(255)" },
+};
+
+/**
+ * Append `@db.…` to the mapped fields, model block by model block.
+ *
+ * Text-level on purpose: the generator's job is a faithful textual variant, and a line-based
+ * pass keeps every model, comment and blank line byte-identical to the SQLite schema.
+ */
+function applyNativeTypes(schema, { onMissing = () => {} } = {}) {
+  const seen = new Set();
+  let model = null;
+  const lines = schema.split("\n").map((line) => {
+    const opened = line.match(/^model (\w+) \{/);
+    if (opened) {
+      model = opened[1];
+      return line;
+    }
+    if (/^\}/.test(line)) {
+      model = null;
+      return line;
+    }
+    if (!model || !NATIVE_TYPES[model]) return line;
+    const field = line.match(/^(\s+)(\w+)(\s+)(String|Json)(\??)(.*)$/);
+    if (!field) return line;
+    const [, indent, name, gap, type, optional, rest] = field;
+    const native = NATIVE_TYPES[model][name];
+    if (!native) return line;
+    seen.add(`${model}.${name}`);
+    return `${indent}${name}${gap}${type}${optional} @db.${native}${rest}`;
+  });
+  for (const model of Object.keys(NATIVE_TYPES)) {
+    for (const field of Object.keys(NATIVE_TYPES[model])) {
+      if (!seen.has(`${model}.${field}`)) onMissing(`${model}.${field}`);
+    }
+  }
+  return { schema: lines.join("\n"), seen };
+}
 
 const source = readFileSync(schemaPath, "utf8");
 if (!/datasource db \{[^}]*\}/.test(source)) {
@@ -47,15 +121,25 @@ if (!/datasource db \{[^}]*\}/.test(source)) {
   process.exit(1);
 }
 
-const body = source
-  .replace(
-    /datasource db \{[^}]*\}/,
-    `datasource db {
+const body = applyNativeTypes(
+  source
+    .replace(
+      /datasource db \{[^}]*\}/,
+      `datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }`,
-  )
-  .replace(/generator client \{[\s\S]*?\n\}\n\n/, "");
+    )
+    .replace(/generator client \{[\s\S]*?\n\}\n\n/, ""),
+  {
+    // A mapped field disappearing means schema.prisma changed; fail loudly instead of
+    // silently generating a MySQL variant that lost the column type again.
+    onMissing: (field) => {
+      console.error(`native type mapping references a missing field: ${field}`);
+      process.exit(1);
+    },
+  },
+).schema;
 
 const mysqlSchema = `${HEADER}
 generator client {
