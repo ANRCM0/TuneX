@@ -1,0 +1,2 @@
+The Next.js app has no static assets of its own; the directory exists so the runtime image can
+copy it (apps/web/Dockerfile). Next serves /public at the site root.

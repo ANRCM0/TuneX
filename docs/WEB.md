@@ -102,7 +102,7 @@ The suites deliberately cover the parts that are pure logic:
 | `web-permissions.test.ts`    | personal licence blanks the admin surface; `canRead/canWrite/isStaff`; 19 resources; URL resolution                   |
 | `web-tunnel-share.test.ts`   | the 8 per-protocol share strings, wireguard `.conf`, openvpn `.ovpn`, guard rails                                     |
 | `web-deploy-command.test.ts` | install-command flag order/spelling, multi-IP expansion, upgrade/uninstall                                            |
-| `web-routes.test.ts`         | `apps/web/routes.json` matches the file tree; admin routes live under `(main)`; `/handler` documented as out of scope |
+| `web-routes.test.ts`         | `apps/web/routes.json` matches the file tree; admin routes live under `(main)`; `/handler` (local auth) has a page; the directory the runtime image copies exists |
 | `web-i18n.test.ts`           | every `t()` key exists, no duplicate keys, `en` only refines known keys, no hard-coded Chinese                        |
 
 ## Interaction details worth knowing
