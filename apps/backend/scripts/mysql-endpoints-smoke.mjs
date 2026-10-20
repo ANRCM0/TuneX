@@ -71,7 +71,8 @@ async function reset() {
   await db.tunnel.deleteMany();
   await db.node.deleteMany();
   await db.inNodeGroupDNS.deleteMany();
-  await db.dnsProvider.deleteMany();
+  // Prisma only lower-cases the first letter of a model name: DNSProvider -> dNSProvider.
+  await db.dNSProvider.deleteMany();
   await db.planNodeGroup.deleteMany();
   await db.nodeGroup.deleteMany();
   await db.commissionLog.deleteMany();
