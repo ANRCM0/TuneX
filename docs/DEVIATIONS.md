@@ -119,7 +119,10 @@ Each entry is something this replica does differently from the analysis tree (`/
       but no MySQL server runs in this checkout, so runtime parity is proven by the CI job
       rather than locally.
     - **MySQL target.** The datasource provider must be a literal, so the MySQL variant lives
-      in its own directory rather than behind `env()`. Deploy with
+      in its own directory rather than behind `env()`; the generator also re-applies the
+      upstream native column types (`@db.VarChar(255)`/`@db.Text`/`@db.Json`) that the SQLite
+      port dropped, so the MySQL DDL matches the recovered schema instead of defaulting every
+      `String` to `VARCHAR(191)`. Deploy with
       `pnpm db:mysql:deploy` and `DATABASE_URL=mysql://…`. `.github/workflows/mysql.yml` proves
       it against a real `mysql:8.0` (baseline applies, no drift, MySQL-generated client
       round-trips JSON/enums/Float/DateTime/uniques and both FK actions) **and boots the backend on that

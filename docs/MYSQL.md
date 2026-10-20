@@ -15,7 +15,7 @@ harness is switched the same way.
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `apps/backend/prisma/schema.prisma`               | The SQLite schema — the source of truth, pinned to the decompiled upstream by `tests/unit/schema-parity.test.ts` |
 | `apps/backend/prisma/migrations/0001_init/`       | SQLite baseline migration                                                                                        |
-| `apps/backend/prisma/mysql/schema.prisma`         | **Generated** MySQL variant (only the `datasource` block differs)                                                |
+| `apps/backend/prisma/mysql/schema.prisma`         | **Generated** MySQL variant: `datasource` + the native types the SQLite port drops                                |
 | `apps/backend/prisma/mysql/migrations/0001_init/` | **Generated** MySQL baseline DDL                                                                                 |
 | `apps/backend/scripts/gen-mysql-schema.mjs`       | Generator; `--check` is read-only and fails on staleness                                                         |
 | `apps/backend/scripts/mysql-smoke.mjs`            | Runtime smoke: JSON, enums, Float, DateTime, uniques, FK actions                                                 |
@@ -30,6 +30,13 @@ harness is switched the same way.
 
 Prisma requires the datasource provider to be a **string literal**, so one schema file cannot
 serve both engines. That is why MySQL lives in its own directory rather than behind `env()`.
+
+The generated variant also restores the **native column types** the SQLite port had to drop
+(`@db.VarChar(255)` / `@db.Text` / `@db.Json`), taken from the recovered upstream schema in
+`relayx-analysis/work/prisma_schema.prisma` and kept in `NATIVE_TYPES` in the generator.
+Without them every `String` becomes `VARCHAR(191)`, which is narrower than upstream and too
+short for the prose columns upstream declared as `TEXT` — running the backend suite on MySQL is
+what found that (`P2000: the provided value for the column is too long`, `Ticket.content`).
 
 ## Running it
 

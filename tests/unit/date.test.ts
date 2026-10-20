@@ -80,7 +80,13 @@ describe("dialect switch", () => {
     expect(sqlDialect("  MySQL://root@127.0.0.1/relayx")).toBe("mysql");
     expect(sqlDialect("file:./dev.db")).toBe("sqlite");
     expect(sqlDialect("postgresql://nope")).toBe("sqlite");
+    // No argument means "whatever DATABASE_URL says" — assert against the ambient value
+    // instead of assuming SQLite, so the same suite is valid in a `RELAYX_TEST_DIALECT=mysql` run.
+    vi.stubEnv("DATABASE_URL", "file:./dev.db");
     expect(sqlDialect(undefined)).toBe("sqlite");
+    vi.stubEnv("DATABASE_URL", "mysql://root@127.0.0.1:3306/relayx");
+    expect(sqlDialect(undefined)).toBe("mysql");
+    vi.unstubAllEnvs();
   });
 
   it("reads DATABASE_URL at call time, so the generated client and the SQL agree", () => {

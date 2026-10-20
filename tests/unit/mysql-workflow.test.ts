@@ -81,6 +81,28 @@ describe("mysql workflow", () => {
     expect(dateSource).toContain("DATE_FORMAT");
   });
 
+  it("restores the upstream native column types in the generated variant", () => {
+    // Running the suite on MySQL caught `P2000: content too long`: without native types the
+    // generator would default every String to VARCHAR(191), while upstream uses VARCHAR(255)
+    // and TEXT. Both the schema and the baseline DDL must carry them.
+    const mysqlSchema = readFileSync(MYSQL_SCHEMA, "utf8");
+    expect(mysqlSchema).toContain("@db.Text");
+    expect(mysqlSchema).toContain("@db.VarChar(255)");
+    const baseline = readFileSync(
+      join(ROOT, "apps/backend/prisma/mysql/migrations/0001_init/migration.sql"),
+      "utf8",
+    );
+    expect(baseline).toContain("`content` TEXT NOT NULL");
+    expect(baseline).toContain("`pay_url` TEXT NOT NULL");
+    expect(baseline).toContain("`name` VARCHAR(255) NOT NULL");
+    // SQLite keeps no native types on its fields (its header comment may mention them); the
+    // generator only adds them to the MySQL variant.
+    const sqliteSchema = readFileSync(join(ROOT, "apps/backend/prisma/schema.prisma"), "utf8");
+    const fieldLines = sqliteSchema.split("\n").filter((line) => /^\s+\w+\s+(String|Json)/.test(line));
+    expect(fieldLines.length).toBeGreaterThan(0);
+    expect(fieldLines.filter((line) => line.includes("@db."))).toEqual([]);
+  });
+
   it("boots the backend on MySQL and hits every dialect-switched aggregate endpoint", () => {
     expect(workflow).toContain("node scripts/mysql-endpoints-smoke.mjs");
     const smoke = readFileSync(ENDPOINT_SMOKE, "utf8");

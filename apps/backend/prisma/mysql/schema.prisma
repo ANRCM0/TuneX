@@ -1,7 +1,7 @@
 // RelayX data model — MySQL variant.
 //
-// GENERATED from ../schema.prisma by scripts/gen-mysql-schema.mjs. Only the datasource
-// block differs; the models are identical to the SQLite schema.
+// GENERATED from ../schema.prisma by scripts/gen-mysql-schema.mjs. The datasource block and
+// the native column types differ; everything else is identical to the SQLite schema.
 
 generator client {
   provider = "prisma-client-js"
@@ -174,16 +174,16 @@ enum DNSProviderType {
 model NodeGroup {
   id                     Int             @id @default(autoincrement())
   token                  String          @unique @default(uuid())
-  name                   String
-  port_range             String?
-  connect_ip             String?
+  name                   String @db.VarChar(255)
+  port_range             String? @db.VarChar(255)
+  connect_ip             String? @db.VarChar(255)
   node_type              NodeType
   load_balance_type      LoadBalanceType @default(round)
   allow_listen_protocol  Boolean         @default(false)
   allow_listen_protocols Json?
   allow_tunnel_types     Json?
   bypass_type            BypassType      @default(blacklist)
-  bypass_list            Json?
+  bypass_list            Json? @db.Json
   admission              Boolean         @default(false)
   block_protocols        Json?
   traffic_rate           Float           @default(1)
@@ -210,12 +210,12 @@ model Node {
   id          Int      @id @default(autoincrement())
   weight      Int      @default(1)
   status      Status   @default(active)
-  node_id     String   @unique
-  connect_ip  String
-  version     String   @default("unknown")
+  node_id     String @db.VarChar(255)   @unique
+  connect_ip  String @db.VarChar(255)
+  version     String @db.VarChar(255)   @default("unknown")
   backup      Boolean  @default(false)
   order_by    Float    @default(1000)
-  custom_line String?
+  custom_line String? @db.VarChar(255)
   dns_status  Boolean  @default(false)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -228,7 +228,7 @@ model Node {
 
 model Tunnel {
   id                         Int             @id @default(autoincrement())
-  name                       String
+  name                       String @db.VarChar(255)
   tunnel_type                TunnelType      @default(wss)
   category                   TunnelCategory  @default(port_forward)
   listen_ip                  String?
@@ -336,8 +336,8 @@ model LocalCredential {
 
 model AdminRole {
   id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
+  name        String @db.VarChar(255)   @unique
+  description String? @db.Text
   permissions Json
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -365,7 +365,7 @@ model UserPlan {
 
 model Plan {
   id                          Int          @id @default(autoincrement())
-  name                        String
+  name                        String @db.VarChar(255)
   description                 String?
   original_price              Float?
   price                       Float
@@ -433,10 +433,10 @@ model TopupOrder {
   bonus      Float            @default(0)
   payment_id Int
   payment    Payment          @relation(fields: [payment_id], references: [id])
-  pay_url    String
+  pay_url    String @db.Text
   status     TopupOrderStatus @default(pending)
-  order_id   String           @unique
-  trade_id   String?          @unique
+  order_id   String @db.VarChar(255)           @unique
+  trade_id   String? @db.VarChar(255)          @unique
   created_at DateTime         @default(now())
   updated_at DateTime         @updatedAt
 
@@ -472,7 +472,7 @@ model TunnelTraffic {
 model SystemConfig {
   id         Int              @id @default(autoincrement())
   name       SystemConfigName @unique
-  value      String
+  value      String @db.Text
   created_at DateTime         @default(now())
   updated_at DateTime         @updatedAt
 
@@ -483,11 +483,11 @@ model Payment {
   id          Int           @id @default(autoincrement())
   fixed_fee   Float?
   percent_fee Float?
-  name        String
-  url         String
+  name        String @db.VarChar(255)
+  url         String @db.VarChar(255)
   config      Json
   method      PaymentMethod
-  type        String?
+  type        String? @db.VarChar(255)
   status      Status        @default(active)
   order_by    Float         @default(1000)
   created_at  DateTime      @default(now())
@@ -499,7 +499,7 @@ model Payment {
 
 model PlanCoupon {
   id               Int           @id @default(autoincrement())
-  code             String
+  code             String @db.VarChar(255)
   type             CouponType
   valid_cycle      BillingCycle?
   value            Float
@@ -546,10 +546,10 @@ model WithdrawRequest {
   user_id    Int
   user       User           @relation(fields: [user_id], references: [id])
   amount     Float
-  method     String
-  account    String
+  method     String @db.VarChar(255)
+  account    String @db.Text
   status     WithdrawStatus @default(pending)
-  remark     String?
+  remark     String? @db.Text
   created_at DateTime       @default(now())
   updated_at DateTime       @updatedAt
 
@@ -558,8 +558,8 @@ model WithdrawRequest {
 
 model Ticket {
   id         Int          @id @default(autoincrement())
-  title      String
-  content    String
+  title      String @db.VarChar(255)
+  content    String @db.Text
   status     TicketStatus @default(open)
   user_id    Int
   user       User         @relation(fields: [user_id], references: [id])
@@ -572,7 +572,7 @@ model Ticket {
 
 model TicketReply {
   id         Int      @id @default(autoincrement())
-  content    String
+  content    String @db.Text
   is_admin   Boolean  @default(false)
   ticket_id  Int
   ticket     Ticket   @relation(fields: [ticket_id], references: [id])
@@ -601,7 +601,7 @@ model InNodeGroupDNS {
 
 model DNSProvider {
   id                Int              @id @default(autoincrement())
-  name              String
+  name              String @db.VarChar(255)
   type              DNSProviderType
   config            Json
   user_id           Int
