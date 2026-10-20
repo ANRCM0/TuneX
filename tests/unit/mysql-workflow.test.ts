@@ -40,11 +40,34 @@ describe("mysql workflow", () => {
       "run: pnpm db:mysql:deploy",
       "--from-migrations apps/backend/prisma/mysql/migrations",
       "run: npx prisma generate --schema apps/backend/prisma/mysql/schema.prisma",
+      "run: pnpm test:mysql",
+      "run: node scripts/mysql-truncate.mjs",
       "run: node scripts/mysql-smoke.mjs",
       "run: node scripts/mysql-endpoints-smoke.mjs",
     ].map((needle) => workflow.indexOf(needle));
     expect(order.every((index) => index > -1)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it("runs the backend suite against MySQL and keeps the shared-database harness wired", () => {
+    expect(workflow).toContain("RELAYX_TEST_DIALECT: mysql");
+    expect(workflow).toContain("pnpm test:mysql");
+
+    const scripts = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).scripts as Record<
+      string,
+      string
+    >;
+    expect(scripts["test:mysql"]).toContain("RELAYX_TEST_DIALECT=mysql");
+    // One shared database means suites must not run concurrently against it.
+    expect(scripts["test:mysql"]).toContain("--no-file-parallelism");
+
+    const helper = readFileSync(join(ROOT, "tests/helpers/temp-db.ts"), "utf8");
+    expect(helper).toContain("RELAYX_TEST_DIALECT");
+    expect(helper).toContain("prisma/mysql/schema.prisma");
+    expect(helper).toContain("mysql-truncate.mjs");
+    // The SQLite branch must keep working: it is the default checkout.
+    expect(helper).toContain("mkdtempSync");
+    expect(helper).toContain("schema.prisma");
   });
 
   it("fails the job when either dialect branch or the documented gaps disappear", () => {

@@ -27,6 +27,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "test:e2e": "vitest run tests/e2e",
+    "test:mysql": "RELAYX_TEST_DIALECT=mysql vitest run --no-file-parallelism",
     "agent:build": "cd apps/agent && go build -o ../../dist/relayx-agent ./cmd/relayx-agent",
     "verify": "bash scripts/verify.sh",
     "e2e": "bash scripts/e2e-local.sh",

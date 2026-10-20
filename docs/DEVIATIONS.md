@@ -126,8 +126,12 @@ Each entry is something this replica does differently from the analysis tree (`/
       client** to hit the aggregate endpoints over HTTP
       (`apps/backend/scripts/mysql-endpoints-smoke.mjs`). The aggregate SQL is no longer
       SQLite-only: `apps/backend/src/utils/date.ts` has both branches and selects one from
-      `DATABASE_URL`; `docs/MYSQL.md` documents the invariants and the remaining gaps (the
-      rest of the test suite still runs on SQLite only).
+      `DATABASE_URL`. The **test suite** follows the same switch: `tests/helpers/temp-db.ts`
+      builds a temp SQLite file by default and, with `RELAYX_TEST_DIALECT=mysql`, pushes
+      `prisma/mysql/schema.prisma` into the `DATABASE_URL` database and truncates it per suite
+      (one shared database, `--no-file-parallelism`), so `pnpm test:mysql` runs every suite on
+      MySQL in CI. `docs/MYSQL.md` documents the invariants and the remaining gaps (serial
+      shared-database runs, in-process Redis, no browser).
     - **Rate limits + lockout.** `middlewares/rate_limit.ts` adds fixed windows for sign-in,
       sign-up, verification mail, payment callbacks, the node observer and a generic API
       bucket, plus a per-account lockout after `LOGIN_MAX_FAILURES`. Upstream has neither; the

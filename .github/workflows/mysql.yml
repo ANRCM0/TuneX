@@ -8,15 +8,17 @@ name: MySQL target
 # What it proves:
 #   1. the baseline migration applies to an empty MySQL 8 database;
 #   2. `prisma migrate diff` finds no drift between migrations and the schema;
-#   3. a client generated from the MySQL schema round-trips JSON, enums, Float, DateTime
-#      (millisecond precision), unique constraints and cascades;
-#   4. the backend boots on that client and the aggregate endpoints — whose SQL is
+#   3. the whole backend vitest suite passes with the MySQL client
+#      (`RELAYX_TEST_DIALECT=mysql`, dialect-aware harness in tests/helpers/temp-db.ts), so
+#      every service and route the suite covers is exercised on the MySQL target;
+#   4. a client generated from the MySQL schema round-trips JSON, enums, Float, DateTime
+#      (millisecond precision), unique constraints and foreign-key actions;
+#   5. the backend boots on that client and the aggregate endpoints — whose SQL is
 #      dialect-switched in apps/backend/src/utils/date.ts — answer over HTTP with the
 #      expected Asia/Shanghai buckets (`scripts/mysql-endpoints-smoke.mjs`).
 #
-# What it does NOT prove: the whole backend test suite on MySQL. That suite is SQLite-only
-# (`prisma db push`, date helpers); this job covers the aggregate surface, not every route.
-# See docs/MYSQL.md §Known gaps.
+# What it does NOT prove: paths that need a real Redis or a browser. The suite runs with the
+# in-process Redis substitute, which is also the replica default. See docs/MYSQL.md §Known gaps.
 
 on:
   push:
@@ -29,6 +31,7 @@ on:
       - "apps/backend/src/routes/**"
       - "tests/unit/date.test.ts"
       - "tests/unit/aggregate-dialect.test.ts"
+      - "tests/helpers/**"
       - "tests/unit/mysql-workflow.test.ts"
       - ".github/workflows/mysql.yml"
   pull_request:
@@ -40,6 +43,7 @@ on:
       - "apps/backend/src/routes/**"
       - "tests/unit/date.test.ts"
       - "tests/unit/aggregate-dialect.test.ts"
+      - "tests/helpers/**"
       - "tests/unit/mysql-workflow.test.ts"
       - ".github/workflows/mysql.yml"
   workflow_dispatch:
@@ -137,6 +141,15 @@ jobs:
       - name: Generate a client from the MySQL schema
         run: npx prisma generate --schema apps/backend/prisma/mysql/schema.prisma
 
+      - name: Backend test suite on MySQL (RELAYX_TEST_DIALECT=mysql)
+        env:
+          RELAYX_TEST_DIALECT: mysql
+        run: pnpm test:mysql
+
+      - name: Empty the test database before the standalone smokes
+        working-directory: apps/backend
+        run: node scripts/mysql-truncate.mjs
+
       - name: Runtime smoke (JSON, enums, Float, DateTime, uniques, cascades)
         working-directory: apps/backend
         run: node scripts/mysql-smoke.mjs
@@ -160,4 +173,6 @@ jobs:
           grep -q "Known gaps" docs/MYSQL.md
           test -f apps/backend/scripts/mysql-endpoints-smoke.mjs
           grep -q "scripts/mysql-endpoints-smoke.mjs" .github/workflows/mysql.yml
+          grep -q "pnpm test:mysql" .github/workflows/mysql.yml
+          grep -q "RELAYX_TEST_DIALECT" tests/helpers/temp-db.ts
           echo "both SQL dialects, the MySQL endpoint step and the documented gaps are present"
