@@ -17,6 +17,7 @@ machine-readable extracts.
 | URL state | nuqs (`page` / `perPage` / `sort` + column filters) | pages |
 | i18n | own runtime, zh-CN default + curated `en` | 6,068 literals → 2,2xx keys |
 | Charts / editor / QR | recharts, `@uiw/react-md-editor`, `react-qr-code`, `@dnd-kit` | 5 chart surfaces, 3 Markdown surfaces, 2 QR surfaces, 6 draggable lists |
+| Dates | `date-fns` 4 + `react-day-picker` 8.10.1 (Popover calendar, single + range) | filter variants `date` / `dateRange` |
 
 ## How a request flows
 
@@ -74,6 +75,18 @@ The suites deliberately cover the parts that are pure logic:
 | `web-deploy-command.test.ts` | install-command flag order/spelling, multi-IP expansion, upgrade/uninstall |
 | `web-routes.test.ts` | `apps/web/routes.json` matches the file tree; admin routes live under `(main)`; `/handler` documented as out of scope |
 | `web-i18n.test.ts` | every `t()` key exists, no duplicate keys, `en` only refines known keys, no hard-coded Chinese |
+
+## Interaction details worth knowing
+
+* **Multi-hop chains** — the tunnel form edits `tunnel_chains: [{node_type:"in"|"out", node_group_id}]`;
+  the hop list is ordered and each hop is priced independently by the backend. Node groups are
+  loaded from `GET /node/group` when the dialog opens.
+* **Mobile rows** — below 768px the tunnel table renders cards and every row opens a bottom
+  sheet with the five upstream actions (配置 / 编辑 / 测试 / 停用 / 删除).
+* **Traffic quota** — `/home` shows a `Progress` bar from `user_plan.traffic_used` against the
+  plan cap.
+* **Landing canvas** — the topology animation is masked by the same radial vignette upstream
+  draws over it, so the copy stays readable.
 
 ## Deviations from upstream
 

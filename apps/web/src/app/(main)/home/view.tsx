@@ -5,6 +5,7 @@ import { useLicense, useSystemConfig, useTunnels, useUser } from "@/lib/hooks";
 import useSWR from "swr";
 import { client } from "@/lib/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { BadgeStatus } from "@/components/ui/badge-status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { setPageTitle } from "@/components/page-title";

@@ -12,8 +12,8 @@ import { ArrowRight, Zap } from "lucide-react";
 import { useSiteConfig } from "@/lib/hooks";
 
 const MOCK_TUNNELS = [
-  { name: tr("zh_6548ac"), protocol: "TCP", active: true, traffic: "4.8 GB", percent: 68 },
-  { name: tr("zh_f22979"), protocol: "RelayX", active: true, traffic: "2.1 GB", percent: 42 },
+  { name: tr("zh_6548ac"), protocol: "tcp", active: true, traffic: "4.8 GB", percent: 68 },
+  { name: tr("zh_f22979"), protocol: "relayx", active: true, traffic: "2.1 GB", percent: 42 },
   { name: tr("zh_a90ffb"), protocol: "TLS", active: true, traffic: "0.9 GB", percent: 18 },
   { name: tr("zh_29e92d"), protocol: "QUIC", active: false, traffic: "—", percent: 0 },
 ];
@@ -26,9 +26,9 @@ const STATS = [
 ];
 
 const PROTOCOLS = [
-  ["TCP", tr("zh_3e535f")],
+  ["tcp", tr("zh_3e535f")],
   ["mTCP", tr("tcp_306b0c")],
-  ["UDP", tr("zh_0d094c")],
+  ["udp", tr("zh_0d094c")],
   ["TLS", tr("zh_dc614b")],
   ["mTLS", tr("tls_5aa613")],
   ["WSS", tr("websocket_121e1f")],
@@ -262,7 +262,7 @@ export default function LandingPage() {
     numText: dark ? "rgba(255,255,255,0.08)" : "rgba(34,42,53,0.10)",
   };
 
-  const siteName = (site?.SITE_NAME ?? "").trim() || "RelayX";
+  const siteName = (site?.SITE_NAME ?? "").trim() || "relayx";
   const siteDesc =
     (site?.SITE_DESCRIPTION ?? "").trim() || tr("zh_5a9bf3");
 
@@ -296,6 +296,13 @@ export default function LandingPage() {
 
       <section className="relative overflow-hidden px-6 py-20 text-center">
         <TopologyCanvas dark={dark} />
+        {/* Upstream masks the canvas with a radial vignette so the grid fades toward the copy. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse 70% 60% at 50% 45%, transparent 30%, ${z.bg} 85%)`,
+          }}
+        />
         <div className="relative z-10 mx-auto max-w-4xl">
           <span
             className="mb-6 inline-flex items-center px-4 py-1.5 text-[13px] font-medium"
@@ -606,7 +613,7 @@ export default function LandingPage() {
             <span>
               Powered by{" "}
               <a className="underline" href="https://docs.relayx.cc" target="_blank" rel="noreferrer">
-                {"RelayX"}
+                {"relayx"}
               </a>
             </span>
           </div>

@@ -87,6 +87,10 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | i18n: every key resolves, no duplicate keys, `en` refines known keys, no hard-coded Chinese | `tests/unit/web-i18n.test.ts` |
 | Production build (Next standalone) | `scripts/verify.sh` step `web build` |
 
+The suites above cover pure logic. Interaction-heavy pieces (calendar filters, the mobile
+action sheet, the chain editor, the landing canvas) are exercised by the manual route smoke in
+`docs/VERIFY.md`; there is no DOM test runner in this workspace.
+
 Not covered: real StackAuth sessions (`/handler/[...stack]` is out of scope), browser
 rendering/DOM, and the live `/api` proxy (the E2E harness starts the backend, not the web app).
 

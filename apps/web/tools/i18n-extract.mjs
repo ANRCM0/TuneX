@@ -77,7 +77,13 @@ for (const file of files) {
 // 2) which of them are already dictionary values?
 let dict = fs.readFileSync(DICT_PATH, "utf8");
 const existingByText = new Map();
+// Only the flattened `messages` area entries are translatable. Enum-table members sit in the
+// same file with the same indentation but are NOT messages — skip the `enumTables` block so
+// protocol names like "TLS" never get rewritten into t("tls").
+const enumStart = dict.indexOf("export const enumTables");
+const enumEnd = dict.indexOf("export type EnumTable");
 for (const m of dict.matchAll(/^    "([^"]+)": "((?:[^"\\]|\\.)*)",$/gm)) {
+  if (enumStart >= 0 && enumEnd > enumStart && m.index > enumStart && m.index < enumEnd) continue;
   existingByText.set(JSON.parse(`"${m[2]}"`), m[1]);
 }
 
@@ -117,7 +123,9 @@ for (const file of files) {
 
   const record = (node, raw) => {
     const trimmed = raw.trim();
-    if (!existingByText.has(trimmed) || trimmed.length < 2) return false;
+    // Only Chinese literals are translated; ASCII strings (protocol names, config keys)
+    // must stay literals even when an enum table happens to share the same text.
+    if (!CJK.test(trimmed) || !existingByText.has(trimmed) || trimmed.length < 2) return false;
     const key = existingByText.get(trimmed);
     const isAttr =
       node.parent && ts.isJsxAttribute(node.parent) && node.parent.initializer === node;

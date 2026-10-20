@@ -200,7 +200,7 @@ export const FIELDS = {
   dnsProvider: [
     { key: "name", label: t("misc.label.name"), required: true },
     { key: "type", label: t("zh_c08681"), kind: "select", options: [
-      { value: "cloudflare", label: "Cloudflare" }, { value: "huawei", label: t("zh_c1c6f8") },
+      { value: "cloudflare", label: "cloudflare" }, { value: "huawei", label: t("zh_c1c6f8") },
     ] },
     { key: "config_token", label: "Cloudflare Token", kind: "password", hint: t("cloudflare_api_token_946378") },
     { key: "config_email", label: t("cloudflare_faabb6"), hint: t("global_api_key_895693") },

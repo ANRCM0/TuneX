@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Checkbox } from "./ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { t } from "@/lib/i18n";
+import { DatePicker, DateRangePicker } from "./date-picker";
 
 export type FilterVariant = "text" | "number" | "select" | "multiSelect" | "date" | "dateRange" | "boolean";
 
@@ -104,29 +105,18 @@ export function useListFilters(defs: FilterDef[]) {
                   })}
                 </div>
               ) : d.variant === "date" ? (
-                <Input
-                  type="date"
-                  className="h-8"
-                  value={String((values as Record<string, unknown>)[d.key] ?? "")}
-                  onChange={(e) => setValues({ [d.key]: e.target.value || null } as never)}
+                <DatePicker
+                  value={String((values as Record<string, unknown>)[d.key] ?? "") || undefined}
+                  onChange={(v) => setValues({ [d.key]: v } as never)}
                 />
               ) : d.variant === "dateRange" ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="date"
-                    className="h-8"
-                    aria-label={`${d.label} start`}
-                    value={String((values as Record<string, unknown>)[`${d.key}_start`] ?? "")}
-                    onChange={(e) => setValues({ [`${d.key}_start`]: e.target.value || null } as never)}
-                  />
-                  <Input
-                    type="date"
-                    className="h-8"
-                    aria-label={`${d.label} end`}
-                    value={String((values as Record<string, unknown>)[`${d.key}_end`] ?? "")}
-                    onChange={(e) => setValues({ [`${d.key}_end`]: e.target.value || null } as never)}
-                  />
-                </div>
+                <DateRangePicker
+                  start={String((values as Record<string, unknown>)[`${d.key}_start`] ?? "") || undefined}
+                  end={String((values as Record<string, unknown>)[`${d.key}_end`] ?? "") || undefined}
+                  onChange={(next) =>
+                    setValues({ [`${d.key}_start`]: next.start, [`${d.key}_end`]: next.end } as never)
+                  }
+                />
               ) : d.variant === "boolean" ? (
                 <Select
                   value={String((values as Record<string, unknown>)[d.key] ?? "all")}

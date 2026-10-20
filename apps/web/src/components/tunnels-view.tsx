@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { setPageTitle } from "@/components/page-title";
 import { TunnelFormDialog, type TunnelDraft } from "@/components/tunnel-form";
 import { TunnelQrDialog } from "@/components/tunnel-qr";
+import { Sheet, SheetContent, SheetTitle } from "./ui/sheet";
 import type { ShareTunnel } from "@/lib/tunnel-share";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,12 +129,61 @@ function BatchDialog({ open, onOpenChange, ids, onDone, api }: { open: boolean; 
   );
 }
 
+/** Upstream TunnelMobileActions: a bottom sheet with the five row actions, mobile only. */
+function TunnelMobileActions({
+  row,
+  onOpenChange,
+  onConfigure,
+  onEdit,
+  onTest,
+  onToggle,
+  onDelete,
+}: {
+  row: Tunnel | null;
+  onOpenChange: (v: boolean) => void;
+  onConfigure: () => void;
+  onEdit: () => void;
+  onTest: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <Sheet open={Boolean(row)} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-72 p-0">
+        <SheetTitle className="px-4 pt-4 text-sm">{row?.name ?? ""}</SheetTitle>
+        <div className="flex flex-col p-2">
+          {[
+            [t("zh_ae27d1"), onConfigure],
+            [t("admin.tunnels.editTunnel"), onEdit],
+            [t("zh_0e8bfd"), onTest],
+            [row?.status === "active" ? t("zh_a10f66") : t("zh_3583d7"), onToggle],
+            [t("zh_577afe"), onDelete],
+          ].map(([label, fn]) => (
+            <button
+              key={label as string}
+              type="button"
+              onClick={() => {
+                (fn as () => void)();
+                onOpenChange(false);
+              }}
+              className="hover:bg-accent rounded-md px-3 py-2.5 text-left text-sm"
+            >
+              {label as string}
+            </button>
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
   const api = mode === "admin" ? adminClient : client;
   const [importOpen, setImportOpen] = React.useState(false);
   const [batchIds, setBatchIds] = React.useState<number[] | null>(null);
   const [whitelistOpen, setWhitelistOpen] = React.useState(false);
   const [whitelistId, setWhitelistId] = React.useState<number | null>(null);
+  const [mobileRow, setMobileRow] = React.useState<Tunnel | null>(null);
   const [page] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [sort] = useQueryState("sort", getSortingStateParser());
@@ -354,6 +404,35 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
         onSaved={() => void mutate()}
       />
       <TunnelQrDialog tunnel={qr} onOpenChange={(v: boolean) => !v && setQr(null)} />
+      <TunnelMobileActions
+        row={mobileRow}
+        onOpenChange={(v: boolean) => !v && setMobileRow(null)}
+        onConfigure={() => setQr(mobileRow)}
+        onEdit={() => {
+          setEditing(mobileRow);
+          setFormOpen(true);
+        }}
+        onTest={() =>
+          void (async () => {
+            if (!mobileRow) return;
+            const res = await api.tunnel[":id"].test.$get({ param: { id: mobileRow.id } });
+            const body = await res.json();
+            toast.success(`${t("share.testResult")}${JSON.stringify(body).slice(0, 120)}`);
+          })()
+        }
+        onToggle={() =>
+          void (async () => {
+            if (!mobileRow) return;
+            const next = mobileRow.status === "active" ? "inactive" : "active";
+            const res = await api.tunnel[":id"].status.$patch({ param: { id: mobileRow.id }, json: { status: next } });
+            if (res.ok) {
+              toast.success(next === "active" ? t("share.enabled") : t("share.disabled"));
+              await mutate();
+            }
+          })()
+        }
+        onDelete={() => void remove(mobileRow ? [mobileRow.id] : [])}
+      />
       <WhitelistDialog
         open={whitelistOpen}
         tunnelId={whitelistId}

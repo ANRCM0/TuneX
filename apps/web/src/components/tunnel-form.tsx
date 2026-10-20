@@ -1,5 +1,5 @@
 "use client";
-import { t } from "@/lib/i18n";
+import { t, tf } from "@/lib/i18n";
 /**
  * 3-step tunnel wizard, reconstructed from the shipped page
  * (reports/07 UF-01: 18 fields, step bar 1/2/3, submit posts TunnelRequest).
@@ -11,6 +11,7 @@ import { t } from "@/lib/i18n";
 import * as React from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import useSWR from "swr";
 import { client, type RpcProxy } from "@/lib/client";
 import { TUNNEL_TYPE_LABEL, LOAD_BALANCE_LABEL, IP_TYPE_LABEL } from "@/lib/format";
 import { Button } from "./ui/button";
@@ -39,6 +40,8 @@ export type TunnelDraft = {
   bandwidth_limit: string;
   proxy_protocol: boolean;
   status: string;
+  /** Multi-hop chain; upstream default is []. Each hop is a node group plus its role. */
+  tunnel_chains: { node_type: "in" | "out"; node_group_id: string }[];
   /** Upstream default: [{ address:"", weight:1, host:null }] — reports/07 UF-01 step 2. */
   forward_addresses: { address: string; weight: string; host: string }[];
 };
@@ -62,6 +65,7 @@ export const EMPTY_TUNNEL: TunnelDraft = {
   bandwidth_limit: "",
   proxy_protocol: false,
   status: "active",
+  tunnel_chains: [],
   forward_addresses: [{ address: "", weight: "1", host: "" }],
 };
 
@@ -92,6 +96,12 @@ export function TunnelFormDialog({
   api?: RpcProxy;
 }) {
   const [step, setStep] = React.useState(0);
+  // Node groups feed both the chain hops and (upstream) the in/out group pickers.
+  const { data: groupData } = useSWR(open ? ["/node/group", "form"] : null, async () => {
+    const res = await client.node.group.$get({ query: { page: "1", perPage: "100" } });
+    return (await res.json()) as { data?: { id: number; name?: string; traffic_rate?: number }[] };
+  });
+  const nodeGroups = groupData?.data ?? [];
   const [draft, setDraft] = React.useState<TunnelDraft>(EMPTY_TUNNEL);
   const [errors, setErrors] = React.useState<Partial<Record<keyof TunnelDraft, string>>>({});
   const [saving, setSaving] = React.useState(false);
@@ -139,6 +149,9 @@ export function TunnelFormDialog({
       bandwidth_limit: draft.bandwidth_limit ? Number(draft.bandwidth_limit) : undefined,
       proxy_protocol: draft.proxy_protocol,
       status: draft.status,
+      tunnel_chains: draft.tunnel_chains
+        .filter((h) => h.node_group_id)
+        .map((h) => ({ node_type: h.node_type, node_group_id: Number(h.node_group_id) })),
       forward_addresses: draft.forward_addresses
         .filter((r) => r.address.trim())
         .map((r) => ({
@@ -249,12 +262,64 @@ export function TunnelFormDialog({
                 placeholder={t("id_f91524")}
               />
             </Field>
-            <Field label={t("zh_53ee74")}>
-              <Input value={draft.in_tunnel_chain_id} onChange={(e) => set("in_tunnel_chain_id", e.target.value)} placeholder={t("zh_53e328")} />
-            </Field>
-            <Field label={t("zh_80248d")}>
-              <Input value={draft.out_tunnel_chain_id} onChange={(e) => set("out_tunnel_chain_id", e.target.value)} placeholder={t("zh_53e328")} />
-            </Field>
+            <div className="sm:col-span-2">
+              <div className="mb-1.5 flex items-center justify-between">
+                <Label className="text-xs">{t("zh_5ea1bb")}</Label>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm"
+                    onClick={() => set("tunnel_chains", [...draft.tunnel_chains, { node_type: "in", node_group_id: "" }])}>
+                    <Plus className="size-3.5" /> {t("zh_9a3832")}
+                  </Button>
+                  <Button type="button" variant="outline" size="sm"
+                    onClick={() => set("tunnel_chains", [...draft.tunnel_chains, { node_type: "out", node_group_id: "" }])}>
+                    <Plus className="size-3.5" /> {t("zh_8cc6e6")}
+                  </Button>
+                </div>
+              </div>
+              {draft.tunnel_chains.length === 0 ? (
+                <p className="text-muted-foreground text-xs">{t("zh_657ebf")}</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {draft.tunnel_chains.map((hop, i) => (
+                    <div key={i} className="grid grid-cols-[6rem_1fr_auto] items-center gap-2">
+                      <span className="bg-muted rounded px-2 py-1 text-center text-[11px]">
+                        {hop.node_type === "in" ? t("zh_9a3832") : t("zh_8cc6e6")}
+                      </span>
+                      <Select
+                        value={hop.node_group_id}
+                        onValueChange={(v) => {
+                          const next = [...draft.tunnel_chains];
+                          next[i] = { ...next[i], node_group_id: v };
+                          set("tunnel_chains", next);
+                        }}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder={t("zh_1e6419")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {nodeGroups.map((g) => (
+                            <SelectItem key={g.id} value={String(g.id)}>
+                              {g.name ?? `#${g.id}`}
+                              {g.traffic_rate != null ? tf("ratio_3f9a2c", { rate: g.traffic_rate }) : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("zh_a56aad")}
+                        onClick={() => set("tunnel_chains", draft.tunnel_chains.filter((_, idx) => idx !== i))}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-muted-foreground mt-1 text-xs">{t("zh_ce517e")}</p>
+            </div>
             <Field label={t("zh_4e5d1c")}>
               <Select value={draft.category} onValueChange={(v) => set("category", v)}>
                 <SelectTrigger>
@@ -366,8 +431,8 @@ export function TunnelFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="http">{"HTTP"}</SelectItem>
-                  <SelectItem value="tls">{"TLS"}</SelectItem>
+                  <SelectItem value="http">{"http"}</SelectItem>
+                  <SelectItem value="tls">TLS</SelectItem>
                   <SelectItem value="socks">SOCKS</SelectItem>
                 </SelectContent>
               </Select>
