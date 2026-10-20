@@ -122,7 +122,7 @@ Each entry is something this replica does differently from the analysis tree (`/
       in its own directory rather than behind `env()`. Deploy with
       `pnpm db:mysql:deploy` and `DATABASE_URL=mysql://…`. `.github/workflows/mysql.yml` proves
       it against a real `mysql:8.0` (baseline applies, no drift, MySQL-generated client
-      round-trips JSON/enums/Float/DateTime/uniques/cascades) **and boots the backend on that
+      round-trips JSON/enums/Float/DateTime/uniques and both FK actions) **and boots the backend on that
       client** to hit the aggregate endpoints over HTTP
       (`apps/backend/scripts/mysql-endpoints-smoke.mjs`). The aggregate SQL is no longer
       SQLite-only: `apps/backend/src/utils/date.ts` has both branches and selects one from

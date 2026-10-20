@@ -17,13 +17,13 @@ aggregate endpoints that used to be SQLite-only are covered. The switch is one m
 | `apps/backend/prisma/mysql/schema.prisma`         | **Generated** MySQL variant (only the `datasource` block differs)                                                |
 | `apps/backend/prisma/mysql/migrations/0001_init/` | **Generated** MySQL baseline DDL                                                                                 |
 | `apps/backend/scripts/gen-mysql-schema.mjs`       | Generator; `--check` is read-only and fails on staleness                                                         |
-| `apps/backend/scripts/mysql-smoke.mjs`            | Runtime smoke: JSON, enums, Float, DateTime, uniques, cascades                                                   |
-| `apps/backend/scripts/mysql-endpoints-smoke.mjs`  | Boots the backend on MySQL and asserts the aggregate endpoints over HTTP                                          |
-| `apps/backend/src/utils/date.ts`                  | Both SQL dialects for the aggregate queries; `DATABASE_URL` selects one at call time                              |
-| `.github/workflows/mysql.yml`                     | Applies the baseline, checks drift, generates the client, runs both smokes                                        |
+| `apps/backend/scripts/mysql-smoke.mjs`            | Runtime smoke: JSON, enums, Float, DateTime, uniques, FK actions                                                 |
+| `apps/backend/scripts/mysql-endpoints-smoke.mjs`  | Boots the backend on MySQL and asserts the aggregate endpoints over HTTP                                         |
+| `apps/backend/src/utils/date.ts`                  | Both SQL dialects for the aggregate queries; `DATABASE_URL` selects one at call time                             |
+| `.github/workflows/mysql.yml`                     | Applies the baseline, checks drift, generates the client, runs both smokes                                       |
 | `tests/unit/mysql-workflow.test.ts`               | Asserts the workflow contract and that `--check` cannot repair what it checks                                    |
 | `tests/unit/aggregate-dialect.test.ts`            | Asserts the aggregate call sites delegate to `utils/date.ts` and never hand-write a dialect                      |
-| `tests/unit/date.test.ts`                         | Pins both branches and the `DATABASE_URL` switch                                                                  |
+| `tests/unit/date.test.ts`                         | Pins both branches and the `DATABASE_URL` switch                                                                 |
 
 Prisma requires the datasource provider to be a **string literal**, so one schema file cannot
 serve both engines. That is why MySQL lives in its own directory rather than behind `env()`.
@@ -60,13 +60,13 @@ Upstream is MySQL-only and interpolates `CONVERT_TZ(...)` / `DATE_FORMAT(...)` /
 SQLite has none of those and stores `DateTime` as unix milliseconds. `utils/date.ts` therefore
 exports the dialect-aware builders below, chosen by `sqlDialect()`:
 
-| Builder                               | SQLite                                                           | MySQL                                                                                                |
-| ------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `toLocalTZ(col)`                      | `datetime(col / 1000, 'unixepoch', '+8 hours')`                  | `DATE_FORMAT(CONVERT_TZ(col,'+00:00','+08:00'), '%Y-%m-%d %H:%i:%s')`                                |
-| `getDateGroupBy(col, 'day')`          | `date(datetime(col / 1000, …))`                                  | `DATE_FORMAT(CONVERT_TZ(col,'+00:00','+08:00'), '%Y-%m-%d')`                                         |
-| `getDateGroupBy(col, 'month'/'year')` | `strftime('%Y-%m', …)` / `strftime('%Y', …)`                     | `DATE_FORMAT(…, '%Y-%m')` / `DATE_FORMAT(…, '%Y')`                                                  |
-| `localNowMinusDays(n)`                | `datetime('now','+8 hours','-N days')`                           | `DATE_FORMAT(DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+08:00'), INTERVAL N DAY), '%Y-%m-%d %H:%i:%s')` |
-| `utcNowMinusDays(n)`                  | `datetime('now','-N days')`                                      | `DATE_FORMAT(DATE_SUB(UTC_TIMESTAMP(), INTERVAL N DAY), '%Y-%m-%d %H:%i:%s')`                        |
+| Builder                               | SQLite                                          | MySQL                                                                                                       |
+| ------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `toLocalTZ(col)`                      | `datetime(col / 1000, 'unixepoch', '+8 hours')` | `DATE_FORMAT(CONVERT_TZ(col,'+00:00','+08:00'), '%Y-%m-%d %H:%i:%s')`                                       |
+| `getDateGroupBy(col, 'day')`          | `date(datetime(col / 1000, …))`                 | `DATE_FORMAT(CONVERT_TZ(col,'+00:00','+08:00'), '%Y-%m-%d')`                                                |
+| `getDateGroupBy(col, 'month'/'year')` | `strftime('%Y-%m', …)` / `strftime('%Y', …)`    | `DATE_FORMAT(…, '%Y-%m')` / `DATE_FORMAT(…, '%Y')`                                                          |
+| `localNowMinusDays(n)`                | `datetime('now','+8 hours','-N days')`          | `DATE_FORMAT(DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(),'+00:00','+08:00'), INTERVAL N DAY), '%Y-%m-%d %H:%i:%s')` |
+| `utcNowMinusDays(n)`                  | `datetime('now','-N days')`                     | `DATE_FORMAT(DATE_SUB(UTC_TIMESTAMP(), INTERVAL N DAY), '%Y-%m-%d %H:%i:%s')`                               |
 
 Three properties make the switch safe, and are the invariants to preserve:
 
@@ -82,7 +82,7 @@ Three properties make the switch safe, and are the invariants to preserve:
 3. **Prisma returns a string in both cases**, because `DATE_FORMAT`/`date()`/`strftime()` all
    yield text, so `formatStatsDate` formats a string on either engine.
 
-`/tunnel/traffic/stats` deliberately keeps upstream's *UTC* bound (`utcNowMinusDays`): it has
+`/tunnel/traffic/stats` deliberately keeps upstream's _UTC_ bound (`utcNowMinusDays`): it has
 always compared the Shanghai rendering of `tunnel_traffic.date` against a plain
 `datetime('now', '-N days')` (upstream `NOW() - INTERVAL n DAY`). The eight-hour skew is
 upstream behaviour, not a replica bug, and it is not "fixed" here.
@@ -102,7 +102,8 @@ routes or their tests change (and on demand via `workflow_dispatch`):
 4. `prisma generate` from the MySQL schema, then `mysql-smoke.mjs`:
    JSON round-trip (nested object + array), enum round-trip, `Float` keeps `0.00390625`,
    `DateTime` keeps milliseconds, `email` uniqueness rejects duplicates, `_sum` aggregate is
-   exact, deleting a `NodeGroup` cascades to its `Node` rows;
+   exact, a `NodeGroup` that still has `Node` rows refuses deletion (RESTRICT) while deleting a
+   `User` removes its `LocalCredential` (CASCADE);
 5. `mysql-endpoints-smoke.mjs` — the backend boots on the MySQL client and answers, with the
    expected Asia/Shanghai buckets:
    - `/admin/stats` counts by status / node type;
