@@ -13,7 +13,10 @@
 #   3. the agent's 5s observer loop reaches the panel through the deployment
 #      `/api` prefix (backend access log shows POST /tunnel/observer);
 #   4. a manual observer event with known bytes increments `Tunnel.traffic`
-#      and `UserPlan.traffic_used` by the expected GiB amount.
+#      and `UserPlan.traffic_used` by the expected GiB amount;
+#   5. the web console serves the same origin: anonymous /home redirects to
+#      /handler/sign-in, sign-up through the `/api` proxy issues the session
+#      cookie, and after verification /home returns 200 with real user data.
 #
 # Everything it creates lives under .e2e/ (gitignored) and is removed on exit
 # unless E2E_KEEP=1. The ports must be free: backend 3000, license 3100, tunnel
@@ -34,7 +37,9 @@ BACKEND_PORT="${BACKEND_PORT:-3000}"
 LICENSE_PORT="${LICENSE_PORT:-3100}"
 E2E_LISTEN_PORT="${E2E_LISTEN_PORT:-18080}"
 E2E_ECHO_PORT="${E2E_ECHO_PORT:-19081}"
+WEB_PORT="${WEB_PORT:-3001}"
 SITE_URL="http://127.0.0.1:${BACKEND_PORT}"
+WEB_URL="http://127.0.0.1:${WEB_PORT}"
 LICENSE_URL="http://127.0.0.1:${LICENSE_PORT}"
 DATABASE_URL="${DATABASE_URL:-file:./e2e.db}"
 E2E_TOKEN="${E2E_TOKEN:-e2e-node-group-token}"
@@ -54,6 +59,7 @@ BACKEND_LOG="$WORK_DIR/backend.log"
 LICENSE_LOG="$WORK_DIR/license.log"
 AGENT_LOG="$WORK_DIR/agent.log"
 ECHO_LOG="$WORK_DIR/echo.log"
+WEB_LOG="$WORK_DIR/web.log"
 
 say() { printf '\n[e2e] %s\n' "$*"; }
 fail() {
@@ -161,11 +167,11 @@ cleanup() {
   local code=$?
   set +e
   say "cleanup"
-  for pid in "${AGENT_PID:-}" "${ECHO_PID:-}" "${BACKEND_PID:-}" "${LICENSE_PID:-}"; do
+  for pid in "${WEB_PID:-}" "${AGENT_PID:-}" "${ECHO_PID:-}" "${BACKEND_PID:-}" "${LICENSE_PID:-}"; do
     [[ -n "$pid" ]] && kill -TERM -- "-$pid" 2>/dev/null
   done
   sleep 1
-  for pid in "${AGENT_PID:-}" "${ECHO_PID:-}" "${BACKEND_PID:-}" "${LICENSE_PID:-}"; do
+  for pid in "${WEB_PID:-}" "${AGENT_PID:-}" "${ECHO_PID:-}" "${BACKEND_PID:-}" "${LICENSE_PID:-}"; do
     [[ -n "$pid" ]] && kill -KILL -- "-$pid" 2>/dev/null
   done
   rm -f "$ROOT/relayx-agent.lock" "$ROOT/apps/agent/relayx-agent.lock"
@@ -184,6 +190,7 @@ require_free_port "$BACKEND_PORT"
 require_free_port "$LICENSE_PORT"
 require_free_port "$E2E_LISTEN_PORT"
 require_free_port "$E2E_ECHO_PORT"
+require_free_port "$WEB_PORT"
 if [[ -f "$ROOT/.env" ]]; then
   CONFIG_SECRET="${CONFIG_SECRET:-$(grep -E '^CONFIG_SECRET=' "$ROOT/.env" | head -1 | cut -d= -f2-)}"
 fi
@@ -322,4 +329,78 @@ node -e '
   }
 ' "$BEFORE" "$AFTER" || fail "traffic accounting did not increment as expected"
 
-say "PASS: license -> config -> TCP forward -> observer -> traffic accounting"
+
+say "build web console"
+# Next inlines the rewrite target at build time, so the backend origin must be known here.
+if [[ ! -f "$ROOT/apps/web/.next/BUILD_ID" || "${E2E_WEB_REBUILD:-0}" == "1" ]]; then
+  BACKEND_ORIGIN="$SITE_URL" run_step "web build" 600 pnpm --filter @relayx/web build >/dev/null ||
+    fail "web build failed"
+else
+  printf '  reusing %s\n' "$ROOT/apps/web/.next"
+fi
+
+say "start web console on :$WEB_PORT"
+(
+  cd "$ROOT/apps/web"
+  BACKEND_ORIGIN="$SITE_URL" PORT="$WEB_PORT" NEXT_TELEMETRY_DISABLED=1 \
+    exec ./node_modules/.bin/next start -H 127.0.0.1 -p "$WEB_PORT"
+) >"$WEB_LOG" 2>&1 &
+WEB_PID=$!
+wait_http "$WEB_URL/" "web console" 160 || fail "web console did not start (see $WEB_LOG)"
+
+say "assert web console: anonymous access is gated"
+WEB_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/")"
+[[ "$WEB_STATUS" == "200" ]] || fail "landing page returned $WEB_STATUS"
+LOCATION="$(curl -s -o /dev/null -w '%{redirect_url}' "$WEB_URL/home")"
+case "$LOCATION" in
+  */handler/sign-in*) printf '  /home -> %s\n' "$LOCATION" ;;
+  *) fail "anonymous /home did not redirect to sign-in (got '$LOCATION')" ;;
+esac
+printf '  / -> %s, /home -> 307 sign-in\n' "$WEB_STATUS"
+
+say "assert web console: sign-up through the /api proxy"
+WEB_EMAIL="web-${RANDOM}@example.test"
+JAR="$WORK_DIR/web-cookies.txt"
+SIGNUP_STATUS="$(curl -s -o "$WORK_DIR/web-signup.json" -w '%{http_code}' -c "$JAR" \
+  -X POST "$WEB_URL/api/auth/sign-up" -H 'content-type: application/json' \
+  -d "{\"email\":\"$WEB_EMAIL\",\"password\":\"e2e-supersecret\"}")"
+[[ "$SIGNUP_STATUS" == "201" ]] || {
+  cat "$WORK_DIR/web-signup.json" >&2
+  fail "sign-up returned $SIGNUP_STATUS"
+}
+grep -q 'stack-access' "$JAR" || fail "sign-up did not set the stack-access cookie"
+printf '  sign-up 201, cookie set\n'
+
+say "assert web console: unverified session is pushed to /verify-email"
+LOCATION="$(curl -s -b "$JAR" -o /dev/null -w '%{redirect_url}' "$WEB_URL/home")"
+case "$LOCATION" in
+  */verify-email*) printf '  /home -> %s\n' "$LOCATION" ;;
+  *) fail "unverified /home did not redirect to /verify-email (got '$LOCATION')" ;;
+esac
+
+curl -fsS -b "$JAR" -X POST "$WEB_URL/api/auth/verify-email" >/dev/null ||
+  fail "verify-email call failed"
+
+say "assert web console: verified session reaches the panel and the API"
+HOME_STATUS="$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' "$WEB_URL/home")"
+[[ "$HOME_STATUS" == "200" ]] || fail "/home returned $HOME_STATUS after verification"
+VERIFY_LOCATION="$(curl -s -b "$JAR" -o /dev/null -w '%{redirect_url}' "$WEB_URL/verify-email")"
+case "$VERIFY_LOCATION" in
+  */home*) printf '  /verify-email -> %s\n' "$VERIFY_LOCATION" ;;
+  *) fail "/verify-email did not redirect verified users home (got '$VERIFY_LOCATION')" ;;
+esac
+USER_EMAIL="$(curl -fsS -b "$JAR" "$WEB_URL/api/user/info" | node -e '
+  let raw = "";
+  process.stdin.on("data", (c) => (raw += c));
+  process.stdin.on("end", () => {
+    const user = JSON.parse(raw);
+    if (!user.email) { console.error("no email in /api/user/info"); process.exit(1); }
+    console.log(user.email);
+  });
+')" || fail "/api/user/info did not return the signed-in user"
+[[ "$USER_EMAIL" == "$WEB_EMAIL" ]] || fail "/api/user/info returned '$USER_EMAIL', expected '$WEB_EMAIL'"
+ANON_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/api/user/info")"
+[[ "$ANON_STATUS" == "401" ]] || fail "anonymous /api/user/info returned $ANON_STATUS, expected 401"
+printf '  /home 200, /api/user/info -> %s, anonymous -> 401\n' "$USER_EMAIL"
+
+say "PASS: license -> config -> TCP forward -> observer -> traffic accounting -> web console"

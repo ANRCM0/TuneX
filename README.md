@@ -106,7 +106,7 @@ Repo scripts (not pnpm scripts):
 | --- | --- |
 | `bash scripts/verify.sh` | install + prisma push + typecheck + unit tests + license tests + `go vet`/`go test` + agent build |
 | `bash scripts/verify.sh --e2e` | the same, then the live full-stack E2E |
-| `bash scripts/e2e-local.sh` | boots a private license server, backend, echo target and agent on a throwaway database, then asserts the config push, TCP forwarding, observer path and traffic accounting |
+| `bash scripts/e2e-local.sh` | boots a private license server, backend, echo target, agent **and the web console** on a throwaway database, then asserts the config push, TCP forwarding, observer path, traffic accounting and the console login round-trip |
 
 ## Tests
 

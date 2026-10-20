@@ -146,5 +146,20 @@ why `pnpm test` is safe to run with no stack.
 | Production build | `pnpm --filter @relayx/web build` | `✓ Compiled successfully`, 43 routes |
 | Route smoke (local) | `cd apps/web && DEV_BYPASS_AUTH=1 ./node_modules/.bin/next start -H 127.0.0.1 -p 3100` then `curl` each path from `apps/web/routes.json` | 41 × 200, plus `_global-error` 500 / `_not-found` 404 / `verify-email` 307 (all by design) |
 
-The route smoke is manual on purpose: it needs a listening server and the login gate's
-behaviour depends on `DEV_BYPASS_AUTH`.
+`bash scripts/e2e-local.sh` also covers the console end to end (no manual step): it builds
+`apps/web` with `BACKEND_ORIGIN` pointing at the E2E backend, starts `next start` on
+`WEB_PORT` (3001), then asserts:
+
+| Assertion | Expected |
+| --- | --- |
+| `GET /` | 200 (landing page, no session needed) |
+| `GET /home` anonymous | 307 → `/handler/sign-in` |
+| `POST /api/auth/sign-up` through the proxy | 201 + `stack-access` cookie |
+| `GET /home` with the unverified cookie | 307 → `/verify-email` |
+| `POST /api/auth/verify-email` | 200 |
+| `GET /home` after verification | 200 |
+| `GET /verify-email` after verification | 307 → `/home` |
+| `GET /api/user/info` with the cookie | 200, email matches the sign-up |
+| `GET /api/user/info` anonymous | 401 |
+
+Set `E2E_WEB_REBUILD=1` to force a fresh `next build`; otherwise an existing `.next` is reused.
