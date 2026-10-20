@@ -1,0 +1,138 @@
+name: MySQL target
+
+# The replica runs on SQLite out of the box; `prisma/mysql/` is the MySQL target generated
+# from the same models (see docs/MYSQL.md). SQLite can validate a schema, but only a real
+# MySQL 8 can prove the DDL applies and the column types round-trip, so this workflow runs
+# the whole MySQL path against a service container.
+#
+# What it proves:
+#   1. the baseline migration applies to an empty MySQL 8 database;
+#   2. `prisma migrate diff` finds no drift between migrations and the schema;
+#   3. a client generated from the MySQL schema round-trips JSON, enums, Float, DateTime
+#      (millisecond precision), unique constraints and cascades.
+#
+# What it does NOT prove: the panel's own aggregate endpoints. They use SQLite dialect
+# (`datetime(col/1000,'unixepoch')`, `strftime`) — see docs/MYSQL.md §Known gaps. That step
+# fails the job if someone edits those helpers without updating the document.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "apps/backend/prisma/**"
+      - "apps/backend/scripts/**"
+      - "apps/backend/src/utils/date.ts"
+      - ".github/workflows/mysql.yml"
+  pull_request:
+    paths:
+      - "apps/backend/prisma/**"
+      - "apps/backend/scripts/**"
+      - "apps/backend/src/utils/date.ts"
+      - ".github/workflows/mysql.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mysql-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "11.7.0"
+  MYSQL_DATABASE: relayx_ci
+  MYSQL_ROOT_PASSWORD: ci-root-password
+  # 127.0.0.1, not "mysql": the job's steps run on the runner host, the service is published.
+  DATABASE_URL: "mysql://root:ci-root-password@127.0.0.1:3306/relayx_ci"
+
+jobs:
+  mysql:
+    name: MySQL 8 (migrate + runtime smoke)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=30s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Wait for MySQL
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if node -e '
+              const net = require("net");
+              const s = net.connect(3306, "127.0.0.1");
+              s.on("connect", () => { s.destroy(); process.exit(0); });
+              s.on("error", () => process.exit(1));
+            '; then
+              echo "mysql is accepting connections"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "mysql did not become reachable" >&2
+          exit 1
+
+      - name: Generate the MySQL schema variant (must be current)
+        run: pnpm db:mysql:generate --check
+
+      - name: Apply the baseline migration to an empty database
+        run: pnpm db:mysql:deploy
+
+      - name: Detect migration drift against the schema
+        env:
+          SHADOW_URL: "mysql://root:ci-root-password@127.0.0.1:3306/relayx_shadow"
+        run: |
+          set -euo pipefail
+          # `migrate diff --from-migrations` needs a scratch database it can write to.
+          printf 'CREATE DATABASE IF NOT EXISTS relayx_shadow;' \
+            | npx prisma db execute --url "mysql://root:ci-root-password@127.0.0.1:3306/relayx_ci" --stdin
+          DIFF="$(npx prisma migrate diff \
+            --from-migrations apps/backend/prisma/mysql/migrations \
+            --to-schema-datamodel apps/backend/prisma/mysql/schema.prisma \
+            --shadow-database-url "$SHADOW_URL" \
+            --script)"
+          echo "$DIFF"
+          if ! grep -q "empty migration" <<<"$DIFF"; then
+            echo "MySQL migrations drifted from the schema" >&2
+            exit 1
+          fi
+
+      - name: Generate a client from the MySQL schema
+        run: npx prisma generate --schema apps/backend/prisma/mysql/schema.prisma
+
+      - name: Runtime smoke (JSON, enums, Float, DateTime, uniques, cascades)
+        working-directory: apps/backend
+        run: node scripts/mysql-smoke.mjs
+
+      - name: Guard the documented SQLite-only surface
+        run: |
+          set -euo pipefail
+          # These helpers are SQLite dialect on purpose; if they change, docs/MYSQL.md must too.
+          grep -q "unixepoch" apps/backend/src/utils/date.ts
+          grep -q "strftime" apps/backend/src/utils/date.ts
+          grep -q "Known gaps" docs/MYSQL.md
+          echo "SQLite-only aggregate helpers and the documented gap are both still present"

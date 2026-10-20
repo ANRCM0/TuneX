@@ -119,7 +119,12 @@ Each entry is something this replica does differently from the analysis tree (`/
       but no MySQL server runs here, so runtime parity is untested.
     - **MySQL target.** The datasource provider must be a literal, so the MySQL variant lives
       in its own directory rather than behind `env()`. Deploy with
-      `pnpm db:mysql:deploy` and `DATABASE_URL=mysql://…`.
+      `pnpm db:mysql:deploy` and `DATABASE_URL=mysql://…`. `.github/workflows/mysql.yml` proves
+      it against a real `mysql:8.0` (baseline applies, no drift, MySQL-generated client
+      round-trips JSON/enums/Float/DateTime/uniques/cascades). **The panel's aggregate queries
+      remain SQLite dialect** (`datetime(col/1000,'unixepoch')`, `strftime`), so the stats and
+      dashboard endpoints do not run on MySQL — documented in `docs/MYSQL.md` §Known gaps and
+      guarded by the workflow.
     - **Rate limits + lockout.** `middlewares/rate_limit.ts` adds fixed windows for sign-in,
       sign-up, verification mail, payment callbacks, the node observer and a generic API
       bucket, plus a per-account lockout after `LOGIN_MAX_FAILURES`. Upstream has neither; the
