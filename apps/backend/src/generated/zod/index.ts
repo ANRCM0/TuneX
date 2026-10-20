@@ -143,6 +143,16 @@ export const UserSchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 
+export const LocalCredentialSchema = z.object({
+  user_id: z.number().int(),
+  password_hash: z.string(),
+  email_verified: z.boolean(),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+
+export type LocalCredential = z.infer<typeof LocalCredentialSchema>;
+
 export const AdminRoleSchema = z.object({
   id: z.number().int(),
   name: z.string(),

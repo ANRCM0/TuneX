@@ -45,6 +45,26 @@ export const BACKEND_ROOT = new URL("../", import.meta.url).pathname;
 // managed infrastructure. Defaults keep upstream behaviour.
 /** Bearer token required by /health/diag and /health/heap; empty disables both. */
 export const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
+/**
+ * Authentication backend.
+ *
+ * `stack` — verify StackAuth JWTs against its JWKS (upstream behaviour; needs a project).
+ * `local` — passwords + HS256 sessions issued by this process (see services/local_auth.ts).
+ *
+ * Defaults to `local` when no StackAuth project is configured, so a fresh checkout can log
+ * in; set `AUTH_MODE=stack` to force the upstream path.
+ */
+export const AUTH_MODE: "local" | "stack" =
+  (process.env.AUTH_MODE as "local" | "stack" | undefined) ??
+  (process.env.STACK_API_URL && process.env.STACK_PROJECT_ID ? "stack" : "local");
+/**
+ * Signing key for local sessions. The default is a fixed development value: production
+ * deployments must override it (same policy as CONFIG_SECRET).
+ */
+export const AUTH_SECRET = process.env.AUTH_SECRET || "relayx-local-auth-dev-secret-change-me-0123456789";
+export const AUTH_ACCESS_TTL_SECONDS = Number.parseInt(process.env.AUTH_ACCESS_TTL_SECONDS || "86400", 10);
+export const AUTH_REFRESH_TTL_SECONDS = Number.parseInt(process.env.AUTH_REFRESH_TTL_SECONDS || "2592000", 10);
+
 /** Port the HTTP server listens on. */
 export const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 /**

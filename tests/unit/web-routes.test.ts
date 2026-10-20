@@ -32,9 +32,9 @@ describe("route manifest", () => {
     expect(missing).toEqual([]);
   });
 
-  it("documents the one route that is deliberately out of scope", () => {
+  it('implements every declared route, including the auth handler', () => {
     const scopeOut = routes.filter((r) => r.implemented === false);
-    expect(scopeOut.map((r) => r.path)).toEqual(["/handler/[...stack]"]);
+    expect(scopeOut).toEqual([]);
   });
 
   it("marks the landing page and the auth-free verify-email page", () => {

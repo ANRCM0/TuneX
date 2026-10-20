@@ -21,3 +21,4 @@ apps/license-server/*.db-shm
 
 # parity audit scratch (Lead)
 .audit/
+verify.db

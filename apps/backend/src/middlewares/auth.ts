@@ -14,7 +14,7 @@ import {
   SUPER_ADMIN_KEY,
   type PermissionLevel,
 } from "@relayx/shared/permissions";
-import { STACK_API_URL, STACK_PROJECT_ID } from "../config";
+import { AUTH_MODE, STACK_API_URL, STACK_PROJECT_ID } from "../config";
 import { instance, TOKENS } from "../container";
 import { db } from "../db";
 import type { LicenseService } from "../services/license";
@@ -28,6 +28,7 @@ import type { StackAuthService } from "../services/stackauth";
 import type { SystemConfigService } from "../services/system_config";
 import type { AppEnv, SessionUser } from "../types";
 import { isUUID } from "../utils/uuid";
+import { parseTokenCookie, verifyToken } from "../services/local_auth";
 
 /**
  * Upstream: src/middlewares/auth.ts (225 lines).
@@ -57,6 +58,9 @@ export const noAuthPathsRegex: RegExp[] = [
   /^\/system\/config\/site/,
   /^\/license\/notify/,
   /^\/license/,
+  // Local auth: the browser has no session yet when it calls these. /auth/me and
+  // /auth/verify-email stay protected.
+  /^\/auth\/(sign-in|sign-up|sign-out|refresh)$/,
 ];
 
 const redisService = () => instance.resolve<RedisService>(TOKENS.Redis);
@@ -161,6 +165,25 @@ export const adminPermissionGuard = async (c: Context<AppEnv>, next: Next) => {
   return next();
 };
 
+/**
+ * Local mode: `sub` is the local user id, so no remote lookup is needed.
+ * The upstream auto-provisioning path only exists because StackAuth owns the identities.
+ */
+async function resolveLocalUser(sub: string): Promise<SessionUser> {
+  const id = Number.parseInt(sub, 10);
+  if (Number.isNaN(id)) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  const user = await db.user.findUnique({ where: { id }, include: { admin_roles: true } });
+  if (!user) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+  if (user.status === "inactive") {
+    throw new HTTPException(403, { message: "用户账户已被封禁" });
+  }
+  return user;
+}
+
 /** Resolve (and if needed provision) the local user behind a verified JWT payload. */
 async function resolveCookieUser(payload: JWTPayload, parentId?: number): Promise<SessionUser> {
   const sub = payload.sub;
@@ -227,7 +250,8 @@ export const authRequired = async (c: Context<AppEnv>, next: Next) => {
   if (cookie) {
     let token: string | undefined;
     try {
-      token = JSON.parse(cookie)[1];
+      // StackAuth writes raw JSON; a proxy or another client may percent-encode it.
+      token = JSON.parse(decodeURIComponent(cookie))[1];
     } catch {
       token = undefined;
     }
@@ -235,6 +259,16 @@ export const authRequired = async (c: Context<AppEnv>, next: Next) => {
       throw new HTTPException(401, { message: "Unauthorized" });
     }
     let payload: JWTPayload;
+    if (AUTH_MODE === "local") {
+      // Local sessions are our own HS256 tokens; `sub` is the local user id.
+      const verified = await verifyToken(token, "access", { freezeClock: true });
+      if (!verified) {
+        throw new HTTPException(401, { message: "Unauthorized" });
+      }
+      const localUser = await resolveLocalUser(verified.sub);
+      c.set("user", await resolveImpersonation(c, localUser));
+      return next();
+    }
     try {
       // `currentDate: new Date(0)` freezes the clock so `exp`/`nbf` are never enforced —
       // recovered verbatim from the upstream middleware.

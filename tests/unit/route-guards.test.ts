@@ -218,7 +218,9 @@ describe.skipIf(!EVIDENCE_PRESENT)("route guard parity", () => {
   it("mounts the same top-level prefixes, in the same order", () => {
     const prefixes = (src: string, callee: string) =>
       [...src.matchAll(new RegExp(`${callee}\\s*\\.route\\(\\s*"([^"]+)"`, "g"))].map((m) => m[1]);
-    expect(prefixes(replicaSrc, "app")).toEqual(prefixes(upstreamSrc, "app34"));
+    // `/auth` is the replica's local-auth mount (docs/DEVIATIONS.md §30); everything else
+    // must match upstream, in order.
+    expect(prefixes(replicaSrc, "app").filter((p) => p !== "/auth")).toEqual(prefixes(upstreamSrc, "app34"));
   });
 
   it("derives the same guard chain for every upstream registration", () => {
@@ -289,12 +291,14 @@ describe.skipIf(!EVIDENCE_PRESENT)("route guard parity", () => {
     expect(missed.map((r) => `${r.method} ${r.path}`)).toEqual([]);
     expect(leaked.map((r) => `${r.method} ${r.path}`)).toEqual([]);
     expect(routes.filter((r) => r.public)).toHaveLength(11);
-    // Same nine patterns; the replica escapes `/` and `.`, which the analysis
-    // quotes verbatim from the decompile. Compare with escapes removed.
+    // Same nine upstream patterns plus the local-auth escape (`/auth/sign-in|sign-up|
+    // sign-out|refresh`, docs/DEVIATIONS.md §30). The replica escapes `/` and `.`, which the
+    // analysis quotes verbatim from the decompile; compare with escapes removed.
     const normalize = (source: string) => source.replace(/\\/g, "");
-    expect(noAuthPathsRegex.map((re) => normalize(re.source))).toEqual(
-      apiMap!.authBypassRegexes.map((r) => normalize(r.regex)),
-    );
+    expect(noAuthPathsRegex.map((re) => normalize(re.source))).toEqual([
+      ...apiMap!.authBypassRegexes.map((r) => normalize(r.regex)),
+      "^/auth/(sign-in|sign-up|sign-out|refresh)$",
+    ]);
   });
 
   it("agrees with the api map on route, admin and public totals", () => {

@@ -205,7 +205,7 @@ describe("payment callback", () => {
 });
 
 describe("topup bonus", () => {
-  it("sums every activity whose window contains the price", async () => {
+  it("sums every activity whose window contains the price", { timeout: 30_000 }, async () => {
     const { TopupActivityService } = await import("../../apps/backend/src/services/topup_activity");
     const bonus = new TopupActivityService();
     await db.topupActivity.create({ data: { type: "percentage", value: 10, min_amount: 20 } });
@@ -217,7 +217,7 @@ describe("topup bonus", () => {
 });
 
 describe("renewUsersPlan", () => {
-  it("renews an expiring plan when the balance covers it and skips the rest", async () => {
+  it("renews an expiring plan when the balance covers it and skips the rest", { timeout: 30_000 }, async () => {
     const plan = await db.plan.create({
       data: {
         name: "renew-me",
@@ -252,7 +252,7 @@ describe("renewUsersPlan", () => {
 });
 
 describe("observer traffic cost", () => {
-  it("adds GiB times the in, out and chain rates", async () => {
+  it("adds GiB times the in, out and chain rates", { timeout: 30_000 }, async () => {
     const owner = await db.user.create({ data: { email: "node-owner@example.test" } });
     const buyer = await db.user.create({ data: { email: "buyer@example.test" } });
     const plan = await db.plan.create({

@@ -1,18 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getSessionUser } from "@/lib/stack";
+import { getSessionUser } from "@/lib/auth";
 
 /**
- * Server-side login gate, reconstructed from the shipped build
- * (relayx-web/reports/04-auth-session-rbac.md §2.3; original bytes verified).
+ * Server-side login gate (Next 16 `proxy`, formerly middleware), reconstructed from the
+ * shipped build — see relayx-web/reports/04 §2.3. Upstream order:
  *
- * Upstream logic, in order:
- *   1. /handler and /handler/*  -> pass (auth pages must stay reachable)
+ *   1. /handler and /handler/*  -> pass (the auth pages must stay reachable)
  *   2. no session:  "/" -> pass, everything else -> 307 /handler/sign-in (carry ?ref)
  *   3. email verified:   /verify-email -> 307 /home ; otherwise pass
  *   4. email unverified: /verify-email -> pass ; otherwise -> 307 /verify-email
  *
- * NOTE: this gate only covers "signed in" and "email verified". RBAC and the business
- * licence are enforced by the backend, never here.
+ * The session itself is resolved by the backend (`GET /auth/me`), so this gate is identical
+ * under `AUTH_MODE=local` and StackAuth.
  */
 export const config = {
   matcher: [
@@ -27,7 +26,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const user = await getSessionUser();
+  const user = await getSessionUser(req.headers.get("cookie"));
 
   if (!user) {
     if (pathname === "/") return NextResponse.next();

@@ -129,12 +129,15 @@ const zod = parseZod(readFileSync(ZOD, "utf8"));
 
 describe("replica schema structural invariants", () => {
   it("has the expected model, enum and column counts", () => {
-    expect([...replicaSchema.models.keys()].sort()).toHaveLength(23);
+    // 23 upstream models + `LocalCredential` (replica-local auth, docs/DEVIATIONS.md §30).
+    expect([...replicaSchema.models.keys()].sort()).toHaveLength(24);
     expect([...replicaSchema.enums.keys()].sort()).toHaveLength(18);
     const all = [...replicaSchema.models.values()].flat();
-    expect(all).toHaveLength(297);
-    expect(all.filter((f) => !isRelation(f))).toHaveLength(241);
-    expect(all.filter(isRelation)).toHaveLength(56);
+    // +5 LocalCredential scalars (user_id, password_hash, email_verified, created_at,
+    // updated_at) and +1 User.credential relation.
+    expect(all).toHaveLength(304);
+    expect(all.filter((f) => !isRelation(f))).toHaveLength(246);
+    expect(all.filter(isRelation)).toHaveLength(58);
     expect(all.filter((f) => f.nullable && !isRelation(f))).toHaveLength(56);
   });
 });
@@ -146,8 +149,13 @@ describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upst
     ? parsePrisma(readFileSync(UPSTREAM_SCHEMA, "utf8"))
     : { models: new Map<string, Field[]>(), enums: new Map<string, string[]>(), blocks: new Map<string, string[]>() };
 
+  // `LocalCredential` is the replica's own auth table (docs/DEVIATIONS.md §30); it is the
+  // only model allowed to exist on top of the decompiled schema.
+  const REPLICA_ONLY_MODELS = new Set(["LocalCredential"]);
+
   it("declares the same models and enums", () => {
-    expect([...replicaSchema.models.keys()].sort()).toEqual([...upstream.models.keys()].sort());
+    const replicaModels = [...replicaSchema.models.keys()].filter((m) => !REPLICA_ONLY_MODELS.has(m)).sort();
+    expect(replicaModels).toEqual([...upstream.models.keys()].sort());
     expect([...replicaSchema.enums.keys()].sort()).toEqual([...upstream.enums.keys()].sort());
     for (const [name, values] of upstream.enums) {
       expect(replicaSchema.enums.get(name), `enum ${name}`).toEqual(values);
@@ -164,7 +172,11 @@ describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upst
       const ourMap = byName(ours);
 
       const missing = [...theirMap.keys()].filter((name) => !ourMap.has(name));
-      const extra = [...ourMap.keys()].filter((name) => !theirMap.has(name));
+      // The only tolerated extra field: the local-credential relation on User.
+      const ALLOWED_EXTRA: Record<string, string[]> = { User: ["credential"] };
+      const extra = [...ourMap.keys()].filter(
+        (name) => !theirMap.has(name) && !(ALLOWED_EXTRA[model] ?? []).includes(name),
+      );
       if (missing.length) differences.push(`${model}: missing ${missing.join(", ")}`);
       if (extra.length) differences.push(`${model}: extra ${extra.join(", ")}`);
 
@@ -196,7 +208,8 @@ describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upst
 
 describe("generated zod schemas", () => {
   it("covers every model", () => {
-    expect([...zod.keys()].sort()).toEqual([...replicaSchema.models.keys()].sort());
+    const models = [...replicaSchema.models.keys()].sort();
+    expect([...zod.keys()].sort()).toEqual(models);
   });
 
   it("emits every scalar column with the schema's nullability", () => {

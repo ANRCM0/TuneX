@@ -36,15 +36,39 @@ browser ──same-origin──> web:3000 (Next)
 
 ## Authentication and authorisation
 
-* `src/proxy.ts` is the Next 16 server gate (formerly middleware). It redirects
-  unauthenticated users to `/handler/sign-in` (carrying `?ref`) and unverified users to
-  `/verify-email`; `/`, `/handler/*`, `/api`, `/socket.io` and static assets pass.
-* It only covers "signed in" and "email verified". **RBAC and the business licence are
-  enforced by the backend** (`adminPermissionGuard`, `businessLicenseRequired`); the
-  console mirrors them with `effectiveAccess()` from `@relayx/shared/permissions`.
-* `/handler/[...stack]` (StackAuth pages) is the one unimplemented route: this replica has
-  no StackAuth project. `DEV_BYPASS_AUTH=1` makes the gate treat the visitor as verified so
-  the UI can be exercised locally.
+Two modes, selected by the backend's `AUTH_MODE` (default `local` when no StackAuth project
+is configured):
+
+| Mode | Identity | Panel behaviour |
+| --- | --- | --- |
+| `local` (default) | `LocalCredential` rows: scrypt password hash + HS256 session | `/handler/sign-in`, `/handler/sign-up`, `/handler/sign-out`, `/verify-email` call `POST /api/auth/*` |
+| `stack` | StackAuth project (upstream) | the same pages should delegate to the hosted handler; the gate is unchanged |
+
+How the pieces fit:
+
+* `src/app/handler/[...stack]/page.tsx` renders the four auth pages. Sign-up and sign-in
+  post to `/api/auth/sign-in|sign-up`; the backend answers with the `stack-access` cookie
+  (a percent-encoded `[refresh, access]` pair) and the page routes onward.
+* `src/proxy.ts` is the Next 16 server gate (formerly middleware). It asks the backend
+  `GET /auth/me` with the incoming cookie, then applies the upstream rules: `/` and
+  `/handler/*` pass; no session → `/handler/sign-in` (carrying `?ref`); verified user on
+  `/verify-email` → `/home`; unverified user anywhere else → `/verify-email`.
+* The gate only covers "signed in" and "email verified". **RBAC and the business licence are
+  enforced by the backend** (`adminPermissionGuard`, `businessLicenseRequired`); the console
+  mirrors them with `effectiveAccess()` from `@relayx/shared/permissions`.
+* `DEV_BYPASS_AUTH=1` makes the gate treat every visitor as verified — useful for UI work
+  without the backend, never for a deployment.
+
+End-to-end (both processes running):
+
+```bash
+pid=$!                       # backend on :3000 with AUTH_MODE=local
+curl -c /tmp/jar -X POST localhost:3001/api/auth/sign-up \
+  -H 'content-type: application/json' -d '{"email":"me@example.com","password":"supersecret"}'
+curl -b /tmp/jar -o /dev/null -w '%{http_code}\n' localhost:3001/verify-email   # 200
+curl -b /tmp/jar -X POST localhost:3001/api/auth/verify-email
+curl -b /tmp/jar -o /dev/null -w '%{http_code}\n' localhost:3001/home          # 200
+```
 
 ## i18n
 

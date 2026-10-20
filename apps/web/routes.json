@@ -189,8 +189,8 @@
    "source": null,
    "kind": "auth",
    "nav": null,
-   "implemented": false,
-   "note": "StackAuth handler page is out of scope for this replica (no StackAuth project); the proxy still redirects here."
+   "implemented": true,
+   "note": "Local auth pages (sign-in / sign-up / sign-out / verify-email) backed by POST /auth/*."
   },
   {
    "path": "/home",

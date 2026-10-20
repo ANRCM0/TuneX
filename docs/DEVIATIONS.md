@@ -76,6 +76,30 @@ Each entry is something this replica does differently from the analysis tree (`/
 
 29. **i18n keys are content-derived.** Upstream has no i18n layer; the dictionary is generated (`<slug>_<sha1(text)[:6]>`) plus 151 curated semantic names. English is a curated subset, and untranslated keys fall back to Chinese by design.
 
+30. **Local authentication replaces StackAuth when `AUTH_MODE=local`.** Upstream delegates
+    identities to StackAuth: the panel redirects to its hosted handler, and the backend only
+    verifies StackAuth JWTs against their JWKS. A replica with no StackAuth project therefore
+    could not log in at all. The replica adds an equivalent local mode:
+
+    * `LocalCredential` (additive table: `user_id`, scrypt `password_hash`, `email_verified`) —
+      no upstream column is changed;
+    * `POST /auth/sign-up|sign-in|sign-out|refresh`, `GET /auth/me`, `POST /auth/verify-email`;
+    * the session keeps the upstream cookie name and shape — `stack-access` holds
+      `[refresh, access]`, both HS256 JWTs with `sub` = local user id, signed with `AUTH_SECRET`;
+    * preserved panel semantics: the first registrant becomes super admin, `ALLOW_REGISTER`
+      gates sign-up, an `inactive` user cannot sign in, and the `ref` cookie sets `parent_id`
+      on first provision.
+
+    Differences from the upstream wire format, all deliberate:
+    - the cookie value is **percent-encoded** (Hono's own cookie parser returns `null` for a
+      raw JSON value containing quotes; the middleware decodes before `JSON.parse`);
+    - tokens expire (24 h access / 30 d refresh) instead of being verified with a frozen clock;
+    - `/auth/verify-email` marks the address directly — there is no mail transport here;
+    - `AUTH_MODE=stack` restores the upstream path, so both modes stay available. Default is
+      `local` when no StackAuth project is configured.
+    Blast radius: `/auth/*` is added to `noAuthPathsRegex` for the four endpoints that must be
+    reachable without a session; `/auth/me` and `/auth/verify-email` stay behind the guard.
+
 ## What is NOT a deviation
 
 - `/license` is mounted twice on the public router in `apps/backend/src/app.ts`. Upstream `112__src__app.ts` does the same.

@@ -303,8 +303,25 @@ model User {
   withdraw_requests          WithdrawRequest[]
   dns_providers              DNSProvider[]
   admin_roles                AdminRole[]
+  credential                 LocalCredential?
 
   @@map("user")
+}
+
+/// Password credential for replica-local authentication.
+///
+/// Upstream delegates passwords to StackAuth (`@stackframe/stack`); the replica can run
+/// without that hosted service by storing a scrypt hash here and issuing its own cookie
+/// session. Additive table only — no upstream column is changed. See docs/DEVIATIONS.md §30.
+model LocalCredential {
+  user_id        Int      @id
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  password_hash  String
+  email_verified Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@map("local_credential")
 }
 
 model AdminRole {

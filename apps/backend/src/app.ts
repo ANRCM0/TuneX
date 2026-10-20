@@ -20,6 +20,7 @@ import { instance, TOKENS } from "./container";
 import type { TelegramService } from "./services/telegram";
 
 import health from "./routes/health";
+import auth from "./routes/auth";
 import queuedash from "./bullmq/queuedash";
 
 import adminNode from "./routes/admin/node";
@@ -95,6 +96,12 @@ app.use(
   }),
   authRequired,
 );
+
+// Local auth lives behind the guard so `/auth/me` sees `c.get("user")`; the sign-in,
+// sign-up, sign-out and refresh endpoints are whitelisted by `noAuthPathsRegex`.
+// (Hono appends middleware to routes registered *earlier*, so mount order matters here —
+// see reports/02 §2.)
+app.route("/auth", auth);
 
 app.use("/admin/*", adminRequired);
 app.use("/admin/*", adminPermissionGuard);

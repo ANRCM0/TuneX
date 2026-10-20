@@ -36,8 +36,9 @@ pnpm dev           # backend  http://127.0.0.1:3000
 pnpm web:dev       # console  http://127.0.0.1:3001  (proxies /api to :3000)
 ```
 
-The console needs the backend for data. Without a StackAuth project set `DEV_BYPASS_AUTH=1`
-so the server-side login gate lets you in (see `docs/WEB.md`).
+The console signs in against the backend. With no StackAuth project the backend runs
+`AUTH_MODE=local` (scrypt passwords + its own session cookie), so registration works out of
+the box; `DEV_BYPASS_AUTH=1` skips the gate for UI-only work. Details: `docs/WEB.md`.
 
 `pnpm seed` creates the super admin with a deterministic dev `api_key`
 (`a34d563e-9efe-4047-9e20-05a9678ef5fb`, also used by `tests/e2e/smoke.test.ts`).
@@ -112,7 +113,7 @@ Repo scripts (not pnpm scripts):
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0 (backend, license server, shared, web)
-- `pnpm test` — 52 files, 477 passed (the live smoke case self-skips when no backend is listening)
+- `pnpm test` — 53 files, 491 passed (the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok
@@ -149,6 +150,7 @@ Mounted in `apps/backend/src/app.ts`.
 | Group | Guard |
 | --- | --- |
 | `/queuedash`, `/health` | none (before auth) |
+| `/auth/*` | public for sign-up/sign-in/sign-out/refresh; `/auth/me` needs a session (local mode) |
 | web (`apps/web`) | server-side `proxy` gate: signed-in + email verified only |
 | `/docs`, `/openapi.json` | business license |
 | `/admin/*` | auth, admin, admin permission; extra business license and/or super-admin on pay, plan coupon, topup activity, ticket, withdraw, role |

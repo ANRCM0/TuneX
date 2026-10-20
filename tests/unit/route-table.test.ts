@@ -34,6 +34,13 @@ const DOCUMENTED_EXTRAS = [
   "GET /health/heap",
   "GET /docs",
   "GET /openapi.json",
+  // Replica-local authentication (docs/DEVIATIONS.md §30).
+  "POST /auth/sign-up",
+  "POST /auth/sign-in",
+  "POST /auth/sign-out",
+  "POST /auth/refresh",
+  "GET /auth/me",
+  "POST /auth/verify-email",
 ];
 
 const PRESENT = existsSync(API_MAP);
@@ -59,12 +66,12 @@ describe.skipIf(!PRESENT)("route table parity", () => {
     expect(missing).toEqual([]);
   });
 
-  it("adds exactly the six documented extras", () => {
+  it("adds exactly the documented extras", () => {
     const extras = [...replicaTable].filter((key) => !upstreamTable.has(key));
     expect(extras.sort()).toEqual([...DOCUMENTED_EXTRAS].sort());
   });
 
   it("still has the documented replica count", () => {
-    expect(replicaTable.size).toBe(163);
+    expect(replicaTable.size).toBe(169);
   });
 });
