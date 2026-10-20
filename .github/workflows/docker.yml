@@ -7,6 +7,7 @@ name: Docker images
 #   ghcr.io/<owner>/tunex-backend
 #   ghcr.io/<owner>/tunex-agent
 #   ghcr.io/<owner>/tunex-license-server
+#   ghcr.io/<owner>/tunex-web
 #
 # linux/amd64 only. Add arm64 to `platforms` when arm nodes are needed; the agent
 # builds multi-arch cleanly, the panel image doubles build time.
@@ -75,6 +76,11 @@ jobs:
             image: tunex-license-server
             context: apps/license-server
             dockerfile: apps/license-server/Dockerfile
+          # Next.js standalone build needs the workspace root (packages/shared).
+          - component: web
+            image: tunex-web
+            context: .
+            dockerfile: apps/web/Dockerfile
     steps:
       - uses: actions/checkout@v4
 

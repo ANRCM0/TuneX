@@ -7,6 +7,7 @@ A reconstruction of the RelayX tunnel panel, built from the decompiled binary an
 | Path | What |
 | --- | --- |
 | `apps/backend` | Hono API, Prisma/SQLite, Socket.IO, BullMQ |
+| `apps/web` | Panel UI — Next.js 16 App Router + React 19 + Tailwind v4 (port 3000, proxies `/api`) |
 | `apps/license-server` | Self-hosted license issuer (port 3100) |
 | `apps/agent` | Go node agent |
 | `packages/shared` | Shared package (workspace) |
@@ -14,7 +15,7 @@ A reconstruction of the RelayX tunnel panel, built from the decompiled binary an
 | `scripts` | `verify.sh` and the live `e2e-local.sh` harness |
 | `docs` | Conventions, deviations, agent notes, parity, verification |
 
-Architecture: Hono on Node, Prisma against SQLite, Socket.IO for node agents, BullMQ when Redis is configured, and a business-license gate on pay / ticket / commission / parts of `/admin`.
+Architecture: Hono on Node, Prisma against SQLite, Socket.IO for node agents, BullMQ when Redis is configured, and a business-license gate on pay / ticket / commission / parts of `/admin`. The web app is a single-origin BFF: it serves the UI and proxies `/api`, `/socket.io`, `/openapi.json` and `/docs` to the backend, exactly like the upstream image.
 
 ## Requirements
 
@@ -31,8 +32,12 @@ pnpm install
 pnpm db:generate
 pnpm db:push
 pnpm seed          # prints the admin api_key
-pnpm dev           # http://127.0.0.1:3000
+pnpm dev           # backend  http://127.0.0.1:3000
+pnpm web:dev       # console  http://127.0.0.1:3001  (proxies /api to :3000)
 ```
+
+The console needs the backend for data. Without a StackAuth project set `DEV_BYPASS_AUTH=1`
+so the server-side login gate lets you in (see `docs/WEB.md`).
 
 `pnpm seed` creates the super admin with a deterministic dev `api_key`
 (`a34d563e-9efe-4047-9e20-05a9678ef5fb`, also used by `tests/e2e/smoke.test.ts`).
@@ -106,8 +111,8 @@ Repo scripts (not pnpm scripts):
 
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
-- `pnpm -r typecheck` — exit 0
-- `pnpm test` — 46 files, 437 passed (the live smoke case self-skips when no backend is listening)
+- `pnpm -r typecheck` — exit 0 (backend, license server, shared, web)
+- `pnpm test` — 52 files, 477 passed (the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok
@@ -124,10 +129,18 @@ Some suites compare the replica against the reverse-engineering evidence tree (`
 | `ghcr.io/<owner>/tunex-backend` | `apps/backend/Dockerfile` | repository root |
 | `ghcr.io/<owner>/tunex-node-agent` | `apps/agent/Dockerfile` | `apps/agent` |
 | `ghcr.io/<owner>/tunex-license-server` | `apps/license-server/Dockerfile` | `apps/license-server` |
+| `ghcr.io/<owner>/tunex-web` | `apps/web/Dockerfile` | repository root (workspace deps) |
 
 A push to `master`/`main` publishes `dev` and `dev-<sha>`; a `v*` tag publishes the semver tags (`0.0.1`, `0.0`, `0`) plus `latest`. The backend image applies the Prisma schema on start (`DB_PUSH_ON_START=0` disables that, `SEED_ON_START=1` seeds the super admin).
 
 `docs/PARITY.md` is the route-by-route diff and is written by the verify pass. If that file is missing, the verify task has not landed yet. `docs/COVERAGE.md` maps each layer to the suite that checks it.
+
+## Web console
+
+`apps/web` is the reconstructed panel UI (43 routes, 41 of them fully implemented;
+`/handler/[...stack]` is documented as out of scope because this replica has no StackAuth
+project). It reuses `@relayx/shared/permissions` so the console's RBAC mirror is the same
+module the backend guards execute. Details, tests and deviations: [docs/WEB.md](docs/WEB.md).
 
 ## Route groups
 
@@ -136,6 +149,7 @@ Mounted in `apps/backend/src/app.ts`.
 | Group | Guard |
 | --- | --- |
 | `/queuedash`, `/health` | none (before auth) |
+| web (`apps/web`) | server-side `proxy` gate: signed-in + email verified only |
 | `/docs`, `/openapi.json` | business license |
 | `/admin/*` | auth, admin, admin permission; extra business license and/or super-admin on pay, plan coupon, topup activity, ticket, withdraw, role |
 | `/pay`, `/plan/coupon`, `/ticket/*`, `/commission/*` | auth + business license |
@@ -151,6 +165,7 @@ Mounted in `apps/backend/src/app.ts`.
 - [docs/AGENT.md](docs/AGENT.md) — build and run the node agent
 - [docs/PARITY.md](docs/PARITY.md) — full route diff (verify task)
 - [docs/VERIFY.md](docs/VERIFY.md) — verification matrix, live E2E harness, known gaps
+- [docs/WEB.md](docs/WEB.md) — the console: stack, request flow, auth, i18n, tests, deviations
 - [docs/COVERAGE.md](docs/COVERAGE.md) — which suite covers which layer, and what is intentionally not covered
 - [docs/REPLICATION.md](docs/REPLICATION.md) — remaining replication phases
 

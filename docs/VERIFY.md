@@ -135,3 +135,16 @@ RELAYX_API_KEY=a34d563e-9efe-4047-9e20-05a9678ef5fb \
 
 The smoke test skips when nothing is listening on `RELAYX_BASE_URL`, which is
 why `pnpm test` is safe to run with no stack.
+
+
+## Web console
+
+| Check | Command | Expected |
+| --- | --- | --- |
+| Typecheck | `pnpm --filter @relayx/web typecheck` | exit 0 |
+| Unit suites | `npx vitest run tests/unit/web-*.test.ts` | 5 files / 36 tests pass |
+| Production build | `pnpm --filter @relayx/web build` | `✓ Compiled successfully`, 43 routes |
+| Route smoke (local) | `cd apps/web && DEV_BYPASS_AUTH=1 ./node_modules/.bin/next start -H 127.0.0.1 -p 3100` then `curl` each path from `apps/web/routes.json` | 41 × 200, plus `_global-error` 500 / `_not-found` 404 / `verify-email` 307 (all by design) |
+
+The route smoke is manual on purpose: it needs a listening server and the login gate's
+behaviour depends on `DEV_BYPASS_AUTH`.

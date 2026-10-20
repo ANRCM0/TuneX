@@ -35,6 +35,7 @@ relayx/
       prisma/schema.prisma              — frozen; SQLite port of the original schema
       scripts/generate-zod.mjs          — regenerates src/generated/zod
       src/…
+    web/              @relayx/web — the panel UI (Next.js 16, separate vertical)
     agent/            Go node agent (separate vertical)
     license-server/   license/pay/coupon service (separate vertical)
   packages/shared/    @relayx/shared    — frozen: date/fernet/pay/permissions/telegram
@@ -134,3 +135,23 @@ Every vertical must, at minimum:
 
 The Lead runs the end-to-end pass. Use `pnpm db:reset && pnpm db:push && pnpm seed` to get
 a clean database.
+
+## The web app owns its own conventions
+
+`apps/web` is a separate vertical like the agent: it has its own toolchain (Next 16 +
+Turbopack), its own tests (`tests/unit/web-*.test.ts`) and its own documentation
+([`docs/WEB.md`](./WEB.md)). Rules that matter when touching it:
+
+1. **No Chinese literals in code.** Every user-visible string goes through `t()` / `tf()` from
+   `@/lib/i18n`; the dictionary lives in `src/lib/i18n/zh-CN.ts` and is guarded by
+   `tests/unit/web-i18n.test.ts`. Comments and the five backend-error regexes are the only
+   exceptions (the backend answers with Chinese error strings — see reports/10 U1).
+2. **RBAC constants come from `@relayx/shared/permissions`.** Never re-declare the resource
+   table in the console; the backend guards and the console must resolve the same keys.
+3. **List pages are client-rendered.** A route that reads URL state (`nuqs`) is a server
+   wrapper with `export const dynamic = "force-dynamic"` around a `view.tsx` client module.
+4. **Route changes update `apps/web/routes.json`.** `tests/unit/web-routes.test.ts` fails when
+   the manifest and the file tree disagree, and `/handler/[...stack]` is the only entry
+   allowed to say `implemented: false`.
+5. **API calls go through `src/lib/client.ts`** (Hono-RPC style). Do not hand-roll `fetch`;
+   the wrapper owns impersonation, the 401/403 redirects and the toast contract.

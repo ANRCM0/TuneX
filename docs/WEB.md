@@ -1,0 +1,82 @@
+# The web console (`apps/web`)
+
+The panel UI reconstructed from the shipped `relayx/web:latest` image. Everything here is
+derived from the reverse-engineering evidence in `relayx-analysis/` — see
+`relayx-web/reports/` for the per-layer findings (routes, API client, auth, design system,
+build/security, flows, columns, landing page) and `relayx-web/artifacts/` for the
+machine-readable extracts.
+
+## Stack
+
+| Layer | Choice | Upstream evidence |
+| --- | --- | --- |
+| Framework | Next.js 16.3.5 App Router, `output: "standalone"`, Turbopack | `required-server-files.json` |
+| UI | React 19.2.8 + Tailwind v4 + shadcn-style primitives (copied, not a runtime dep) | `package.json`, CSS chunk |
+| Data | SWR + a Hono-RPC-style client (`src/lib/client.ts`) | module 194108 |
+| Tables | `@tanstack/react-table` + the shared `DataTable` | module 493843 |
+| URL state | nuqs (`page` / `perPage` / `sort` + column filters) | pages |
+| i18n | own runtime, zh-CN default + curated `en` | 6,068 literals → 2,2xx keys |
+| Charts / editor / QR | recharts, `@uiw/react-md-editor`, `react-qr-code`, `@dnd-kit` | 5 chart surfaces, 3 Markdown surfaces, 2 QR surfaces, 6 draggable lists |
+
+## How a request flows
+
+```
+browser ──same-origin──> web:3000 (Next)
+                          │ rewrites: /api/:path* → BACKEND_ORIGIN/:path*
+                          │           /socket.io  → BACKEND_ORIGIN/socket.io
+                          │           /openapi.json, /docs → backend
+                          └ everything else → App Router (43 routes)
+```
+
+* `BACKEND_ORIGIN` defaults to `http://127.0.0.1:3000` so the console can run next to
+  `pnpm dev`; compose sets `http://backend:3000`.
+* The browser never talks to the backend directly — same model as upstream, where the
+  rewrite target is the compose service name `relayx`.
+
+## Authentication and authorisation
+
+* `src/proxy.ts` is the Next 16 server gate (formerly middleware). It redirects
+  unauthenticated users to `/handler/sign-in` (carrying `?ref`) and unverified users to
+  `/verify-email`; `/`, `/handler/*`, `/api`, `/socket.io` and static assets pass.
+* It only covers "signed in" and "email verified". **RBAC and the business licence are
+  enforced by the backend** (`adminPermissionGuard`, `businessLicenseRequired`); the
+  console mirrors them with `effectiveAccess()` from `@relayx/shared/permissions`.
+* `/handler/[...stack]` (StackAuth pages) is the one unimplemented route: this replica has
+  no StackAuth project. `DEV_BYPASS_AUTH=1` makes the gate treat the visitor as verified so
+  the UI can be exercised locally.
+
+## i18n
+
+* `src/lib/i18n/zh-CN.ts` — 2,2xx keys / 59 areas, each key `<slug>_<sha1(text)[:6]>` so the
+  same Chinese sentence always maps to one key. Provenance is recorded in
+  `relayx-web/artifacts/i18n-zh-CN.json` (upstream literals vs. authoring added by this port).
+* `src/lib/i18n/en.ts` — curated English (navigation, titles, table scaffolding, actions,
+  all enum values). Missing keys fall back to Chinese, never to a raw id.
+* `src/lib/i18n/index.ts` — `t()`, `tf()` (placeholder substitution), `tEnum()` (the 19
+  recovered enum tables), locale store + `useSyncExternalStore` subscription.
+* The invariant "no hard-coded Chinese outside the dictionary, comments and the five
+  backend-error regexes" is a unit test (`tests/unit/web-i18n.test.ts`).
+
+## Tests
+
+```bash
+npx vitest run tests/unit/web-*.test.ts       # i18n integrity, RBAC helpers, share links, deploy command, route manifest
+pnpm --filter @relayx/web typecheck
+pnpm --filter @relayx/web build
+```
+
+The suites deliberately cover the parts that are pure logic:
+
+| Suite | What it pins |
+| --- | --- |
+| `web-permissions.test.ts` | personal licence blanks the admin surface; `canRead/canWrite/isStaff`; 19 resources; URL resolution |
+| `web-tunnel-share.test.ts` | the 8 per-protocol share strings, wireguard `.conf`, openvpn `.ovpn`, guard rails |
+| `web-deploy-command.test.ts` | install-command flag order/spelling, multi-IP expansion, upgrade/uninstall |
+| `web-routes.test.ts` | `apps/web/routes.json` matches the file tree; admin routes live under `(main)`; `/handler` documented as out of scope |
+| `web-i18n.test.ts` | every `t()` key exists, no duplicate keys, `en` only refines known keys, no hard-coded Chinese |
+
+## Deviations from upstream
+
+Recorded in `docs/DEVIATIONS.md` (web section) and in `relayx-web/reports/13-frontend-build.md`:
+error handling guards non-JSON responses, SWR keys come from exported builders, admin hooks
+are renamed, list pages opt out of prerender, and the StackAuth SDK is replaced by an adapter.

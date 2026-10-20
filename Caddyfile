@@ -17,7 +17,9 @@
 	# 	respond "forbidden" 403
 	# }
 
-	reverse_proxy backend:3000 {
+	# The panel is a single origin: the web app proxies /api and /socket.io to the
+	# backend itself (Next rewrites), so Caddy only needs to reach `web`.
+	reverse_proxy web:3000 {
 		# The panel builds self-referential URLs with /api; the backend strips
 		# one leading /api itself, so pass the path through unchanged.
 		header_up X-Forwarded-Proto {scheme}

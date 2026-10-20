@@ -56,6 +56,26 @@ Each entry is something this replica does differently from the analysis tree (`/
 
 20. **`zod-openapi` is a runtime dependency of the OpenAPI endpoint.** `hono-openapi@1.3.5` delegates schema conversion to `@standard-community/standard-openapi`, whose zod adapter imports `createSchema` from `zod-openapi` v4. Without it, `GET /openapi.json` (and `/docs`) returned **500** — the routes were documented but the document could not be generated. `zod-openapi@^4.2.4` is now a direct dependency; the endpoint returns 200 with 116 paths and `scripts/e2e-local.sh` asserts it. Blast radius: one extra production dependency; the generated document is what the replica's own `describeRoute` calls declare.
 
+## Web console (`apps/web`)
+
+21. **Error handling guards non-JSON responses.** Upstream's fetch wrapper calls `res.clone().json()` unguarded, so a 502 HTML from the proxy throws and the toast is silently lost. `apps/web/src/lib/client.ts` wraps it and falls back to `HTTP <status>`. **Visible behaviour differs only in the broken case.**
+
+22. **SWR keys come from exported builders.** Upstream hand-writes `mutate(["<key>", ...])` at call sites, which silently stops working when a hook gains a parameter (7 call sites in the decompile). `keyTunnels()` / `keyAdminUsers()` … are the single source; pages compose them.
+
+23. **Admin hooks are renamed.** `useUser` / `usePlan` / `useNode` / `useNodeGroup` / `usePayment` / `useSystemConfig` exist on both sides upstream with opposite meanings. The admin variants are `useAdminUsers` / `useAdminPlans` / … so a rebuild cannot wire the wrong one.
+
+24. **List pages opt out of prerender.** `useQueryState` (nuqs) cannot run during static generation, so each list route is a server wrapper (`export const dynamic = "force-dynamic"`) around a `view.tsx` client component. Upstream reaches the same result with `dynamic(..., { ssr: false })`.
+
+25. **StackAuth is an adapter, not the SDK.** No StackAuth project exists here, so `src/lib/stack.ts` returns a stub session and `src/proxy.ts` implements the upstream gate on top of it. `/handler/[...stack]` is therefore **the one unimplemented route** (declared `implemented: false` in `apps/web/routes.json`). `DEV_BYPASS_AUTH=1` treats the visitor as verified for local use.
+
+26. **The tunnel form validates two fields.** Upstream uses `zodResolver(z.custom())` — no validation at all — and lets the backend reject the submission. The replica validates `name` and `listen_port` (1–65535) client-side but keeps the same six server-error → field mappings.
+
+27. **`form:` / `cookie:` on the RPC client are not implemented.** Upstream implements both but never calls them (0 call sites), and `form:` is broken anyway because the wrapper forces `Content-Type: application/json`. The replica omits them.
+
+28. **Landing-page canvas is algorithmic, not pixel-identical.** Node grid, 25 edges, particle speeds and the dash/glow constants come from the decompile, but the drawn output was not diffed against a screenshot.
+
+29. **i18n keys are content-derived.** Upstream has no i18n layer; the dictionary is generated (`<slug>_<sha1(text)[:6]>`) plus 151 curated semantic names. English is a curated subset, and untranslated keys fall back to Chinese by design.
+
 ## What is NOT a deviation
 
 - `/license` is mounted twice on the public router in `apps/backend/src/app.ts`. Upstream `112__src__app.ts` does the same.

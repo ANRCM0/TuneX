@@ -1,0 +1,308 @@
+{
+ "schema": "relayx.web-routes/v1",
+ "count": 43,
+ "routes": [
+  {
+   "path": "/",
+   "source": "apps/web/src/app/page.tsx",
+   "kind": "landing",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/account",
+   "source": "apps/web/src/app/(main)/account/page.tsx",
+   "kind": "main",
+   "nav": "个人中心",
+   "implemented": true
+  },
+  {
+   "path": "/account-settings",
+   "source": "apps/web/src/app/(main)/account-settings/page.tsx",
+   "kind": "main",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/admin",
+   "source": "apps/web/src/app/(main)/admin/page.tsx",
+   "kind": "admin",
+   "nav": "首页",
+   "implemented": true
+  },
+  {
+   "path": "/admin/balance-logs",
+   "source": "apps/web/src/app/(main)/admin/balance-logs/page.tsx",
+   "kind": "admin",
+   "nav": "余额记录",
+   "implemented": true
+  },
+  {
+   "path": "/admin/commission-logs",
+   "source": "apps/web/src/app/(main)/admin/commission-logs/page.tsx",
+   "kind": "admin",
+   "nav": "佣金记录",
+   "implemented": true
+  },
+  {
+   "path": "/admin/license",
+   "source": "apps/web/src/app/(main)/admin/license/page.tsx",
+   "kind": "admin",
+   "nav": "License 管理",
+   "implemented": true
+  },
+  {
+   "path": "/admin/node-groups",
+   "source": "apps/web/src/app/(main)/admin/node-groups/page.tsx",
+   "kind": "admin",
+   "nav": "节点组配置",
+   "implemented": true
+  },
+  {
+   "path": "/admin/nodes",
+   "source": "apps/web/src/app/(main)/admin/nodes/page.tsx",
+   "kind": "admin",
+   "nav": "节点配置",
+   "implemented": true
+  },
+  {
+   "path": "/admin/orders",
+   "source": "apps/web/src/app/(main)/admin/orders/page.tsx",
+   "kind": "admin",
+   "nav": "购买记录",
+   "implemented": true
+  },
+  {
+   "path": "/admin/payments",
+   "source": "apps/web/src/app/(main)/admin/payments/page.tsx",
+   "kind": "admin",
+   "nav": "支付配置",
+   "implemented": true
+  },
+  {
+   "path": "/admin/plan_coupons",
+   "source": "apps/web/src/app/(main)/admin/plan_coupons/page.tsx",
+   "kind": "admin",
+   "nav": "优惠券配置",
+   "implemented": true
+  },
+  {
+   "path": "/admin/plans",
+   "source": "apps/web/src/app/(main)/admin/plans/page.tsx",
+   "kind": "admin",
+   "nav": "套餐配置",
+   "implemented": true
+  },
+  {
+   "path": "/admin/roles",
+   "source": "apps/web/src/app/(main)/admin/roles/page.tsx",
+   "kind": "admin",
+   "nav": "角色管理",
+   "implemented": true
+  },
+  {
+   "path": "/admin/settings",
+   "source": "apps/web/src/app/(main)/admin/settings/page.tsx",
+   "kind": "admin",
+   "nav": "系统设置",
+   "implemented": true
+  },
+  {
+   "path": "/admin/tickets",
+   "source": "apps/web/src/app/(main)/admin/tickets/page.tsx",
+   "kind": "admin",
+   "nav": "工单管理",
+   "implemented": true
+  },
+  {
+   "path": "/admin/tickets/[id]",
+   "source": "apps/web/src/app/(main)/admin/tickets/[id]/page.tsx",
+   "kind": "admin",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/admin/topup_activities",
+   "source": "apps/web/src/app/(main)/admin/topup_activities/page.tsx",
+   "kind": "admin",
+   "nav": "充值活动",
+   "implemented": true
+  },
+  {
+   "path": "/admin/topups",
+   "source": "apps/web/src/app/(main)/admin/topups/page.tsx",
+   "kind": "admin",
+   "nav": "充值记录",
+   "implemented": true
+  },
+  {
+   "path": "/admin/tunnels",
+   "source": "apps/web/src/app/(main)/admin/tunnels/page.tsx",
+   "kind": "admin",
+   "nav": "用户隧道",
+   "implemented": true
+  },
+  {
+   "path": "/admin/tunnels/stats",
+   "source": "apps/web/src/app/(main)/admin/tunnels/stats/page.tsx",
+   "kind": "admin",
+   "nav": "隧道统计",
+   "implemented": true
+  },
+  {
+   "path": "/admin/user_plans",
+   "source": "apps/web/src/app/(main)/admin/user_plans/page.tsx",
+   "kind": "admin",
+   "nav": "用户套餐",
+   "implemented": true
+  },
+  {
+   "path": "/admin/users",
+   "source": "apps/web/src/app/(main)/admin/users/page.tsx",
+   "kind": "admin",
+   "nav": "用户管理",
+   "implemented": true
+  },
+  {
+   "path": "/admin/withdraw",
+   "source": "apps/web/src/app/(main)/admin/withdraw/page.tsx",
+   "kind": "admin",
+   "nav": "提现管理",
+   "implemented": true
+  },
+  {
+   "path": "/auth-configs",
+   "source": "apps/web/src/app/(main)/auth-configs/page.tsx",
+   "kind": "main",
+   "nav": "授权配置",
+   "implemented": true
+  },
+  {
+   "path": "/balance-logs",
+   "source": "apps/web/src/app/(main)/balance-logs/page.tsx",
+   "kind": "main",
+   "nav": "余额记录",
+   "implemented": true
+  },
+  {
+   "path": "/handler/[...stack]",
+   "source": null,
+   "kind": "auth",
+   "nav": null,
+   "implemented": false,
+   "note": "StackAuth handler page is out of scope for this replica (no StackAuth project); the proxy still redirects here."
+  },
+  {
+   "path": "/home",
+   "source": "apps/web/src/app/(main)/home/page.tsx",
+   "kind": "main",
+   "nav": "首页",
+   "implemented": true
+  },
+  {
+   "path": "/in-node-group-dns",
+   "source": "apps/web/src/app/(main)/in-node-group-dns/page.tsx",
+   "kind": "main",
+   "nav": "入口保活",
+   "implemented": true
+  },
+  {
+   "path": "/node-groups",
+   "source": "apps/web/src/app/(main)/node-groups/page.tsx",
+   "kind": "main",
+   "nav": "节点组管理",
+   "implemented": true
+  },
+  {
+   "path": "/node-stats",
+   "source": "apps/web/src/app/(main)/node-stats/page.tsx",
+   "kind": "main",
+   "nav": "节点状态",
+   "implemented": true
+  },
+  {
+   "path": "/orders",
+   "source": "apps/web/src/app/(main)/orders/page.tsx",
+   "kind": "main",
+   "nav": "购买记录",
+   "implemented": true
+  },
+  {
+   "path": "/plans",
+   "source": "apps/web/src/app/(main)/plans/page.tsx",
+   "kind": "main",
+   "nav": "套餐购买",
+   "implemented": true
+  },
+  {
+   "path": "/referral",
+   "source": "apps/web/src/app/(main)/referral/page.tsx",
+   "kind": "main",
+   "nav": "推广信息",
+   "implemented": true
+  },
+  {
+   "path": "/tickets",
+   "source": "apps/web/src/app/(main)/tickets/page.tsx",
+   "kind": "main",
+   "nav": "我的工单",
+   "implemented": true
+  },
+  {
+   "path": "/tickets/[id]",
+   "source": "apps/web/src/app/(main)/tickets/[id]/page.tsx",
+   "kind": "main",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/tickets/new",
+   "source": "apps/web/src/app/(main)/tickets/new/page.tsx",
+   "kind": "main",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/topups",
+   "source": "apps/web/src/app/(main)/topups/page.tsx",
+   "kind": "main",
+   "nav": "充值记录",
+   "implemented": true
+  },
+  {
+   "path": "/tunnels",
+   "source": "apps/web/src/app/(main)/tunnels/page.tsx",
+   "kind": "main",
+   "nav": "隧道管理",
+   "implemented": true
+  },
+  {
+   "path": "/tunnels/monitoring",
+   "source": "apps/web/src/app/(main)/tunnels/monitoring/page.tsx",
+   "kind": "main",
+   "nav": "隧道监控",
+   "implemented": true
+  },
+  {
+   "path": "/tunnels/stats",
+   "source": "apps/web/src/app/(main)/tunnels/stats/page.tsx",
+   "kind": "main",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/tunnels/traffic",
+   "source": "apps/web/src/app/(main)/tunnels/traffic/page.tsx",
+   "kind": "main",
+   "nav": null,
+   "implemented": true
+  },
+  {
+   "path": "/verify-email",
+   "source": "apps/web/src/app/verify-email/page.tsx",
+   "kind": "auth",
+   "nav": null,
+   "implemented": true
+  }
+ ]
+}

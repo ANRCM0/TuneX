@@ -19,7 +19,7 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 
 | Suite | Count | Notes |
 | --- | --- | --- |
-| Workspace vitest (`pnpm test`) | 40 files / 410 tests | 31 unit files, 6 license-server files, 1 live smoke that self-skips when the backend is down |
+| Workspace vitest (`pnpm test`) | 52 files / 477 tests | 36 unit files (incl. 5 web suites), 6 license-server files, 1 live smoke that self-skips when the backend is down |
 | License server (dedicated run) | 6 files / 44 tests | Fernet wire compatibility, CLI, HTTP routes, store |
 | Go (`go test ./...`) | 33 packages, all covered | table below |
 | Live E2E | 1 | license → config push → TCP forward → observer → exact traffic accounting → OpenAPI document |
@@ -75,6 +75,20 @@ cd apps/agent && go test ./... -cover      # Go suites with coverage
 | Redis-backed lock (SET NX PX) | `tests/unit/redis-lock.test.ts` |
 | Health probes, sysinfo heartbeat, topup creation, observer node stats | `tests/unit/ops-gaps.test.ts` |
 | Socket register rejection, register block, `listen_error` | `tests/unit/socket-handlers.test.ts` |
+
+## Web console (`apps/web`)
+
+| Concern | Suite |
+| --- | --- |
+| RBAC mirror: personal licence blanks the surface, `canRead/canWrite/isStaff`, 19 resources, URL resolution | `tests/unit/web-permissions.test.ts` |
+| Per-protocol share links (8 protocols), wireguard `.conf`, openvpn `.ovpn`, guard rails | `tests/unit/web-tunnel-share.test.ts` |
+| Install command flag order/spelling, multi-IP, upgrade/uninstall | `tests/unit/web-deploy-command.test.ts` |
+| Route manifest ↔ file tree, admin nesting, `/handler` scope note | `tests/unit/web-routes.test.ts` |
+| i18n: every key resolves, no duplicate keys, `en` refines known keys, no hard-coded Chinese | `tests/unit/web-i18n.test.ts` |
+| Production build (Next standalone) | `scripts/verify.sh` step `web build` |
+
+Not covered: real StackAuth sessions (`/handler/[...stack]` is out of scope), browser
+rendering/DOM, and the live `/api` proxy (the E2E harness starts the backend, not the web app).
 
 ## Agent: protocol and runtime
 

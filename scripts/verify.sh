@@ -6,9 +6,10 @@
 #
 #   1. TypeScript typecheck across the workspace (backend, license server,
 #      shared).
-#   2. Vitest unit suites (backend/shared). `tests/e2e` smoke self-skips when no
-#      backend is listening on RELAYX_BASE_URL.
+#   2. Vitest unit suites (backend, shared and the web console).
+#      `tests/e2e` smoke self-skips when no backend is listening on RELAYX_BASE_URL.
 #   3. License-server vitest suites.
+#   3b. Web console: production build of the Next.js app.
 #   4. `go vet` and `go test` for the node agent.
 #   5. Agent build plus `--version`.
 #
@@ -64,6 +65,9 @@ pnpm test
 
 step "license-server tests"
 pnpm --filter @relayx/license-server test
+
+step "web build (Next.js standalone)"
+pnpm --filter @relayx/web build
 
 step "agent: go vet"
 (cd apps/agent && go vet ./...)
