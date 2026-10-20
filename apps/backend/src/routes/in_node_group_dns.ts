@@ -33,10 +33,7 @@ router.get(
   zValidator("query", InNodeGroupDNSQuerySchema),
   async (c) => {
     const user = c.get("user");
-    const { data, total } = await inNodeGroupDNSService.getInNodeGroupDNSList(
-      user.id,
-      c.req.valid("query"),
-    );
+    const { data, total } = await inNodeGroupDNSService.getInNodeGroupDNSList(user.id, c.req.valid("query"));
     return c.json({ data, total });
   },
 );

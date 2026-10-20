@@ -172,7 +172,9 @@ describe("subscribePlan", () => {
     const plan = await makePlan({ price: 100 });
     const user = await makeUser(10);
 
-    await expect(service.subscribePlan({ ...user, admin_roles: [] } as SessionUser, plan.id, true)).rejects.toMatchObject({
+    await expect(
+      service.subscribePlan({ ...user, admin_roles: [] } as SessionUser, plan.id, true),
+    ).rejects.toMatchObject({
       status: 409,
     });
     expect(notifications.map((n) => n.kind)).toEqual(["renew-failed"]);

@@ -16,10 +16,7 @@ import {
   TunnelRequestSchema,
   TunnelStatsQuerySchema,
 } from "../../schemas/request";
-import {
-  AdminTunnelStatsResponseSchema,
-  TunnelResponseSchema,
-} from "../../schemas/response";
+import { AdminTunnelStatsResponseSchema, TunnelResponseSchema } from "../../schemas/response";
 import type { AppEnv } from "../../types";
 
 /**
@@ -31,9 +28,7 @@ import type { AppEnv } from "../../types";
 const router = new Hono<AppEnv>();
 
 /** Prisma JSON column input: `undefined` leaves the value untouched, `null` stores JSON null. */
-function toJsonInput(
-  value: unknown,
-): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
   if (value === undefined) return undefined;
   if (value === null) return Prisma.JsonNull;
   return value as Prisma.InputJsonValue;
@@ -110,11 +105,7 @@ router.post(
     if (!user_plan) {
       throw new HTTPException(404, { message: "用户没有有效的套餐" });
     }
-    await tunnelService.createTunnel(
-      user_id,
-      data,
-      user_plan.max_tunnels ?? user_plan.plan.max_tunnels,
-    );
+    await tunnelService.createTunnel(user_id, data, user_plan.max_tunnels ?? user_plan.plan.max_tunnels);
     return c.body(null, 204);
   },
 );
@@ -435,8 +426,7 @@ router.get(
     }),
   ),
   async (c) => {
-    const { page, perPage, sort, name, in_node_group_id, out_node_group_id, email } =
-      c.req.valid("query");
+    const { page, perPage, sort, name, in_node_group_id, out_node_group_id, email } = c.req.valid("query");
     let user_id: number | undefined;
     if (email) {
       const user = await db.user.findFirst({

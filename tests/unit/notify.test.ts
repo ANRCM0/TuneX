@@ -23,7 +23,8 @@ let paymentId = 0;
 
 const telegramCalls: { chatId: number; message: string; buttons?: unknown; callback?: unknown }[] = [];
 const emailCalls: { to: string; subject: string; text: string; html?: string }[] = [];
-let superAdmins: { id: number; email: string; tg_id: string | null; admin_notify_subscriptions: unknown }[] = [];
+let superAdmins: { id: number; email: string; tg_id: string | null; admin_notify_subscriptions: unknown }[] =
+  [];
 
 beforeAll(async () => {
   process.env.SITE_URL = "https://panel.test";
@@ -127,9 +128,7 @@ describe("dispatch", () => {
     expect(telegramCalls[0].chatId).toBe(42);
     expect(telegramCalls[0].message).toContain("🎫 New ticket");
     expect(telegramCalls[0].message).toContain("a\\_b\\*c");
-    expect(telegramCalls[0].callback).toEqual([
-      { text: "💬 快捷回复", callback_data: "ticket:reply:9" },
-    ]);
+    expect(telegramCalls[0].callback).toEqual([{ text: "💬 快捷回复", callback_data: "ticket:reply:9" }]);
     expect(emailCalls).toHaveLength(0);
   });
 
@@ -204,7 +203,13 @@ describe("business notifications", () => {
     await db.user.update({ where: { id: userId }, data: { notify_subscriptions: null } });
     superAdmins = [];
 
-    await service.notifyTopup({ user_id: userId, payment_id: paymentId, price: 10, bonus: 0, order_id: "O-2" });
+    await service.notifyTopup({
+      user_id: userId,
+      payment_id: paymentId,
+      price: 10,
+      bonus: 0,
+      order_id: "O-2",
+    });
 
     expect(emailCalls).toHaveLength(0);
     expect(telegramCalls).toHaveLength(0);

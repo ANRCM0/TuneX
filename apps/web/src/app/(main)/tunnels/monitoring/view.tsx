@@ -20,25 +20,36 @@ export default function TunnelMonitoringPage() {
   });
   const interval = Number(period?.OBSERVER_PERIOD ?? 5) * 1000;
 
-  const traffic = useSWR(["/tunnel/traffic/stats"], async () => {
-    const res = await client.tunnel.traffic.stats.$get({ query: { aggregate_by: "day" } });
-    return (await res.json()) as Point[] | { data: Point[] };
-  }, { refreshInterval: interval });
+  const traffic = useSWR(
+    ["/tunnel/traffic/stats"],
+    async () => {
+      const res = await client.tunnel.traffic.stats.$get({ query: { aggregate_by: "day" } });
+      return (await res.json()) as Point[] | { data: Point[] };
+    },
+    { refreshInterval: interval },
+  );
 
-  const stats = useSWR(["/tunnel/stats"], async () => {
-    const res = await client.tunnel.stats.$get({ query: {} });
-    return (await res.json()) as Point[] | { data: Point[] };
-  }, { refreshInterval: interval });
+  const stats = useSWR(
+    ["/tunnel/stats"],
+    async () => {
+      const res = await client.tunnel.stats.$get({ query: {} });
+      return (await res.json()) as Point[] | { data: Point[] };
+    },
+    { refreshInterval: interval },
+  );
 
   React.useEffect(() => setPageTitle(t("nav.tunnelMonitoring")), []);
 
-  const norm = (v: unknown): Point[] => (Array.isArray(v) ? (v as Point[]) : ((v as { data?: Point[] })?.data ?? []));
+  const norm = (v: unknown): Point[] =>
+    Array.isArray(v) ? (v as Point[]) : ((v as { data?: Point[] })?.data ?? []);
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <div>
         <h2 className="text-lg font-semibold">{t("nav.tunnelMonitoring")}</h2>
-        <p className="text-muted-foreground text-xs">{t("zh_7757f7")} {interval / 1000} {t("observer_period_c22e3b")}</p>
+        <p className="text-muted-foreground text-xs">
+          {t("zh_7757f7")} {interval / 1000} {t("observer_period_c22e3b")}
+        </p>
       </div>
       <Tabs defaultValue="traffic-stats">
         <TabsList>
@@ -59,7 +70,10 @@ export default function TunnelMonitoringPage() {
         </TabsContent>
         <TabsContent value="traffic">
           <ChartCard title={t("app.tunnelTraffic")}>
-            <BarSeries data={norm(traffic.data)} keys={[{ key: "traffic", label: t("admin.plans.traffic") }]} />
+            <BarSeries
+              data={norm(traffic.data)}
+              keys={[{ key: "traffic", label: t("admin.plans.traffic") }]}
+            />
           </ChartCard>
         </TabsContent>
         <TabsContent value="stats">

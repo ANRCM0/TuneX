@@ -57,8 +57,19 @@ step "prisma generate + schema push"
 pnpm db:generate
 pnpm db:push
 
+step "migrations (baseline applies to a fresh database)"
+rm -f "$ROOT/verify-migrate.db" "$ROOT/verify-migrate.db-journal"
+DATABASE_URL="file:./verify-migrate.db" pnpm db:deploy
+rm -f "$ROOT/verify-migrate.db" "$ROOT/verify-migrate.db-journal"
+
+step "schema drift (migrations and MySQL variant)"
+pnpm db:drift
+
 step "typecheck"
 pnpm -r typecheck
+
+step "lint (prettier check)"
+pnpm lint
 
 step "unit tests (vitest)"
 pnpm test

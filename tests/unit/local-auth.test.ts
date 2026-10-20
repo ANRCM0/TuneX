@@ -35,7 +35,11 @@ const env = { incoming: { socket: { remoteAddress: "127.0.0.1" } }, outgoing: {}
 function post(path: string, body: unknown, headers: Record<string, string> = {}) {
   return app.request(
     path,
-    { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) },
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify(body),
+    },
     env,
   );
 }
@@ -154,8 +158,12 @@ describe("sign-up / sign-in", () => {
   });
 
   it("rejects a wrong password and an unknown address", async () => {
-    expect((await post("/auth/sign-in", { email: "first@example.com", password: "nope-nope" })).status).toBe(401);
-    expect((await post("/auth/sign-in", { email: "ghost@example.com", password: "supersecret" })).status).toBe(401);
+    expect((await post("/auth/sign-in", { email: "first@example.com", password: "nope-nope" })).status).toBe(
+      401,
+    );
+    expect(
+      (await post("/auth/sign-in", { email: "ghost@example.com", password: "supersecret" })).status,
+    ).toBe(401);
   });
 
   it("refuses an inactive account", async () => {
@@ -211,7 +219,11 @@ describe("email verification", () => {
 
     const verify = await app.request(
       "/auth/verify-email",
-      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ token: body.token }) },
+      {
+        method: "POST",
+        headers: { cookie, "content-type": "application/json" },
+        body: JSON.stringify({ token: body.token }),
+      },
       env,
     );
     expect(verify.status).toBe(200);
@@ -221,7 +233,11 @@ describe("email verification", () => {
     // The token is single-use: the stored hash is cleared.
     const again = await app.request(
       "/auth/verify-email",
-      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ token: body.token }) },
+      {
+        method: "POST",
+        headers: { cookie, "content-type": "application/json" },
+        body: JSON.stringify({ token: body.token }),
+      },
       env,
     );
     expect(again.status).toBe(200); // already verified → idempotent
@@ -261,7 +277,11 @@ describe("email verification", () => {
 
     const wrong = await app.request(
       "/auth/verify-email",
-      { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ token: "x".repeat(43) }) },
+      {
+        method: "POST",
+        headers: { cookie, "content-type": "application/json" },
+        body: JSON.stringify({ token: "x".repeat(43) }),
+      },
       env,
     );
     expect(wrong.status).toBe(400);
@@ -281,8 +301,12 @@ describe("email verification", () => {
       update: { value: JSON.stringify("") },
       create: { name: "EMAIL_PROVIDER", value: JSON.stringify("") },
     });
-    expect((await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env)).status).toBe(200);
-    expect((await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env)).status).toBe(429);
+    expect(
+      (await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env)).status,
+    ).toBe(200);
+    expect(
+      (await app.request("/auth/verify-email/request", { method: "POST", headers: { cookie } }, env)).status,
+    ).toBe(429);
   });
 
   it("refuses the direct shortcut when a provider is configured", async () => {

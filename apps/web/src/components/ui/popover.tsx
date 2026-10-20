@@ -26,17 +26,26 @@ export function Popover({ children }: { children: React.ReactNode }) {
     <div className="relative" ref={ref} data-open={open}>
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<{ onOpenChange?: (v: boolean) => void; forceOpen?: boolean }>, {
-              onOpenChange: setOpen,
-              forceOpen: open,
-            })
+          ? React.cloneElement(
+              child as React.ReactElement<{ onOpenChange?: (v: boolean) => void; forceOpen?: boolean }>,
+              {
+                onOpenChange: setOpen,
+                forceOpen: open,
+              },
+            )
           : child,
       )}
     </div>
   );
 }
 
-export function PopoverTrigger({ children, onOpenChange }: { children: React.ReactNode; onOpenChange?: (v: boolean) => void }) {
+export function PopoverTrigger({
+  children,
+  onOpenChange,
+}: {
+  children: React.ReactNode;
+  onOpenChange?: (v: boolean) => void;
+}) {
   return (
     <span onClick={() => onOpenChange?.(true)} className="inline-flex">
       {children}

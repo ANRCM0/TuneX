@@ -44,15 +44,9 @@ export function sysinfo(socket: Socket): void {
       const node_db_id = node.id as number;
       const node_group_id = node.node_group_id as number;
       const node_status = node.status as Status;
-      if (
-        node_status === Status.active &&
-        !socket.rooms.has(`node_group/${node_group_id}`)
-      ) {
+      if (node_status === Status.active && !socket.rooms.has(`node_group/${node_group_id}`)) {
         await socket.join(`node_group/${node_group_id}`);
-      } else if (
-        node_status === Status.inactive &&
-        socket.rooms.has(`node_group/${node_group_id}`)
-      ) {
+      } else if (node_status === Status.inactive && socket.rooms.has(`node_group/${node_group_id}`)) {
         await socket.leave(`node_group/${node_group_id}`);
       }
       await redisService.setSysinfo(node_group_id, node_db_id, sysinfo);

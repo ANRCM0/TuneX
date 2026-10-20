@@ -22,7 +22,9 @@ let tunnelSeq = 0;
 
 const config: Record<string, unknown> = { SITE_NAME: "RelayX Test" };
 
-async function makeUserWithPlan(options: { expiredAt?: Date | null; traffic?: number | null; used?: number } = {}) {
+async function makeUserWithPlan(
+  options: { expiredAt?: Date | null; traffic?: number | null; used?: number } = {},
+) {
   userSeq += 1;
   const user = await db.user.create({ data: { email: `sub-${userSeq}@example.test` } });
   await db.userPlan.create({
@@ -37,10 +39,7 @@ async function makeUserWithPlan(options: { expiredAt?: Date | null; traffic?: nu
   return user;
 }
 
-async function makeTunnel(
-  userId: number,
-  overrides: Record<string, unknown> = {},
-) {
+async function makeTunnel(userId: number, overrides: Record<string, unknown> = {}) {
   tunnelSeq += 1;
   return db.tunnel.create({
     data: {
@@ -62,9 +61,14 @@ beforeAll(async () => {
   const dbModule = await import("../../apps/backend/src/db");
   db = dbModule.db;
   const { TunnelService: Service } = await import("../../apps/backend/src/services/tunnel");
-  service = new Service({} as never, {} as never, {} as never, {
-    getConfig: async (name: string) => config[name],
-  } as never);
+  service = new Service(
+    {} as never,
+    {} as never,
+    {} as never,
+    {
+      getConfig: async (name: string) => config[name],
+    } as never,
+  );
 
   planId = (
     await db.plan.create({

@@ -67,7 +67,9 @@ export default function AdminTicketDetailPage() {
           ) : null}
         </div>
       </div>
-      <p className="text-muted-foreground text-xs">#{data.id} · {formatDate(data.created_at)}</p>
+      <p className="text-muted-foreground text-xs">
+        #{data.id} · {formatDate(data.created_at)}
+      </p>
 
       <div className="rounded-lg border p-3">
         <MarkdownView source={data.content} />

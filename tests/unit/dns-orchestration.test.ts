@@ -277,11 +277,7 @@ describe("InNodeGroupDNSService", () => {
     );
 
     // Two paired updates, then the leftover delete.
-    expect(calls).toEqual([
-      "update:1.1.1.1->4.4.4.4:A",
-      "update:2.2.2.2->5.5.5.5:A",
-      "delete:3.3.3.3",
-    ]);
+    expect(calls).toEqual(["update:1.1.1.1->4.4.4.4:A", "update:2.2.2.2->5.5.5.5:A", "delete:3.3.3.3"]);
 
     calls.length = 0;
     await inGroupDns.syncIpSet(provider as never, ["1.1.1.1"], ["2.2.2.2", "3.3.3.3"], "A", 60, 10);

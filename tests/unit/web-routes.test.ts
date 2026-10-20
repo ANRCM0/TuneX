@@ -18,7 +18,9 @@ const routes = (manifest as { routes: Route[] }).routes;
 
 function pageFile(routePath: string): string | null {
   const segs = routePath === "/" ? "" : routePath.replace(/^\//, "");
-  const candidates = segs ? GROUPS.map((g) => join(APP_DIR, `${g}${segs}/page.tsx`)) : [join(APP_DIR, "page.tsx")];
+  const candidates = segs
+    ? GROUPS.map((g) => join(APP_DIR, `${g}${segs}/page.tsx`))
+    : [join(APP_DIR, "page.tsx")];
   return candidates.find((p) => existsSync(p)) ?? null;
 }
 
@@ -32,7 +34,7 @@ describe("route manifest", () => {
     expect(missing).toEqual([]);
   });
 
-  it('implements every declared route, including the auth handler', () => {
+  it("implements every declared route, including the auth handler", () => {
     const scopeOut = routes.filter((r) => r.implemented === false);
     expect(scopeOut).toEqual([]);
   });

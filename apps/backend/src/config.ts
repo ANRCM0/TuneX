@@ -63,7 +63,10 @@ export const AUTH_MODE: "local" | "stack" =
  */
 export const AUTH_SECRET = process.env.AUTH_SECRET || "relayx-local-auth-dev-secret-change-me-0123456789";
 export const AUTH_ACCESS_TTL_SECONDS = Number.parseInt(process.env.AUTH_ACCESS_TTL_SECONDS || "86400", 10);
-export const AUTH_REFRESH_TTL_SECONDS = Number.parseInt(process.env.AUTH_REFRESH_TTL_SECONDS || "2592000", 10);
+export const AUTH_REFRESH_TTL_SECONDS = Number.parseInt(
+  process.env.AUTH_REFRESH_TTL_SECONDS || "2592000",
+  10,
+);
 /**
  * How a local account proves it owns its address.
  *
@@ -108,7 +111,7 @@ export function resolveConfigSecret(env: NodeJS.ProcessEnv = process.env): strin
   if ((env.NODE_ENV ?? "production") === "production") {
     throw new Error(
       "CONFIG_SECRET is required when NODE_ENV=production; generate one with " +
-        "`node -e 'console.log(require(\"crypto\").randomBytes(32).toString(\"base64url\"))'`",
+        '`node -e \'console.log(require("crypto").randomBytes(32).toString("base64url"))\'`',
     );
   }
   return RECOVERED_FERNET_KEY;

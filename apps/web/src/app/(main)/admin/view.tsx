@@ -26,11 +26,15 @@ export default function AdminOverviewPage() {
     return (await res.json()) as StatRow[] | { data: StatRow[] };
   });
   const traffic = useSWR(["/admin/stats/traffic", range.start, range.end], async () => {
-    const res = await adminClient.stats.traffic.$get({ query: { start_date: range.start, end_date: range.end } });
+    const res = await adminClient.stats.traffic.$get({
+      query: { start_date: range.start, end_date: range.end },
+    });
     return (await res.json()) as StatRow[] | { data: StatRow[] };
   });
   const users = useSWR(["/admin/stats/user", range.start, range.end], async () => {
-    const res = await adminClient.stats.user.$get({ query: { start_date: range.start, end_date: range.end } });
+    const res = await adminClient.stats.user.$get({
+      query: { start_date: range.start, end_date: range.end },
+    });
     return (await res.json()) as StatRow[] | { data: StatRow[] };
   });
 
@@ -64,17 +68,41 @@ export default function AdminOverviewPage() {
           <BarSeries data={t} keys={[{ key: "traffic", label: tr("admin.plans.traffic") }]} />
         </ChartCard>
         <ChartCard title={tr("app.orders")} description={tr("7_f297b9")}>
-          <BarSeries data={o} keys={[{ key: "total", label: tr("zh_084389") }, { key: "amount", label: tr("misc.label.amount") }]} />
+          <BarSeries
+            data={o}
+            keys={[
+              { key: "total", label: tr("zh_084389") },
+              { key: "amount", label: tr("misc.label.amount") },
+            ]}
+          />
         </ChartCard>
         <ChartCard title={tr("zh_6153a0")} description={tr("7_f297b9")}>
           <BarSeries data={u} keys={[{ key: "count", label: tr("zh_2cd9e6") }]} />
         </ChartCard>
         <Card>
-          <CardHeader><CardTitle className="text-sm">{tr("zh_3824d4")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{tr("zh_3824d4")}</CardTitle>
+          </CardHeader>
           <CardContent className="grid gap-1 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{tr("admin.userPlans.plan")}</span><span>{planStats.data?.total ?? 0} {tr("zh_88464f")} {planStats.data?.active ?? 0}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{tr("account.topUp")}</span><span>{topupStats.data?.total ?? 0} {tr("zh_db2954")}{Number(topupStats.data?.amount ?? 0).toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{tr("misc.label.nodeGroups2")}</span><span>{ngSummary.data?.total ?? 0} {tr("zh_4530ed")} {ngSummary.data?.online ?? 0}</span></div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{tr("admin.userPlans.plan")}</span>
+              <span>
+                {planStats.data?.total ?? 0} {tr("zh_88464f")} {planStats.data?.active ?? 0}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{tr("account.topUp")}</span>
+              <span>
+                {topupStats.data?.total ?? 0} {tr("zh_db2954")}
+                {Number(topupStats.data?.amount ?? 0).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{tr("misc.label.nodeGroups2")}</span>
+              <span>
+                {ngSummary.data?.total ?? 0} {tr("zh_4530ed")} {ngSummary.data?.online ?? 0}
+              </span>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -82,7 +110,8 @@ export default function AdminOverviewPage() {
             <CardTitle className="text-sm">{tr("zh_26670d")}</CardTitle>
           </CardHeader>
           <CardContent className="text-muted-foreground text-xs">
-            {tr("zh_21af80")} <code>/api/admin/stats*</code>{tr("zh_cf8352")}
+            {tr("zh_21af80")} <code>/api/admin/stats*</code>
+            {tr("zh_cf8352")}
           </CardContent>
         </Card>
       </div>

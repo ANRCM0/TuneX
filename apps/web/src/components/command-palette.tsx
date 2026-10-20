@@ -31,7 +31,9 @@ export function CommandPalette({ items }: { items: CommandItem[] }) {
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? items.filter((i) => i.label.toLowerCase().includes(q) || (i.group ?? "").toLowerCase().includes(q)) : items;
+    return q
+      ? items.filter((i) => i.label.toLowerCase().includes(q) || (i.group ?? "").toLowerCase().includes(q))
+      : items;
   }, [items, query]);
 
   React.useEffect(() => setIndex(0), [query, open]);

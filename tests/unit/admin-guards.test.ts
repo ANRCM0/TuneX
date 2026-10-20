@@ -44,11 +44,13 @@ function stubLicence(value: Licence): void {
 
 let userId = 0;
 
-function makeUser(options: {
-  superAdmin?: boolean;
-  permissions?: PermissionMap[];
-  status?: "active" | "inactive";
-} = {}): SessionUser {
+function makeUser(
+  options: {
+    superAdmin?: boolean;
+    permissions?: PermissionMap[];
+    status?: "active" | "inactive";
+  } = {},
+): SessionUser {
   const roles = (options.permissions ?? []).map((permissions, i) => ({
     id: i + 1,
     name: `role-${i + 1}`,
@@ -341,7 +343,12 @@ describe("superAdminRequired", () => {
 
 describe("businessLicenseRequired", () => {
   const cases: { name: string; licence: Licence; status: number; message?: string }[] = [
-    { name: "personal licence is rejected", licence: { type: "personal" }, status: 403, message: "请购买商业授权" },
+    {
+      name: "personal licence is rejected",
+      licence: { type: "personal" },
+      status: 403,
+      message: "请购买商业授权",
+    },
     { name: "business licence passes", licence: { type: "business" }, status: 200 },
     {
       name: "missing licence passes (recovered upstream semantics)",

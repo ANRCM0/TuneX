@@ -1,14 +1,6 @@
 import { z } from "zod";
-import {
-  NodeType,
-  Status,
-  SystemConfigName,
-  TunnelType,
-} from "@prisma/client";
-import {
-  AdminNotifyType,
-  NotifyType,
-} from "../services/notify-types";
+import { NodeType, Status, SystemConfigName, TunnelType } from "@prisma/client";
+import { AdminNotifyType, NotifyType } from "../services/notify-types";
 import {
   BalanceLogSchema,
   CommissionLogSchema,
@@ -160,27 +152,14 @@ export const NodeGroupResponseSchema = z.object({
   total: z.number(),
 });
 
-export const SystemConfigResponseSchema = z.record(
-  z.nativeEnum(SystemConfigName),
-  z.any(),
-);
+export const SystemConfigResponseSchema = z.record(z.nativeEnum(SystemConfigName), z.any());
 
 export const AdminStatsResponseSchema = z.object({
-  user: z.array(
-    z.object({ status: z.nativeEnum(Status), count: z.number() }),
-  ),
-  node: z.array(
-    z.object({ status: z.nativeEnum(Status), count: z.number() }),
-  ),
-  node_group: z.array(
-    z.object({ node_type: z.nativeEnum(NodeType), count: z.number() }),
-  ),
-  topup_order: z.array(
-    z.object({ date: z.string(), total: z.number() }),
-  ),
-  plan: z.array(
-    z.object({ status: z.nativeEnum(Status), count: z.number() }),
-  ),
+  user: z.array(z.object({ status: z.nativeEnum(Status), count: z.number() })),
+  node: z.array(z.object({ status: z.nativeEnum(Status), count: z.number() })),
+  node_group: z.array(z.object({ node_type: z.nativeEnum(NodeType), count: z.number() })),
+  topup_order: z.array(z.object({ date: z.string(), total: z.number() })),
+  plan: z.array(z.object({ status: z.nativeEnum(Status), count: z.number() })),
   topup: z.array(z.object({ date: z.string(), total: z.number() })),
 });
 
@@ -303,9 +282,7 @@ export const UserResponseSchema = z.object({
   total: z.number(),
 });
 
-export const PlanSummaryResponseSchema = z.array(
-  PlanSchema.pick({ id: true, name: true }),
-);
+export const PlanSummaryResponseSchema = z.array(PlanSchema.pick({ id: true, name: true }));
 
 export const BalanceLogResponseSchema = z.object({
   data: z.array(
@@ -337,9 +314,7 @@ export const TunnelStatsResponseSchemaItem = z.object({
   name: z.string(),
   client_limit: z.number().nullable(),
   in_node_group: z.object({ id: z.number(), name: z.string() }),
-  out_node_group: z
-    .object({ id: z.number(), name: z.string() })
-    .nullable(),
+  out_node_group: z.object({ id: z.number(), name: z.string() }).nullable(),
   stats: z
     .object({
       totalConns: z.number(),
@@ -357,10 +332,9 @@ export const TunnelStatsResponseSchema = z.object({
   total: z.number(),
 });
 
-export const AdminTunnelStatsResponseSchemaItem =
-  TunnelStatsResponseSchemaItem.extend({
-    user: z.object({ email: z.string() }),
-  });
+export const AdminTunnelStatsResponseSchemaItem = TunnelStatsResponseSchemaItem.extend({
+  user: z.object({ email: z.string() }),
+});
 
 export const AdminTunnelStatsResponseSchema = z.object({
   data: z.array(AdminTunnelStatsResponseSchemaItem),

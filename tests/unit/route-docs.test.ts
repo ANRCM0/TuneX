@@ -68,9 +68,7 @@ describe.skipIf(!PRESENT)("route documentation parity", () => {
   const docs = PRESENT ? replicaDocumentation() : new Map();
 
   it("documents the same routes", () => {
-    const missing = api
-      .map((route) => `${route.method} ${route.path}`)
-      .filter((key) => !docs.has(key));
+    const missing = api.map((route) => `${route.method} ${route.path}`).filter((key) => !docs.has(key));
     expect(missing).toEqual([]);
     expect(api.filter((route) => route.openapiDoc)).toHaveLength(158);
   });

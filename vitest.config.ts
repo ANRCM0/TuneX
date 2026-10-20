@@ -16,5 +16,30 @@ export default defineConfig({
   test: {
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "json-summary"],
+      // Generated Prisma/Zod output is not hand-written logic and would drown the signal.
+      exclude: [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/*.config.*",
+        "**/generated/**",
+        "apps/web/**", // covered by the web suites below, measured separately
+        "apps/agent/**",
+        "tests/**",
+        "scripts/**",
+      ],
+      // Ratchet, not an aspiration: set a few points under the measured baseline so a real
+      // regression fails CI while refactors do not. Raise these when coverage improves.
+      //   measured 2026-10-20 (after the ops/integration suites):
+      //   statements 65.4 / branches 79.9 / functions 74.2 / lines 65.4
+      thresholds: {
+        statements: 64,
+        branches: 78,
+        functions: 72,
+        lines: 64,
+      },
+    },
   },
 });

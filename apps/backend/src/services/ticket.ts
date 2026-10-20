@@ -30,9 +30,7 @@ export class TicketService {
    * into an arbitrary Prisma `orderBy`; the cast is needed because the field name is a
    * runtime string.
    */
-  private buildOrderBy(
-    sort?: SortItem[],
-  ): Prisma.TicketOrderByWithRelationInput[] | undefined {
+  private buildOrderBy(sort?: SortItem[]): Prisma.TicketOrderByWithRelationInput[] | undefined {
     return sort?.map((s) => ({
       [s.id]: s.desc ? "desc" : "asc",
     })) as unknown as Prisma.TicketOrderByWithRelationInput[];
@@ -90,11 +88,7 @@ export class TicketService {
     return ticket;
   }
 
-  async updateUserTicketStatus(
-    userId: number,
-    ticketId: number,
-    status: TicketStatus,
-  ) {
+  async updateUserTicketStatus(userId: number, ticketId: number, status: TicketStatus) {
     const ticket = await db.ticket.findUnique({ where: { id: ticketId } });
     if (!ticket) {
       throw new HTTPException(404, { message: "工单不存在" });
@@ -127,12 +121,7 @@ export class TicketService {
     return reply;
   }
 
-  async adminGetTickets(
-    page: number,
-    perPage: number,
-    sort?: SortItem[],
-    status?: TicketStatus,
-  ) {
+  async adminGetTickets(page: number, perPage: number, sort?: SortItem[], status?: TicketStatus) {
     const orderBy = this.buildOrderBy(sort);
     const where = status ? { status } : {};
     const [data, total] = await db.$transaction([
@@ -211,7 +200,4 @@ export class TicketService {
 }
 
 /** Self-registration. */
-export const ticketService = service<TicketService>(
-  TOKENS.Ticket,
-  () => new TicketService(notifyService),
-);
+export const ticketService = service<TicketService>(TOKENS.Ticket, () => new TicketService(notifyService));

@@ -231,7 +231,13 @@ describe("observer node stats", () => {
         kind: "service",
         service: `tcp-${id}`,
         type: "stats",
-        stats: { totalConns: 1, currentConns: 0, inputBytes: 1024 * 1024 * 1024, outputBytes: 0, totalErrs: 0 },
+        stats: {
+          totalConns: 1,
+          currentConns: 0,
+          inputBytes: 1024 * 1024 * 1024,
+          outputBytes: 0,
+          totalErrs: 0,
+        },
       },
     ],
   });

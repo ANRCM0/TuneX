@@ -92,8 +92,7 @@ export class NodeService {
   }
 
   async getNodes(query: Record<string, any>, user_id?: number) {
-    const { page, perPage, sort, node_group_id, ip, node_id, status, version, backup, node_type } =
-      query;
+    const { page, perPage, sort, node_group_id, ip, node_id, status, version, backup, node_type } = query;
     const where: Prisma.NodeWhereInput = {
       node_group: {
         user_id,
@@ -185,9 +184,5 @@ export class NodeService {
 /** Self-registration. */
 export const nodeService = service<NodeService>(
   TOKENS.Node,
-  () =>
-    new NodeService(
-      redisService,
-      inNodeGroupDNSService as unknown as NodeDnsService,
-    ),
+  () => new NodeService(redisService, inNodeGroupDNSService as unknown as NodeDnsService),
 );

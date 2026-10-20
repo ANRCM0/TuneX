@@ -9,10 +9,7 @@
  * The helper is pure; the surrounding purchase still runs in `subscribePlan`.
  */
 import { describe, expect, it } from "vitest";
-import {
-  computePlanPrice,
-  type PlanCouponTerms,
-} from "../../apps/backend/src/services/plan";
+import { computePlanPrice, type PlanCouponTerms } from "../../apps/backend/src/services/plan";
 
 // The Prisma enum values are plain strings; the helper only compares them.
 const coupon = (type: "percentage" | "fixed", value: number): PlanCouponTerms => ({

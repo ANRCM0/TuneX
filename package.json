@@ -12,6 +12,11 @@
     "db:push": "prisma db push --schema apps/backend/prisma/schema.prisma",
     "db:reset": "prisma db push --force-reset --schema apps/backend/prisma/schema.prisma",
     "db:studio": "prisma studio --schema apps/backend/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema apps/backend/prisma/schema.prisma",
+    "db:deploy": "prisma migrate deploy --schema apps/backend/prisma/schema.prisma",
+    "db:drift": "bash scripts/db-drift.sh",
+    "db:mysql:generate": "node apps/backend/scripts/gen-mysql-schema.mjs",
+    "db:mysql:deploy": "prisma migrate deploy --schema apps/backend/prisma/mysql/schema.prisma",
     "seed": "pnpm --filter @relayx/backend seed",
     "dev": "pnpm --filter @relayx/backend dev",
     "start": "pnpm --filter @relayx/backend start",
@@ -24,10 +29,15 @@
     "test:e2e": "vitest run tests/e2e",
     "agent:build": "cd apps/agent && go build -o ../../dist/relayx-agent ./cmd/relayx-agent",
     "verify": "bash scripts/verify.sh",
-    "e2e": "bash scripts/e2e-local.sh"
+    "e2e": "bash scripts/e2e-local.sh",
+    "test:coverage": "vitest run --coverage",
+    "lint": "prettier --check \"apps/backend/src/**/*.ts\" \"apps/license-server/src/**/*.ts\" \"apps/web/src/**/*.{ts,tsx}\" \"packages/shared/src/**/*.ts\" \"tests/**/*.ts\" \"*.json\" \".github/workflows/*.yml\"",
+    "format": "prettier --write \"apps/backend/src/**/*.ts\" \"apps/license-server/src/**/*.ts\" \"apps/web/src/**/*.{ts,tsx}\" \"packages/shared/src/**/*.ts\" \"tests/**/*.ts\" \"*.json\" \".github/workflows/*.yml\""
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "3.2.7",
+    "prettier": "3.6.2",
     "prisma": "6.17.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",

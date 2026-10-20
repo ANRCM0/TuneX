@@ -39,13 +39,11 @@ describe.skipIf(!PRESENT)("route validator parity", () => {
     // twice; `router.on(["POST", "GET"], …)` contributes two keys of its own.
     // +7 local-auth registrations
     // (`/auth/sign-up|sign-in|sign-out|refresh|me|verify-email|verify-email/request`).
-    expect(replicaRegistrations().size).toBe(168);
+    expect(replicaRegistrations().size).toBe(169);
   });
 
   it("finds every upstream registration", () => {
-    const missing = api
-      .map((route) => `${route.method} ${route.path}`)
-      .filter((key) => !replica.has(key));
+    const missing = api.map((route) => `${route.method} ${route.path}`).filter((key) => !replica.has(key));
     expect(missing).toEqual([]);
   });
 

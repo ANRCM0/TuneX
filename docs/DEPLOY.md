@@ -4,11 +4,11 @@
 
 镜像由 `.github/workflows/docker.yml` 构建并发布到 GHCR：
 
-| 镜像 | 用途 |
-| --- | --- |
-| `ghcr.io/<owner>/tunex-backend` | 面板与 HTTP/Socket.IO 控制面 |
-| `ghcr.io/<owner>/tunex-license-server` | 自建授权服务器 |
-| `ghcr.io/<owner>/tunex-node-agent` | 节点 agent |
+| 镜像                                   | 用途                         |
+| -------------------------------------- | ---------------------------- |
+| `ghcr.io/<owner>/tunex-backend`        | 面板与 HTTP/Socket.IO 控制面 |
+| `ghcr.io/<owner>/tunex-license-server` | 自建授权服务器               |
+| `ghcr.io/<owner>/tunex-node-agent`     | 节点 agent                   |
 
 推 `master` 出 `dev` 标签，推 `v*` 出正式版本。本文命令里的 `${TUNEX_TAG}` 默认 `latest`，生产建议钉死版本号，例如 `TUNEX_TAG=0.0.1`。
 
@@ -40,12 +40,12 @@ cp .env.example .env
 
 编辑 `.env`，至少改这四项：
 
-| 变量 | 说明 |
-| --- | --- |
-| `SITE_URL` | 面板对外的 HTTPS 地址，例如 `https://panel.example.com`。**必须**与后面签发授权时的 `--site-url` 完全一致（协议、主机名、端口、结尾斜杠都不能差） |
-| `CONFIG_SECRET` | 必填。生成：`node -e 'console.log(require("crypto").randomBytes(32).toString("base64url"))'`。生产缺少它时 backend 会拒绝启动 |
-| `SEED_ADMIN_EMAIL` | 管理员邮箱 |
-| `TUNEX_DOMAIN` | Caddy 使用的域名，通常与 `SITE_URL` 的主机名相同 |
+| 变量               | 说明                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SITE_URL`         | 面板对外的 HTTPS 地址，例如 `https://panel.example.com`。**必须**与后面签发授权时的 `--site-url` 完全一致（协议、主机名、端口、结尾斜杠都不能差） |
+| `CONFIG_SECRET`    | 必填。生成：`node -e 'console.log(require("crypto").randomBytes(32).toString("base64url"))'`。生产缺少它时 backend 会拒绝启动                     |
+| `SEED_ADMIN_EMAIL` | 管理员邮箱                                                                                                                                        |
+| `TUNEX_DOMAIN`     | Caddy 使用的域名，通常与 `SITE_URL` 的主机名相同                                                                                                  |
 
 `CONFIG_SECRET` 同时要传给每个 agent 的 `--config-secret`，否则 agent 解不开面板下发的配置。
 
@@ -180,11 +180,11 @@ curl -s -H "Authorization: Bearer $ADMIN_KEY" \
 
 需要备份的两份数据：
 
-| 数据 | 位置 |
-| --- | --- |
-| 面板 SQLite | 卷 `tunex_backend_data` 里的 `relayx.db` |
-| 授权 SQLite | 卷 `tunex_license_data` 里的 `license.db` |
-| Redis | 可选。AOF 已开启，丢了只影响缓存与队列，不影响账目 |
+| 数据        | 位置                                               |
+| ----------- | -------------------------------------------------- |
+| 面板 SQLite | 卷 `tunex_backend_data` 里的 `relayx.db`           |
+| 授权 SQLite | 卷 `tunex_license_data` 里的 `license.db`          |
+| Redis       | 可选。AOF 已开启，丢了只影响缓存与队列，不影响账目 |
 
 SQLite 不能直接热拷贝。用它的在线备份命令：
 
@@ -226,11 +226,11 @@ docker compose pull backend license && docker compose up -d backend license
 
 ## 12. 常见问题
 
-| 现象 | 处理 |
-| --- | --- |
-| backend 启动即退出，日志含 `CONFIG_SECRET is required` | 在 `.env` 里设置 `CONFIG_SECRET` |
-| agent 报 `License loaded` 但配置解不开 | agent 的 `--config-secret` 与面板不一致 |
-| 面板显示无授权，节点注册被拒 | 检查 `LICENSE_URL` 是否可达；签发后是否 `DEL license` |
-| `/api/license` 返回 404 且 `site_url` 不符 | 授权绑定的域名与 `SITE_URL` 不一致，用 `rebind` |
-| 隧道一直 `WAIT_LISTEN` | 节点端口未放行、agent 未连上，或配置推送失败（看 agent 日志） |
-| 公网拉镜像 403 | GHCR 包可见性仍是私有，改成 public 或 `docker login` |
+| 现象                                                   | 处理                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------- |
+| backend 启动即退出，日志含 `CONFIG_SECRET is required` | 在 `.env` 里设置 `CONFIG_SECRET`                              |
+| agent 报 `License loaded` 但配置解不开                 | agent 的 `--config-secret` 与面板不一致                       |
+| 面板显示无授权，节点注册被拒                           | 检查 `LICENSE_URL` 是否可达；签发后是否 `DEL license`         |
+| `/api/license` 返回 404 且 `site_url` 不符             | 授权绑定的域名与 `SITE_URL` 不一致，用 `rebind`               |
+| 隧道一直 `WAIT_LISTEN`                                 | 节点端口未放行、agent 未连上，或配置推送失败（看 agent 日志） |
+| 公网拉镜像 403                                         | GHCR 包可见性仍是私有，改成 public 或 `docker login`          |

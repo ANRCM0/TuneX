@@ -134,9 +134,7 @@ export function ListPage<T>({
         draggable={draggable}
         onReorder={onReorder}
         actionBar={
-          bulkActions
-            ? (selected) => bulkActions(selected as unknown as T[], () => void mutate())
-            : undefined
+          bulkActions ? (selected) => bulkActions(selected as unknown as T[], () => void mutate()) : undefined
         }
       />
     </div>

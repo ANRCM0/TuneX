@@ -60,12 +60,7 @@ router.get(
   zValidator("query", AdminTicketQuerySchema),
   async (c) => {
     const { page, perPage, sort, status } = c.req.valid("query");
-    const result = await ticketService.adminGetTickets(
-      page,
-      perPage,
-      sort ?? undefined,
-      status ?? undefined,
-    );
+    const result = await ticketService.adminGetTickets(page, perPage, sort ?? undefined, status ?? undefined);
     return c.json(result);
   },
 );

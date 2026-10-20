@@ -105,7 +105,14 @@ async function dispatch(path: string[], args: Args): Promise<Response> {
   }
 
   if (verb === "url") {
-    return new Response(JSON.stringify({ url: new URL(finalUrl, typeof window === "undefined" ? "http://localhost" : window.location.origin).toString() }));
+    return new Response(
+      JSON.stringify({
+        url: new URL(
+          finalUrl,
+          typeof window === "undefined" ? "http://localhost" : window.location.origin,
+        ).toString(),
+      }),
+    );
   }
   if (!verb) return new Response(null, { status: 204 }); // lazy handle, no request
 

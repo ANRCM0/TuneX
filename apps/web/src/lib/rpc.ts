@@ -18,7 +18,10 @@ export function rpcQuery(
   node: unknown,
   opts: { query?: Record<string, unknown>; param?: Record<string, string | number> } = {},
 ): Promise<Page> {
-  const fn = node as unknown as (args: { query?: Record<string, unknown>; param?: Record<string, string | number> }) => Promise<Response>;
+  const fn = node as unknown as (args: {
+    query?: Record<string, unknown>;
+    param?: Record<string, string | number>;
+  }) => Promise<Response>;
   return fn(opts).then((r) => r.json() as Promise<Page>);
 }
 

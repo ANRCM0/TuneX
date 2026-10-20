@@ -48,7 +48,15 @@ async function makeUser(parentId?: number) {
   });
 }
 
-async function makeOrder(userId: number, overrides: Partial<{ price: number; bonus: number; status: "pending" | "success"; trade_id: string | null }> = {}) {
+async function makeOrder(
+  userId: number,
+  overrides: Partial<{
+    price: number;
+    bonus: number;
+    status: "pending" | "success";
+    trade_id: string | null;
+  }> = {},
+) {
   orderSeq += 1;
   return db.topupOrder.create({
     data: {

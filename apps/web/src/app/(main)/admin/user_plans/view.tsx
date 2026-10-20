@@ -8,9 +8,22 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 import { CrudDialog, FIELDS } from "@/components/crud-dialogs";
@@ -21,7 +34,10 @@ import { toast } from "sonner";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "user.email", "label": t("misc.label.email"), "variant": "text"}, {"key": "plan.name", "label": t("zh_190a20"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "user.email", label: t("misc.label.email"), variant: "text" },
+  { key: "plan.name", label: t("zh_190a20"), variant: "select" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -29,20 +45,59 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/user_plan", page, perPage, status], () => adminClient.user_plan.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/user_plan", page, perPage, status],
+    () => adminClient.user_plan.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const doPatch = makePatcher(mutate);
   const patch = makePatch(adminClient.user_plan, mutate);
   const remove = makeDelete(adminClient.user_plan, { kind: "query.ids" }, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "user.email", header: t("misc.label.email"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "plan.name", header: t("zh_190a20"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "traffic_used", header: t("gb_48494e"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "traffic", header: t("gb_14e926"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "max_tunnels", header: t("zh_e75467"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "expired_at", header: t("zh_27aefe"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "user.email",
+        header: t("misc.label.email"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "plan.name",
+        header: t("zh_190a20"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "traffic_used",
+        header: t("gb_48494e"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "traffic",
+        header: t("gb_14e926"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "max_tunnels",
+        header: t("zh_e75467"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "expired_at",
+        header: t("zh_27aefe"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",
@@ -56,9 +111,28 @@ export default function View() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => void doPatch(adminClient.user_plan[":id"].$patch, { param: { id }, json: {} }, t("zh_f8574f"))}>{t("zh_b48fe0")}</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setEditing(c.row.original as Record<string, unknown>); setCreateOpen(true); }}>{t("misc.label.edit")}</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>{t("misc.label.delete")}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    void doPatch(
+                      adminClient.user_plan[":id"].$patch,
+                      { param: { id }, json: {} },
+                      t("zh_f8574f"),
+                    )
+                  }
+                >
+                  {t("zh_b48fe0")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditing(c.row.original as Record<string, unknown>);
+                    setCreateOpen(true);
+                  }}
+                >
+                  {t("misc.label.edit")}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>
+                  {t("misc.label.delete")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -105,7 +179,11 @@ export default function View() {
             <Button variant="outline" size="sm" onClick={() => setRenewIds(rows.map((r) => Number(r.id)))}>
               {t("app.bulkRenew")}
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}
+            >
               {t("misc.label.deleteSelected")}
             </Button>
           </>
@@ -117,7 +195,10 @@ export default function View() {
       ) : null}
       <CrudDialog
         open={createOpen}
-        onOpenChange={(v) => { setCreateOpen(v); if (!v) setEditing(null); }}
+        onOpenChange={(v) => {
+          setCreateOpen(v);
+          if (!v) setEditing(null);
+        }}
         initial={editing ?? undefined}
         title={t("app.newUserPlan")}
         fields={FIELDS.userPlan}
@@ -139,19 +220,36 @@ function RenewDialog({ ids, onClose, onDone }: { ids: number[]; onClose: () => v
   return (
     <Dialog open onOpenChange={(v: boolean) => !v && onClose()}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader><DialogTitle>{t("zh_45222b")}{ids.length} {t("zh_372545")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>
+            {t("zh_45222b")}
+            {ids.length} {t("zh_372545")}
+          </DialogTitle>
+        </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("zh_422024")}</Label>
-            <Input value={days} inputMode="numeric" onChange={(e) => setDays(e.target.value)} placeholder={t("30_a30674")} />
+            <Input
+              value={days}
+              inputMode="numeric"
+              onChange={(e) => setDays(e.target.value)}
+              placeholder={t("30_a30674")}
+            />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("zh_1cdce5")}</Label>
-            <Input value={traffic} inputMode="numeric" onChange={(e) => setTraffic(e.target.value)} placeholder={t("zh_d861f8")} />
+            <Input
+              value={traffic}
+              inputMode="numeric"
+              onChange={(e) => setTraffic(e.target.value)}
+              placeholder={t("zh_d861f8")}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose}>{t("misc.label.cancel")}</Button>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            {t("misc.label.cancel")}
+          </Button>
           <Button
             size="sm"
             onClick={() => {

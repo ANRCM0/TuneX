@@ -18,7 +18,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ADMIN_RESOURCES, ADMIN_RESOURCE_GROUPS } from "@/lib/permissions";
 import { makePatcher } from "@/lib/actions";
 import { cn } from "@/lib/utils";
@@ -28,7 +33,11 @@ type Level = "none" | "read" | "write";
 type Permissions = Record<string, Level>;
 
 const LEVELS: Level[] = ["none", "read", "write"];
-const LEVEL_LABEL: Record<Level, string> = { none: t("zh_720777"), read: t("zh_ffc1d0"), write: t("zh_26ae2c") };
+const LEVEL_LABEL: Record<Level, string> = {
+  none: t("zh_720777"),
+  read: t("zh_ffc1d0"),
+  write: t("zh_26ae2c"),
+};
 
 function LevelPicker({
   value,
@@ -131,7 +140,12 @@ function RoleDialog({
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("zh_412f54")}</Label>
-            <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("zh_53e328")} />
+            <Textarea
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("zh_53e328")}
+            />
           </div>
 
           <div className="grid gap-2">
@@ -196,10 +210,14 @@ function RoleDialog({
 export default function View() {
   const [page, setPage] = React.useState(1);
   const perPage = 10;
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/role", page, perPage], () => adminClient.role.$get, {
-    page,
-    perPage,
-  });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/role", page, perPage],
+    () => adminClient.role.$get,
+    {
+      page,
+      perPage,
+    },
+  );
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Row | null>(null);
   const doPatch = makePatcher(mutate);
@@ -222,7 +240,9 @@ export default function View() {
         accessorKey: "description",
         header: t("zh_412f54"),
         enableSorting: false,
-        cell: (r) => <span className="text-muted-foreground max-w-[22rem] truncate">{String(r.getValue() ?? "—")}</span>,
+        cell: (r) => (
+          <span className="text-muted-foreground max-w-[22rem] truncate">{String(r.getValue() ?? "—")}</span>
+        ),
       },
       {
         id: "perm_count",
@@ -239,7 +259,12 @@ export default function View() {
           );
         },
       },
-      { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",

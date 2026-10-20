@@ -87,7 +87,9 @@ describe("user side", () => {
   it("returns a thread with its replies and guards ownership", async () => {
     const ticket = await makeTicket(userA);
     await db.ticketReply.create({ data: { content: "first", ticket_id: ticket.id, user_id: userA } });
-    await db.ticketReply.create({ data: { content: "answer", ticket_id: ticket.id, user_id: adminId, is_admin: true } });
+    await db.ticketReply.create({
+      data: { content: "answer", ticket_id: ticket.id, user_id: adminId, is_admin: true },
+    });
 
     const thread = await service.getUserTicket(userA, ticket.id);
     expect(thread.replies.map((r) => r.content)).toEqual(["first", "answer"]);

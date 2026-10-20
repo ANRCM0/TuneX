@@ -80,13 +80,12 @@ Each entry is something this replica does differently from the analysis tree (`/
     identities to StackAuth: the panel redirects to its hosted handler, and the backend only
     verifies StackAuth JWTs against their JWKS. A replica with no StackAuth project therefore
     could not log in at all. The replica adds an equivalent local mode:
-
-    * `LocalCredential` (additive table: `user_id`, scrypt `password_hash`, `email_verified`) —
+    - `LocalCredential` (additive table: `user_id`, scrypt `password_hash`, `email_verified`) —
       no upstream column is changed;
-    * `POST /auth/sign-up|sign-in|sign-out|refresh`, `GET /auth/me`, `POST /auth/verify-email`;
-    * the session keeps the upstream cookie name and shape — `stack-access` holds
+    - `POST /auth/sign-up|sign-in|sign-out|refresh`, `GET /auth/me`, `POST /auth/verify-email`;
+    - the session keeps the upstream cookie name and shape — `stack-access` holds
       `[refresh, access]`, both HS256 JWTs with `sub` = local user id, signed with `AUTH_SECRET`;
-    * preserved panel semantics: the first registrant becomes super admin, `ALLOW_REGISTER`
+    - preserved panel semantics: the first registrant becomes super admin, `ALLOW_REGISTER`
       gates sign-up, an `inactive` user cannot sign in, and the `ref` cookie sets `parent_id`
       on first provision.
 
@@ -101,8 +100,8 @@ Each entry is something this replica does differently from the analysis tree (`/
       flow; the direct shortcut is then allowed and refused as soon as a provider is set;
     - `AUTH_MODE=stack` restores the upstream path, so both modes stay available. Default is
       `local` when no StackAuth project is configured.
-    Blast radius: `/auth/*` is added to `noAuthPathsRegex` for the four endpoints that must be
-    reachable without a session; `/auth/me` and `/auth/verify-email` stay behind the guard.
+      Blast radius: `/auth/*` is added to `noAuthPathsRegex` for the four endpoints that must be
+      reachable without a session; `/auth/me` and `/auth/verify-email` stay behind the guard.
 
 ## What is NOT a deviation
 
@@ -111,3 +110,23 @@ Each entry is something this replica does differently from the analysis tree (`/
 - `/docs` and `/openapi.json` sit behind `businessLicenseRequired`.
 - `/queuedash` and `/health` are mounted before `authRequired`. `sentry` + `authRequired` apply to the routes registered after them.
 - There is no BullMQ Worker in the original. Jobs are scheduled, not executed in-process.
+
+31. **Productization additions (not upstream behaviour).** Five layers were added because a
+    deployable panel needs them; none changes an upstream response shape:
+    - **Migrations.** `prisma/migrations/0001_init` is the baseline for SQLite and
+      `prisma/mysql/{schema.prisma,migrations}` is generated from the same models
+      (`apps/backend/scripts/gen-mysql-schema.mjs`). The MySQL schema validates and emits DDL,
+      but no MySQL server runs here, so runtime parity is untested.
+    - **MySQL target.** The datasource provider must be a literal, so the MySQL variant lives
+      in its own directory rather than behind `env()`. Deploy with
+      `pnpm db:mysql:deploy` and `DATABASE_URL=mysql://…`.
+    - **Rate limits + lockout.** `middlewares/rate_limit.ts` adds fixed windows for sign-in,
+      sign-up, verification mail, payment callbacks, the node observer and a generic API
+      bucket, plus a per-account lockout after `LOGIN_MAX_FAILURES`. Upstream has neither; the
+      shipped Caddyfile told operators to put fail2ban in front.
+    - **Metrics + correlation.** `GET /metrics` exposes Prometheus text (counters, gauges, an
+      HTTP latency histogram) behind `DIAG_TOKEN` or loopback, and every request carries
+      `x-request-id` plus `x-response-time-ms`. Upstream only had `/health`.
+    - **External bases are overridable.** `CLOUDFLARE_API_BASE`, `HUAWEI_DNS_API_BASE` and
+      `TELEGRAM_API_BASE` exist so the integration suite can drive vendor clients against a
+      loopback fixture (and so a deployment can route egress through a proxy).

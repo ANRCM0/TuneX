@@ -79,7 +79,8 @@ describe("no hard-coded Chinese in code", () => {
         const trimmed = line.trim();
         const isComment = trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*");
         const isRegex = /\/[^/]*[\u4e00-\u9fff][^/]*\/[gimsuy]*/.test(trimmed);
-        if (!isComment && !isRegex) offenders.push(`${relative(process.cwd(), file)}:${i + 1}: ${trimmed.slice(0, 80)}`);
+        if (!isComment && !isRegex)
+          offenders.push(`${relative(process.cwd(), file)}:${i + 1}: ${trimmed.slice(0, 80)}`);
       });
     }
     expect(offenders).toEqual([]);

@@ -120,11 +120,17 @@ interface SendMessageExtra {
   link_preview_options?: { is_disabled: boolean };
 }
 
-class TelegramApi {
+/**
+ * Thin Bot API client. Exported so the integration suite can drive it against a local
+ * fixture; the service itself only uses it internally.
+ */
+export class TelegramApi {
   private readonly base: string;
 
   constructor(token: string) {
-    this.base = `https://api.telegram.org/bot${token}`;
+    // Overridable so the integration suite can drive a local Bot API fixture.
+    const root = process.env.TELEGRAM_API_BASE || "https://api.telegram.org";
+    this.base = `${root.replace(/\/$/, "")}/bot${token}`;
   }
 
   async call<T = unknown>(
@@ -226,17 +232,13 @@ export class TelegramService {
 
   start(): void {
     if (!this.api) {
-      logger.info(
-        "Telegram bot disabled (TELEGRAM_BOT_TOKEN is not set); skipping bot startup.",
-      );
+      logger.info("Telegram bot disabled (TELEGRAM_BOT_TOKEN is not set); skipping bot startup.");
       return;
     }
     if (this.running) return;
     this.running = true;
     void this.pollLoop();
-    this.setBotCommands().catch((err) =>
-      console.error("Failed to set Telegram bot commands:", err),
-    );
+    this.setBotCommands().catch((err) => console.error("Failed to set Telegram bot commands:", err));
   }
 
   stop(): void {
@@ -750,9 +752,7 @@ export class TelegramService {
     const lines = ["*📁 我的节点组*", ""];
     for (const group of groups) {
       const groupSysinfo = allSysinfo[group.id] ?? [];
-      const onlineCount = groupSysinfo.filter(
-        (s) => new Date(s.last_active ?? 0).getTime() >= cutoff,
-      ).length;
+      const onlineCount = groupSysinfo.filter((s) => new Date(s.last_active ?? 0).getTime() >= cutoff).length;
       const typeLabel = group.node_type === NodeType.in ? "入" : "出";
       const healthIcon =
         group.nodes.length === 0
@@ -779,19 +779,18 @@ export class TelegramService {
     if (!user) return;
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const [userCount, nodeCount, allSysinfo, todayTopup, openTickets, activeTunnels] =
-      await Promise.all([
-        db.user.count(),
-        db.node.count(),
-        this.redisService.getSysinfo(),
-        db.topupOrder.aggregate({
-          where: { status: "success", updated_at: { gte: startOfDay } },
-          _sum: { price: true },
-          _count: { _all: true },
-        }),
-        db.ticket.count({ where: { status: "open" } }),
-        db.tunnel.count({ where: { status: Status.active } }),
-      ]);
+    const [userCount, nodeCount, allSysinfo, todayTopup, openTickets, activeTunnels] = await Promise.all([
+      db.user.count(),
+      db.node.count(),
+      this.redisService.getSysinfo(),
+      db.topupOrder.aggregate({
+        where: { status: "success", updated_at: { gte: startOfDay } },
+        _sum: { price: true },
+        _count: { _all: true },
+      }),
+      db.ticket.count({ where: { status: "open" } }),
+      db.tunnel.count({ where: { status: Status.active } }),
+    ]);
     const cutoff = Date.now() - 60000;
     let onlineNodes = 0;
     for (const nodes of Object.values(allSysinfo)) {
@@ -832,9 +831,7 @@ export class TelegramService {
       inline_keyboard.push(buttons.map((b) => ({ text: b.text, url: b.url })));
     }
     if (callbackButtons?.length) {
-      inline_keyboard.push(
-        callbackButtons.map((b) => ({ text: b.text, callback_data: b.callback_data })),
-      );
+      inline_keyboard.push(callbackButtons.map((b) => ({ text: b.text, callback_data: b.callback_data })));
     }
     await this.api?.call(
       "sendMessage",

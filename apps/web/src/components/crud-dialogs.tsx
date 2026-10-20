@@ -132,7 +132,11 @@ export function CrudDialog({
                     onChange={(e) => setValues((s) => ({ ...s, [f.key]: e.target.value }))}
                   />
                 )}
-                {errors[f.key] ? <p className="text-destructive text-xs">{errors[f.key]}</p> : f.hint ? <p className="text-muted-foreground text-xs">{f.hint}</p> : null}
+                {errors[f.key] ? (
+                  <p className="text-destructive text-xs">{errors[f.key]}</p>
+                ) : f.hint ? (
+                  <p className="text-muted-foreground text-xs">{f.hint}</p>
+                ) : null}
               </div>
             </div>
           ))}
@@ -158,28 +162,63 @@ export const FIELDS = {
   ] as FieldDef[],
   payment: [
     { key: "name", label: t("misc.label.name"), required: true },
-    { key: "method", label: t("zh_86ab11"), kind: "select", options: [
-      { value: "epay", label: t("zh_342160") }, { value: "bepusdt", label: "BEPUSDT" }, { value: "heleket", label: "Heleket" },
-    ] },
-    { key: "type", label: t("misc.label.type"), kind: "select", options: [
-      { value: "alipay", label: t("zh_66f117") }, { value: "wxpay", label: t("zh_68406d") }, { value: "usdt", label: "USDT" },
-    ] },
-    { key: "status", label: t("misc.label.status"), kind: "select", options: [
-      { value: "active", label: t("zh_d4e9ca") }, { value: "inactive", label: t("zh_be70be") },
-    ] },
+    {
+      key: "method",
+      label: t("zh_86ab11"),
+      kind: "select",
+      options: [
+        { value: "epay", label: t("zh_342160") },
+        { value: "bepusdt", label: "BEPUSDT" },
+        { value: "heleket", label: "Heleket" },
+      ],
+    },
+    {
+      key: "type",
+      label: t("misc.label.type"),
+      kind: "select",
+      options: [
+        { value: "alipay", label: t("zh_66f117") },
+        { value: "wxpay", label: t("zh_68406d") },
+        { value: "usdt", label: "USDT" },
+      ],
+    },
+    {
+      key: "status",
+      label: t("misc.label.status"),
+      kind: "select",
+      options: [
+        { value: "active", label: t("zh_d4e9ca") },
+        { value: "inactive", label: t("zh_be70be") },
+      ],
+    },
     { key: "url", label: t("zh_29f5ba"), placeholder: "https://…" },
     { key: "fixed_fee", label: t("zh_09d65a"), kind: "number" },
     { key: "percent_fee", label: t("zh_a8021c"), kind: "number" },
   ] as FieldDef[],
   nodeGroup: [
     { key: "name", label: t("misc.label.name"), required: true },
-    { key: "node_type", label: t("zh_4ef7fe"), kind: "select", options: [
-      { value: "in", label: t("zh_38e9cd") }, { value: "out", label: t("zh_dd877e") },
-    ] },
-    { key: "load_balance_type", label: t("zh_5c9408"), kind: "select", options: [
-      { value: "round", label: t("zh_65a48f") }, { value: "rand", label: t("zh_834fd6") }, { value: "fifo", label: t("zh_0ed683") },
-      { value: "hash", label: t("zh_f2b0b1") }, { value: "ll", label: t("zh_ed9de3") }, { value: "lc", label: t("zh_21715b") },
-    ] },
+    {
+      key: "node_type",
+      label: t("zh_4ef7fe"),
+      kind: "select",
+      options: [
+        { value: "in", label: t("zh_38e9cd") },
+        { value: "out", label: t("zh_dd877e") },
+      ],
+    },
+    {
+      key: "load_balance_type",
+      label: t("zh_5c9408"),
+      kind: "select",
+      options: [
+        { value: "round", label: t("zh_65a48f") },
+        { value: "rand", label: t("zh_834fd6") },
+        { value: "fifo", label: t("zh_0ed683") },
+        { value: "hash", label: t("zh_f2b0b1") },
+        { value: "ll", label: t("zh_ed9de3") },
+        { value: "lc", label: t("zh_21715b") },
+      ],
+    },
     { key: "traffic_rate", label: t("zh_e1265d"), kind: "number" },
     { key: "connect_ip", label: t("ip_532a05"), placeholder: "1.2.3.4, example.com" },
     { key: "port_range", label: t("app.portRange"), placeholder: "10000-20000", hint: t("zh_d10717") },
@@ -187,22 +226,44 @@ export const FIELDS = {
     // 高级
     { key: "allow_tunnel_types", label: t("zh_330bdc"), placeholder: "tcp,udp,wss", hint: t("zh_94c11f") },
     { key: "block_protocols", label: t("zh_637782"), placeholder: "http,socks5", hint: t("zh_1e60b4") },
-    { key: "bypass_type", label: t("zh_ebb95d"), kind: "select", options: [
-      { value: "blacklist", label: t("zh_2faec6") }, { value: "whitelist", label: t("admin.nodeGroups.whitelist") },
-    ] },
+    {
+      key: "bypass_type",
+      label: t("zh_ebb95d"),
+      kind: "select",
+      options: [
+        { value: "blacklist", label: t("zh_2faec6") },
+        { value: "whitelist", label: t("admin.nodeGroups.whitelist") },
+      ],
+    },
     { key: "bypass_list", label: t("zh_59bc57"), placeholder: t("zh_b109f5") },
     { key: "admission", label: t("zh_b78025"), kind: "bool" },
     { key: "allow_listen_protocol", label: t("zh_622fa2"), kind: "bool" },
-    { key: "allow_listen_protocols", label: t("zh_f1d55d"), placeholder: "http,socks5,ss", hint: t("zh_3d59bb") },
+    {
+      key: "allow_listen_protocols",
+      label: t("zh_f1d55d"),
+      placeholder: "http,socks5,ss",
+      hint: t("zh_3d59bb"),
+    },
     { key: "allow_in_node_groups", label: t("zh_4bf5ea"), placeholder: "1,2,3", hint: t("zh_5d11ff") },
     { key: "allow_out_node_groups", label: t("zh_281da3"), placeholder: "1,2,3", hint: t("zh_4a180c") },
   ] as FieldDef[],
   dnsProvider: [
     { key: "name", label: t("misc.label.name"), required: true },
-    { key: "type", label: t("zh_c08681"), kind: "select", options: [
-      { value: "cloudflare", label: "cloudflare" }, { value: "huawei", label: t("zh_c1c6f8") },
-    ] },
-    { key: "config_token", label: "Cloudflare Token", kind: "password", hint: t("cloudflare_api_token_946378") },
+    {
+      key: "type",
+      label: t("zh_c08681"),
+      kind: "select",
+      options: [
+        { value: "cloudflare", label: "cloudflare" },
+        { value: "huawei", label: t("zh_c1c6f8") },
+      ],
+    },
+    {
+      key: "config_token",
+      label: "Cloudflare Token",
+      kind: "password",
+      hint: t("cloudflare_api_token_946378"),
+    },
     { key: "config_email", label: t("cloudflare_faabb6"), hint: t("global_api_key_895693") },
     { key: "config_ak", label: t("ak_441f7c") },
     { key: "config_sk", label: t("sk_2ffeb6"), kind: "password" },
@@ -210,24 +271,50 @@ export const FIELDS = {
   node: [
     { key: "name", label: t("zh_3de90b") },
     { key: "node_group_id", label: t("id_f91524"), kind: "number" },
-    { key: "node_type", label: t("misc.label.type"), kind: "select", options: [
-      { value: "in", label: t("zh_38e9cd") }, { value: "out", label: t("zh_dd877e") },
-    ] },
-    { key: "backup", label: t("zh_65ada1"), kind: "select", options: [
-      { value: "primary", label: t("zh_fc90df") }, { value: "backup", label: t("zh_bfd15a") },
-    ] },
+    {
+      key: "node_type",
+      label: t("misc.label.type"),
+      kind: "select",
+      options: [
+        { value: "in", label: t("zh_38e9cd") },
+        { value: "out", label: t("zh_dd877e") },
+      ],
+    },
+    {
+      key: "backup",
+      label: t("zh_65ada1"),
+      kind: "select",
+      options: [
+        { value: "primary", label: t("zh_fc90df") },
+        { value: "backup", label: t("zh_bfd15a") },
+      ],
+    },
     { key: "ip", label: "IP" },
     { key: "port", label: t("zh_6cbb73"), kind: "number" },
-    { key: "status", label: t("misc.label.status"), kind: "select", options: [
-      { value: "active", label: t("zh_d4e9ca") }, { value: "inactive", label: t("zh_be70be") },
-    ] },
+    {
+      key: "status",
+      label: t("misc.label.status"),
+      kind: "select",
+      options: [
+        { value: "active", label: t("zh_d4e9ca") },
+        { value: "inactive", label: t("zh_be70be") },
+      ],
+    },
   ] as FieldDef[],
   plan: [
     { key: "name", label: t("zh_190a20"), required: true },
-    { key: "billing_cycle", label: t("zh_833988"), kind: "select", options: [
-      { value: "month", label: t("zh_ccf97f") }, { value: "quarter", label: t("zh_51e67e") }, { value: "half_year", label: t("zh_89b172") },
-      { value: "year", label: t("zh_1017de") }, { value: "lifetime", label: t("zh_409752") },
-    ] },
+    {
+      key: "billing_cycle",
+      label: t("zh_833988"),
+      kind: "select",
+      options: [
+        { value: "month", label: t("zh_ccf97f") },
+        { value: "quarter", label: t("zh_51e67e") },
+        { value: "half_year", label: t("zh_89b172") },
+        { value: "year", label: t("zh_1017de") },
+        { value: "lifetime", label: t("zh_409752") },
+      ],
+    },
     { key: "price", label: t("admin.plans.price"), kind: "number", required: true },
     { key: "original_price", label: t("zh_2b85c4"), kind: "number" },
     { key: "setup_fee", label: t("zh_47444d"), kind: "number" },
@@ -238,9 +325,15 @@ export const FIELDS = {
     { key: "ip_limit", label: t("ip_da9dda"), kind: "number" },
     { key: "whitelist_limit", label: t("zh_9f04b9"), kind: "number" },
     { key: "stock", label: t("admin.plans.stock"), kind: "number", hint: t("zh_8b11fb") },
-    { key: "status", label: t("misc.label.status"), kind: "select", options: [
-      { value: "active", label: t("zh_d4e9ca") }, { value: "inactive", label: t("zh_be70be") },
-    ] },
+    {
+      key: "status",
+      label: t("misc.label.status"),
+      kind: "select",
+      options: [
+        { value: "active", label: t("zh_d4e9ca") },
+        { value: "inactive", label: t("zh_be70be") },
+      ],
+    },
     { key: "renewable", label: t("zh_80111b"), kind: "bool" },
     { key: "allow_custom_in_node_group", label: t("zh_0717e1"), kind: "bool" },
     { key: "allow_custom_out_node_group", label: t("zh_3d490f"), kind: "bool" },
@@ -248,9 +341,15 @@ export const FIELDS = {
   ] as FieldDef[],
   coupon: [
     { key: "code", label: t("zh_d7d38a"), required: true },
-    { key: "type", label: t("misc.label.type"), kind: "select", options: [
-      { value: "percentage", label: t("zh_4ce634") }, { value: "fixed", label: t("zh_b209f7") },
-    ] },
+    {
+      key: "type",
+      label: t("misc.label.type"),
+      kind: "select",
+      options: [
+        { value: "percentage", label: t("zh_4ce634") },
+        { value: "fixed", label: t("zh_b209f7") },
+      ],
+    },
     { key: "value", label: t("zh_74e272"), kind: "number", required: true },
     { key: "max_use", label: t("zh_10f6ed"), kind: "number" },
     { key: "max_use_per_user", label: t("zh_60b789"), kind: "number" },
@@ -258,9 +357,15 @@ export const FIELDS = {
     { key: "valid_end", label: t("zh_5892dd"), placeholder: "2026-12-31T00:00:00Z" },
   ] as FieldDef[],
   activity: [
-    { key: "type", label: t("zh_0bd77b"), kind: "select", options: [
-      { value: "fixed", label: t("zh_b31999") }, { value: "percentage", label: t("zh_8ed7d7") },
-    ] },
+    {
+      key: "type",
+      label: t("zh_0bd77b"),
+      kind: "select",
+      options: [
+        { value: "fixed", label: t("zh_b31999") },
+        { value: "percentage", label: t("zh_8ed7d7") },
+      ],
+    },
     { key: "value", label: t("zh_726251"), kind: "number", required: true },
     { key: "min_amount", label: t("zh_b44279"), kind: "number" },
     { key: "max_amount", label: t("zh_629b5f"), kind: "number" },

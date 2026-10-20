@@ -15,7 +15,13 @@ import { formatDate } from "@/lib/utils";
 export default function HomePage() {
   const { data: user, isLoading } = useUser();
   const { data: license } = useLicense();
-  const { data: config } = useSystemConfig(["SITE_NAME", "NOTICE", "NOTICE_POPUP", "NOTICE_POPUP_INTERVAL_HOURS", "ENABLE_SUBSCRIPTION"]);
+  const { data: config } = useSystemConfig([
+    "SITE_NAME",
+    "NOTICE",
+    "NOTICE_POPUP",
+    "NOTICE_POPUP_INTERVAL_HOURS",
+    "ENABLE_SUBSCRIPTION",
+  ]);
   const { data: tunnels } = useTunnels(1, 5, [{ id: "created_at", desc: true }]);
 
   // 汇总卡片数据：GET /tunnel/summary、/plan/summary、/node/group/summary
@@ -104,7 +110,9 @@ export default function HomePage() {
           <DialogHeader>
             <DialogTitle>{tr("app.announcement2")}</DialogTitle>
           </DialogHeader>
-          <div className="text-muted-foreground max-h-[60vh] overflow-y-auto text-sm whitespace-pre-wrap">{popup}</div>
+          <div className="text-muted-foreground max-h-[60vh] overflow-y-auto text-sm whitespace-pre-wrap">
+            {popup}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -119,20 +127,28 @@ export default function HomePage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader><CardTitle className="text-sm">{tr("zh_b378ab")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{tr("zh_b378ab")}</CardTitle>
+          </CardHeader>
           <CardContent className="text-sm">
             {summary?.total ?? 0} {tr("zh_984e3e")} {summary?.active ?? 0}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-sm">{tr("misc.label.nodeGroups2")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{tr("misc.label.nodeGroups2")}</CardTitle>
+          </CardHeader>
           <CardContent className="text-sm">
             {ngSummary?.total ?? 0} {tr("zh_4530ed")} {ngSummary?.online ?? 0}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-sm">{tr("admin.userPlans.plan")}</CardTitle></CardHeader>
-          <CardContent className="text-sm">{planSummary?.active ? tr("zh_d60537") : tr("zh_e1997c")}</CardContent>
+          <CardHeader>
+            <CardTitle className="text-sm">{tr("admin.userPlans.plan")}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {planSummary?.active ? tr("zh_d60537") : tr("zh_e1997c")}
+          </CardContent>
         </Card>
       </div>
 
@@ -144,7 +160,9 @@ export default function HomePage() {
           {(tunnels?.data ?? []).length === 0 ? (
             <p className="text-muted-foreground text-sm">{tr("misc.empty.noData")}</p>
           ) : (
-            (tunnels?.data as unknown as { id: number; name: string; status: string; created_at: string }[]).map((t) => (
+            (
+              tunnels?.data as unknown as { id: number; name: string; status: string; created_at: string }[]
+            ).map((t) => (
               <div key={t.id} className="flex items-center justify-between border-b py-1 last:border-0">
                 <span className="text-sm">{t.name}</span>
                 <span className="flex items-center gap-2">

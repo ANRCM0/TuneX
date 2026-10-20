@@ -8,15 +8,33 @@ import { client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch } from "@/lib/actions";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "tunnel.name", "label": t("zh_57916d"), "variant": "text"}, {"key": "tunnel.in_node_group.name", "label": t("zh_a2a58f"), "variant": "select"}, {"key": "tunnel.out_node_group.name", "label": t("zh_59de81"), "variant": "select"}, {"key": "date", "label": t("zh_1b0381"), "variant": "dateRange"}];
+const FILTERS: FilterDef[] = [
+  { key: "tunnel.name", label: t("zh_57916d"), variant: "text" },
+  { key: "tunnel.in_node_group.name", label: t("zh_a2a58f"), variant: "select" },
+  { key: "tunnel.out_node_group.name", label: t("zh_59de81"), variant: "select" },
+  { key: "date", label: t("zh_1b0381"), variant: "dateRange" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -24,18 +42,51 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/tunnel/traffic", page, perPage, status], () => client.tunnel.traffic.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/tunnel/traffic", page, perPage, status],
+    () => client.tunnel.traffic.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const patch = makePatch(client.tunnel.traffic, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "tunnel.name", header: t("zh_57916d"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "tunnel.in_node_group.name", header: t("zh_a2a58f"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "tunnel.out_node_group.name", header: t("zh_59de81"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "traffic", header: t("zh_7428ba"), enableSorting: true, cell: (r) => <TrafficCell value={r.getValue()} /> },
-    { accessorKey: "traffic_cost", header: t("zh_b4a0aa"), enableSorting: true, cell: (r) => <TrafficCell value={r.getValue()} /> },
-    { accessorKey: "date", header: t("zh_1b0381"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-
+      {
+        accessorKey: "tunnel.name",
+        header: t("zh_57916d"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "tunnel.in_node_group.name",
+        header: t("zh_a2a58f"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "tunnel.out_node_group.name",
+        header: t("zh_59de81"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "traffic",
+        header: t("zh_7428ba"),
+        enableSorting: true,
+        cell: (r) => <TrafficCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "traffic_cost",
+        header: t("zh_b4a0aa"),
+        enableSorting: true,
+        cell: (r) => <TrafficCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "date",
+        header: t("zh_1b0381"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
     ],
     [],
   );
@@ -63,7 +114,6 @@ export default function View() {
             </div>
           </div>
         )}
-
       />
     </div>
   );

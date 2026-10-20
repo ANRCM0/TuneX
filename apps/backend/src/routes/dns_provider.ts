@@ -30,10 +30,7 @@ router.get(
   zValidator("query", DNSProviderQuerySchema),
   async (c) => {
     const user = c.get("user");
-    const { data, total } = await dnsProviderService.getDNSProviders(
-      user.id,
-      c.req.valid("query"),
-    );
+    const { data, total } = await dnsProviderService.getDNSProviders(user.id, c.req.valid("query"));
     return c.json({ data, total });
   },
 );

@@ -156,7 +156,14 @@ export class PlanService {
         await this.subscribePlan(user as unknown as SessionUser, plan.id, true, undefined, undefined, true);
       } else if (traffic && traffic_used >= traffic - 1) {
         const remaining_traffic = traffic - traffic_used > 0 ? traffic - traffic_used : 0;
-        await this.subscribePlan(user as unknown as SessionUser, plan.id, true, undefined, remaining_traffic, true);
+        await this.subscribePlan(
+          user as unknown as SessionUser,
+          plan.id,
+          true,
+          undefined,
+          remaining_traffic,
+          true,
+        );
       }
     }
   }
@@ -200,7 +207,9 @@ export class PlanService {
           const now = new Date();
           const oneMinuteLater = new Date(now.getTime() + 1000 * 60);
           const expiringSoon = oldUserPlan.expired_at && oldUserPlan.expired_at < oneMinuteLater;
-          const trafficSoonOut = oldUserPlan.traffic ? oldUserPlan.traffic_used >= oldUserPlan.traffic - 1 : false;
+          const trafficSoonOut = oldUserPlan.traffic
+            ? oldUserPlan.traffic_used >= oldUserPlan.traffic - 1
+            : false;
           if (!expiringSoon && !trafficSoonOut) {
             skipped = true;
             return;
@@ -285,7 +294,9 @@ export class PlanService {
         if (oldUserPlan) {
           if (!plan.traffic && plan.billing_cycle !== BillingCycle.lifetime) {
             const start_time =
-              oldUserPlan.expired_at && oldUserPlan.expired_at > new Date() ? oldUserPlan.expired_at : new Date();
+              oldUserPlan.expired_at && oldUserPlan.expired_at > new Date()
+                ? oldUserPlan.expired_at
+                : new Date();
             expired_at = new Date(start_time.getTime() + duration);
             traffic_used = oldUserPlan.traffic_used;
           } else if (plan.billing_cycle === BillingCycle.lifetime && plan.traffic) {

@@ -17,9 +17,7 @@ function eventNamesToObj(emitter: unknown): Record<string, number> {
   if (typeof candidate.eventNames !== "function" || typeof candidate.listenerCount !== "function") {
     return {};
   }
-  return Object.fromEntries(
-    candidate.eventNames().map((e) => [String(e), candidate.listenerCount!(e)]),
-  );
+  return Object.fromEntries(candidate.eventNames().map((e) => [String(e), candidate.listenerCount!(e)]));
 }
 
 app.get("/", async (c) => {
@@ -40,7 +38,9 @@ app.get("/", async (c) => {
   return c.json({ status, checks }, status === "ok" ? 200 : 503);
 });
 
-function diagAuthorized(c: { req: { header(name: string): string | undefined; query(name: string): string | undefined } }) {
+function diagAuthorized(c: {
+  req: { header(name: string): string | undefined; query(name: string): string | undefined };
+}) {
   const token = c.req.header("x-diag-token") ?? c.req.query("token");
   return Boolean(DIAG_TOKEN) && token === DIAG_TOKEN;
 }

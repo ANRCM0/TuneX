@@ -98,9 +98,7 @@ router.post(
       coupon,
     )) as Record<string, unknown> | null;
     const error =
-      response && typeof response === "object"
-        ? (response as { error?: unknown }).error
-        : undefined;
+      response && typeof response === "object" ? (response as { error?: unknown }).error : undefined;
     if (typeof error === "string") {
       logger.error(`license pay error: ${JSON.stringify(response)}`);
       throw new HTTPException(400, {

@@ -30,9 +30,13 @@ type UserInfo = {
 
 export default function AccountPage() {
   const { data: user, mutate } = useUser();
-  const { data: info } = useSWR<Partial<UserInfo>>(["/user/info", "raw"], async () => user as unknown as Partial<UserInfo>, {
-    fallbackData: user as unknown as Partial<UserInfo>,
-  });
+  const { data: info } = useSWR<Partial<UserInfo>>(
+    ["/user/info", "raw"],
+    async () => user as unknown as Partial<UserInfo>,
+    {
+      fallbackData: user as unknown as Partial<UserInfo>,
+    },
+  );
   const [pwd, setPwd] = React.useState("");
   const [email, setEmail] = React.useState("");
   React.useEffect(() => setPageTitle(t("nav.profile")), []);
@@ -52,7 +56,12 @@ export default function AccountPage() {
 
   const { data: bot } = useSWR(["/bot"], async () => {
     const res = await client.bot.$get({ query: {} });
-    return (await res.json()) as { enabled?: boolean; username?: string; bind_key?: string; bind_url?: string };
+    return (await res.json()) as {
+      enabled?: boolean;
+      username?: string;
+      bind_key?: string;
+      bind_url?: string;
+    };
   });
 
   const renew = async (planId: number) => {
@@ -93,21 +102,32 @@ export default function AccountPage() {
       <h2 className="text-lg font-semibold">{t("nav.profile")}</h2>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("landing.account")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("landing.account")}</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-2 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("misc.label.email")}</span><span>{info?.email ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("misc.label.balance")}</span><span className="tabular-nums">¥{Number(info?.balance ?? 0).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("app.commission")}</span><span className="tabular-nums">¥{Number(info?.commission ?? 0).toFixed(2)}</span></div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("misc.label.email")}</span>
+            <span>{info?.email ?? "—"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("misc.label.balance")}</span>
+            <span className="tabular-nums">¥{Number(info?.balance ?? 0).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("app.commission")}</span>
+            <span className="tabular-nums">¥{Number(info?.commission ?? 0).toFixed(2)}</span>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("telegram_38d24c")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("telegram_38d24c")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-center justify-between gap-2">
           <p className="text-muted-foreground text-xs">
-            {bot?.enabled
-              ? tf("username_99adbf", { username: bot.username ?? "—" })
-              : t("telegram_163aa6")}
+            {bot?.enabled ? tf("username_99adbf", { username: bot.username ?? "—" }) : t("telegram_163aa6")}
           </p>
           {bot?.bind_url ? (
             <Button size="sm" variant="outline" asChild>
@@ -120,7 +140,9 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_b48fe0")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_b48fe0")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-center justify-between">
           <p className="text-muted-foreground text-xs">{t("zh_3b86e5")}</p>
           <Button
@@ -138,7 +160,9 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_efe6de")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_efe6de")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-center justify-between">
           <p className="text-muted-foreground text-xs">{t("zh_cfef1a")}</p>
           <Switch
@@ -149,10 +173,20 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">API Key</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">API Key</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-center gap-2">
-          <code className="bg-muted flex-1 truncate rounded px-2 py-1 text-xs">{info?.api_key ?? t("zh_3c04f9")}</code>
-          <Button variant="outline" size="icon" className="size-8" aria-label={t("misc.label.copy")} onClick={() => copy(info?.api_key)}>
+          <code className="bg-muted flex-1 truncate rounded px-2 py-1 text-xs">
+            {info?.api_key ?? t("zh_3c04f9")}
+          </code>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-8"
+            aria-label={t("misc.label.copy")}
+            onClick={() => copy(info?.api_key)}
+          >
             <Copy className="size-3.5" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => void resetKey("api_key")}>
@@ -162,10 +196,20 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_ff1321")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_ff1321")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-center gap-2">
-          <code className="bg-muted flex-1 truncate rounded px-2 py-1 text-xs">{info?.subscription_key ?? t("zh_3c04f9")}</code>
-          <Button variant="outline" size="icon" className="size-8" aria-label={t("misc.label.copy")} onClick={() => copy(info?.subscription_key)}>
+          <code className="bg-muted flex-1 truncate rounded px-2 py-1 text-xs">
+            {info?.subscription_key ?? t("zh_3c04f9")}
+          </code>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-8"
+            aria-label={t("misc.label.copy")}
+            onClick={() => copy(info?.subscription_key)}
+          >
             <Copy className="size-3.5" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => void resetKey("subscription_key")}>
@@ -175,7 +219,9 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_2b8e47")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_2b8e47")}</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-2 text-sm">
           {[
             ["notify_topup", t("zh_0a4c7a")],
@@ -184,14 +230,18 @@ export default function AccountPage() {
             ["notify_ticket", t("zh_6ac58c")],
           ].map(([key, label]) => {
             const subs =
-              (info as unknown as { notify_subscriptions?: Record<string, boolean> })?.notify_subscriptions ?? {};
+              (info as unknown as { notify_subscriptions?: Record<string, boolean> })?.notify_subscriptions ??
+              {};
             return (
               <div key={key} className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">{label}</span>
                 <Switch
                   checked={Boolean(subs[key])}
                   onCheckedChange={(v) =>
-                    void patch({ notify_subscriptions: { ...subs, [key]: v } }, v ? t("zh_d78cde") : t("zh_f62876"))
+                    void patch(
+                      { notify_subscriptions: { ...subs, [key]: v } },
+                      v ? t("zh_d78cde") : t("zh_f62876"),
+                    )
                   }
                 />
               </div>
@@ -201,11 +251,18 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_1c3757")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_1c3757")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-end gap-2">
           <div className="grid flex-1 gap-1.5">
             <Label className="text-xs">{t("zh_b4e7c5")}</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="new@example.com" />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="new@example.com"
+            />
           </div>
           <Button
             size="sm"
@@ -220,11 +277,18 @@ export default function AccountPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_0ae20a")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_0ae20a")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-end gap-2">
           <div className="grid flex-1 gap-1.5">
             <Label className="text-xs">{t("zh_d22c9c")}</Label>
-            <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder={t("8_bfd5e7")} />
+            <Input
+              type="password"
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              placeholder={t("8_bfd5e7")}
+            />
           </div>
           <Button
             size="sm"

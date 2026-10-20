@@ -32,17 +32,14 @@ export function startLicenseServer(
   const requestedPort = options.port ?? DEFAULT_PORT;
 
   return new Promise<RunningLicenseServer>((resolve, reject) => {
-    const server = serve(
-      { fetch: app.fetch, hostname: host, port: requestedPort },
-      (info) => {
-        resolve({
-          host,
-          port: info.port,
-          url: `http://${host}:${info.port}`,
-          close: () => closeServer(server),
-        });
-      },
-    ) as unknown as Server;
+    const server = serve({ fetch: app.fetch, hostname: host, port: requestedPort }, (info) => {
+      resolve({
+        host,
+        port: info.port,
+        url: `http://${host}:${info.port}`,
+        close: () => closeServer(server),
+      });
+    }) as unknown as Server;
 
     server.once("error", reject);
   });

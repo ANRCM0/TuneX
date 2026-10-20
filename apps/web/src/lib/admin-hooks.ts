@@ -41,11 +41,19 @@ export function useAdminUsers(
   );
 }
 
-export function useAdminTunnels(page = 1, perPage = 10, sort?: unknown): SWRResponse<Page<Record<string, unknown>>> {
+export function useAdminTunnels(
+  page = 1,
+  perPage = 10,
+  sort?: unknown,
+): SWRResponse<Page<Record<string, unknown>>> {
   return useSWR(keyAdminTunnels(page, perPage, sort), async () =>
     json(
       await adminClient.tunnel.$get({
-        query: { page: String(page), perPage: String(perPage), sort: sort ? JSON.stringify(sort) : undefined },
+        query: {
+          page: String(page),
+          perPage: String(perPage),
+          sort: sort ? JSON.stringify(sort) : undefined,
+        },
       }),
     ),
   );
@@ -57,14 +65,12 @@ export function useAdminTickets(
   status?: string,
   enabled = true,
 ): SWRResponse<Page<Record<string, unknown>>> {
-  return useSWR(
-    enabled ? keyAdminTickets(page, perPage, status) : null,
-    async () =>
-      json(
-        await adminClient.ticket.$get({
-          query: { page: String(page), perPage: String(perPage), status: status ?? undefined },
-        }),
-      ),
+  return useSWR(enabled ? keyAdminTickets(page, perPage, status) : null, async () =>
+    json(
+      await adminClient.ticket.$get({
+        query: { page: String(page), perPage: String(perPage), status: status ?? undefined },
+      }),
+    ),
   );
 }
 
@@ -74,14 +80,12 @@ export function useAdminWithdraw(
   status?: string,
   enabled = true,
 ): SWRResponse<Page<Record<string, unknown>>> {
-  return useSWR(
-    enabled ? keyAdminWithdraw(page, perPage, status) : null,
-    async () =>
-      json(
-        await adminClient.withdraw.$get({
-          query: { page: String(page), perPage: String(perPage), status: status ?? undefined },
-        }),
-      ),
+  return useSWR(enabled ? keyAdminWithdraw(page, perPage, status) : null, async () =>
+    json(
+      await adminClient.withdraw.$get({
+        query: { page: String(page), perPage: String(perPage), status: status ?? undefined },
+      }),
+    ),
   );
 }
 

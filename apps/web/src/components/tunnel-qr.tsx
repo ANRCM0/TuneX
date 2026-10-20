@@ -56,7 +56,11 @@ export function TunnelQrDialog({
 
   return (
     <Dialog open={Boolean(tunnel)} onOpenChange={onOpenChange}>
-      <DialogContent className={isOvpn ? "max-h-[90vh] overflow-y-auto sm:max-w-2xl" : "max-h-[90vh] overflow-y-auto sm:max-w-md"}>
+      <DialogContent
+        className={
+          isOvpn ? "max-h-[90vh] overflow-y-auto sm:max-w-2xl" : "max-h-[90vh] overflow-y-auto sm:max-w-md"
+        }
+      >
         <DialogHeader>
           <DialogTitle>{t("share.qrTitle")}</DialogTitle>
           <DialogDescription>{tf("share.qrDesc", { name: tunnel?.name ?? "" })}</DialogDescription>
@@ -71,7 +75,12 @@ export function TunnelQrDialog({
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                 <div className="space-y-1">
                   <p>{t("share.ovpnWarning")}</p>
-                  <a className="underline" href="https://openvpn.net/client/" target="_blank" rel="noopener noreferrer">
+                  <a
+                    className="underline"
+                    href="https://openvpn.net/client/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     https://openvpn.net/client/
                   </a>
                 </div>
@@ -94,7 +103,9 @@ export function TunnelQrDialog({
               </div>
             ) : null}
 
-            <pre className="bg-muted max-h-56 overflow-auto rounded-md p-3 text-xs break-all whitespace-pre-wrap">{value}</pre>
+            <pre className="bg-muted max-h-56 overflow-auto rounded-md p-3 text-xs break-all whitespace-pre-wrap">
+              {value}
+            </pre>
 
             <div className="flex gap-2">
               <Button
@@ -112,7 +123,9 @@ export function TunnelQrDialog({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => download(`${tunnel?.name ?? "relayx"}.ovpn`, value, "application/x-openvpn-profile")}
+                  onClick={() =>
+                    download(`${tunnel?.name ?? "relayx"}.ovpn`, value, "application/x-openvpn-profile")
+                  }
                 >
                   <Download className="size-3.5" /> {t("share.downloadOvpn")}
                 </Button>

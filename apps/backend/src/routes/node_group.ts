@@ -5,12 +5,7 @@ import { NodeType } from "@prisma/client";
 import { describeRoute, resolver, zValidator } from "../openapi";
 import { planRequired } from "../middlewares/plan";
 import { nodeGroupService } from "../services/node_group";
-import {
-  BatchIdSchema,
-  IdSchema,
-  NodeGroupQuerySchema,
-  NodeGroupRequestSchema,
-} from "../schemas/request";
+import { BatchIdSchema, IdSchema, NodeGroupQuerySchema, NodeGroupRequestSchema } from "../schemas/request";
 import { NodeGroupResponseSchema, NodeGroupSummaryResponseSchema } from "../schemas/response";
 import type { AppEnv } from "../types";
 
@@ -59,10 +54,7 @@ router.get(
   }),
   zValidator("query", NodeGroupQuerySchema),
   async (c) => {
-    const { data, total } = await nodeGroupService.getNodeGroups(
-      c.req.valid("query"),
-      c.get("user").id,
-    );
+    const { data, total } = await nodeGroupService.getNodeGroups(c.req.valid("query"), c.get("user").id);
     return c.json({
       data,
       total,

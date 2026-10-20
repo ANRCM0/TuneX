@@ -87,7 +87,9 @@ export default function AdminSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">{t("nav.settings")}</h2>
-          <p className="text-muted-foreground text-xs">{t("zh_497064")} {FIELDS.length} {t("setting_field_names_877745")}</p>
+          <p className="text-muted-foreground text-xs">
+            {t("zh_497064")} {FIELDS.length} {t("setting_field_names_877745")}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -96,14 +98,20 @@ export default function AdminSettingsPage() {
             onClick={() =>
               void (async () => {
                 const email = String(draft.TEST_EMAIL ?? "");
-                const res = await adminClient.system.config["test-email"].$post({ json: email ? { email } : {} });
+                const res = await adminClient.system.config["test-email"].$post({
+                  json: email ? { email } : {},
+                });
                 if (res.ok) toast.success(t("zh_035a27"));
               })()
             }
           >
             {t("app.sendTestEmail")}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => void client.system.config.$get({ query: {} }).then(() => mutate())}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void client.system.config.$get({ query: {} }).then(() => mutate())}
+          >
             {t("zh_5982c4")}
           </Button>
           <Button size="sm" disabled={saving} onClick={() => void save()}>
@@ -121,7 +129,9 @@ export default function AdminSettingsPage() {
 
         <TabsContent value="basic">
           <Card>
-            <CardHeader><CardTitle className="text-sm">{t("zh_509500")}</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">{t("zh_509500")}</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               {others.map((f) => (
                 <div key={f.key} className="grid gap-1.5">
@@ -153,7 +163,9 @@ export default function AdminSettingsPage() {
 
         <TabsContent value="notice">
           <Card>
-            <CardHeader><CardTitle className="text-sm">{t("markdown_64f307")}</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">{t("markdown_64f307")}</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-4">
               {markdown.map((f) => (
                 <div key={f.key} className="grid gap-1.5">
@@ -171,7 +183,9 @@ export default function AdminSettingsPage() {
 
         <TabsContent value="mail">
           <Card>
-            <CardHeader><CardTitle className="text-sm">{t("zh_519470")}</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">{t("zh_519470")}</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               {FIELDS.filter((f) => /SMTP|RESEND|EMAIL/.test(f.key)).map((f) => (
                 <div key={f.key} className="grid gap-1.5">

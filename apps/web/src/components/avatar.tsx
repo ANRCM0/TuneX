@@ -17,7 +17,10 @@ export function AvatarImage({ className, src, alt }: { className?: string; src?:
 export function AvatarFallback({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
-      className={cn("bg-muted flex size-full items-center justify-center rounded-full text-xs font-medium", className)}
+      className={cn(
+        "bg-muted flex size-full items-center justify-center rounded-full text-xs font-medium",
+        className,
+      )}
       {...props}
     />
   );

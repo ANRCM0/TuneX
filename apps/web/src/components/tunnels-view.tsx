@@ -13,7 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { setPageTitle } from "@/components/page-title";
 import { TunnelFormDialog, type TunnelDraft } from "@/components/tunnel-form";
 import { TunnelQrDialog } from "@/components/tunnel-qr";
@@ -34,25 +40,47 @@ type Tunnel = {
   created_at: string;
 };
 
-function ImportDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
+function ImportDialog({
+  open,
+  onOpenChange,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onDone: () => void;
+}) {
   const [text, setText] = React.useState("");
   const [groupId, setGroupId] = React.useState("");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader><DialogTitle>{t("tunnels.importTunnels")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("tunnels.importTunnels")}</DialogTitle>
+        </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("id_605348")}</Label>
-            <Input value={groupId} inputMode="numeric" onChange={(e) => setGroupId(e.target.value)} placeholder={t("zh_32945d")} />
+            <Input
+              value={groupId}
+              inputMode="numeric"
+              onChange={(e) => setGroupId(e.target.value)}
+              placeholder={t("zh_32945d")}
+            />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("json_0c3873")}</Label>
-            <Textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder='[{"name":"a","listen_port":10000,"dest":["1.2.3.4:80"]}]' />
+            <Textarea
+              rows={8}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder='[{"name":"a","listen_port":10000,"dest":["1.2.3.4:80"]}]'
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>{t("misc.label.cancel")}</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            {t("misc.label.cancel")}
+          </Button>
           <Button
             size="sm"
             onClick={() => {
@@ -85,25 +113,52 @@ function ImportDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
   );
 }
 
-function BatchDialog({ open, onOpenChange, ids, onDone, api }: { open: boolean; onOpenChange: (v: boolean) => void; ids: number[]; onDone: () => void; api: RpcProxy }) {
+function BatchDialog({
+  open,
+  onOpenChange,
+  ids,
+  onDone,
+  api,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  ids: number[];
+  onDone: () => void;
+  api: RpcProxy;
+}) {
   const [status, setStatus] = React.useState("");
   const [lb, setLb] = React.useState("");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{t("zh_cfd50d")}{ids.length} {t("zh_372545")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>
+            {t("zh_cfd50d")}
+            {ids.length} {t("zh_372545")}
+          </DialogTitle>
+        </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("misc.label.status")}</Label>
-            <Input value={status} onChange={(e) => setStatus(e.target.value)} placeholder={t("active_inactive_b92fff")} />
+            <Input
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              placeholder={t("active_inactive_b92fff")}
+            />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("zh_b3bee4")}</Label>
-            <Input value={lb} onChange={(e) => setLb(e.target.value)} placeholder={t("round_rand_fifo_0d92f4")} />
+            <Input
+              value={lb}
+              onChange={(e) => setLb(e.target.value)}
+              placeholder={t("round_rand_fifo_0d92f4")}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>{t("misc.label.cancel")}</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            {t("misc.label.cancel")}
+          </Button>
           <Button
             size="sm"
             onClick={() => {
@@ -218,10 +273,28 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
           </span>
         ),
       },
-      { accessorKey: "tunnel_type", header: t("zh_b0c431"), cell: (c) => <code className="text-xs">{String(c.getValue() ?? "")}</code> },
-      { accessorKey: "listen_port", header: t("zh_a31d9f"), cell: (c) => <span className="tabular-nums">{String(c.getValue() ?? "")}</span> },
-      { accessorKey: "status", header: t("misc.label.status"), cell: (c) => <BadgeStatus status={String(c.getValue() ?? "")} /> },
-      { accessorKey: "created_at", header: t("misc.label.created"), cell: (c) => <span className="text-muted-foreground text-xs">{formatDate(String(c.getValue() ?? ""))}</span> },
+      {
+        accessorKey: "tunnel_type",
+        header: t("zh_b0c431"),
+        cell: (c) => <code className="text-xs">{String(c.getValue() ?? "")}</code>,
+      },
+      {
+        accessorKey: "listen_port",
+        header: t("zh_a31d9f"),
+        cell: (c) => <span className="tabular-nums">{String(c.getValue() ?? "")}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: t("misc.label.status"),
+        cell: (c) => <BadgeStatus status={String(c.getValue() ?? "")} />,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        cell: (c) => (
+          <span className="text-muted-foreground text-xs">{formatDate(String(c.getValue() ?? ""))}</span>
+        ),
+      },
       {
         id: "actions",
         header: "",
@@ -238,7 +311,10 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
                   void (async () => {
                     const row = c.row.original;
                     const next = row.status === "active" ? "inactive" : "active";
-                    const res = await api.tunnel[":id"].status.$patch({ param: { id: row.id }, json: { status: next } });
+                    const res = await api.tunnel[":id"].status.$patch({
+                      param: { id: row.id },
+                      json: { status: next },
+                    });
                     if (res.ok) {
                       toast.success(next === "active" ? t("zh_25d284") : t("zh_6c7dcb"));
                       await mutate();
@@ -268,7 +344,12 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
                 {t("zh_0e8bfd")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { setWhitelistId(c.row.original.id); setWhitelistOpen(true); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setWhitelistId(c.row.original.id);
+                  setWhitelistOpen(true);
+                }}
+              >
                 {t("app.editWhitelist")}
               </DropdownMenuItem>
               <DropdownMenuItem className="text-destructive" onClick={() => void remove([c.row.original.id])}>
@@ -296,7 +377,9 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">{t("nav.tunnelManagement")}</h2>
-          <p className="text-muted-foreground text-xs">{t("zh_497064")} {data?.total ?? 0} {t("zh_eb8c2d")}</p>
+          <p className="text-muted-foreground text-xs">
+            {t("zh_497064")} {data?.total ?? 0} {t("zh_eb8c2d")}
+          </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
           {t("app.import")}
@@ -317,14 +400,19 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
         total={data?.total ?? 0}
         page={page}
         perPage={perPage}
-        onPageChange={(p) => void (window.location.search = `?page=${p}&perPage=${perPage}${sort ? `&sort=${JSON.stringify(sort)}` : ""}`)}
+        onPageChange={(p) =>
+          void (window.location.search = `?page=${p}&perPage=${perPage}${sort ? `&sort=${JSON.stringify(sort)}` : ""}`)
+        }
         sorting={sort as SortingState}
         isLoading={isLoading}
         error={error}
         draggable
         onReorder={async (rows, orderBy, index) => {
           const id = Number((rows[index] as { id?: unknown }).id);
-          const res = await api.tunnel[":id"].order.$patch({ param: { id: String(id) }, json: { order_by: orderBy } });
+          const res = await api.tunnel[":id"].order.$patch({
+            param: { id: String(id) },
+            json: { order_by: orderBy },
+          });
           if (!res.ok) throw new Error(t("zh_594fe0"));
           await mutate();
         }}
@@ -338,7 +426,9 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
               size="sm"
               onClick={() =>
                 void (async () => {
-                  const res = await api.tunnel.traffic.$delete({ query: { ids: selected.map((r) => r.id).join(",") } });
+                  const res = await api.tunnel.traffic.$delete({
+                    query: { ids: selected.map((r) => r.id).join(",") },
+                  });
                   if (res.ok) {
                     toast.success(t("zh_2b18fa"));
                     await mutate();
@@ -381,7 +471,8 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
         )}
       />
       <p className="text-muted-foreground text-xs">
-        SWR key: <code>{JSON.stringify(keyTunnels(page, perPage, sort))}</code>{t("status_53c9fc")} {status ?? t("zh_8bb38e")}）
+        SWR key: <code>{JSON.stringify(keyTunnels(page, perPage, sort))}</code>
+        {t("status_53c9fc")} {status ?? t("zh_8bb38e")}）
       </p>
 
       <TunnelFormDialog
@@ -424,7 +515,10 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
           void (async () => {
             if (!mobileRow) return;
             const next = mobileRow.status === "active" ? "inactive" : "active";
-            const res = await api.tunnel[":id"].status.$patch({ param: { id: mobileRow.id }, json: { status: next } });
+            const res = await api.tunnel[":id"].status.$patch({
+              param: { id: mobileRow.id },
+              json: { status: next },
+            });
             if (res.ok) {
               toast.success(next === "active" ? t("share.enabled") : t("share.disabled"));
               await mutate();
@@ -441,7 +535,13 @@ export function TunnelsView({ mode = "user" }: { mode?: "user" | "admin" }) {
       />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onDone={() => void mutate()} />
       {batchIds ? (
-        <BatchDialog open onOpenChange={(v: boolean) => !v && setBatchIds(null)} ids={batchIds} onDone={() => void mutate()} api={api} />
+        <BatchDialog
+          open
+          onOpenChange={(v: boolean) => !v && setBatchIds(null)}
+          ids={batchIds}
+          onDone={() => void mutate()}
+          api={api}
+        />
       ) : null}
     </div>
   );
@@ -471,20 +571,34 @@ function WhitelistDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{t("ip_43a300")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("ip_43a300")}</DialogTitle>
+        </DialogHeader>
         <div className="grid gap-1.5">
           <Label className="text-xs">{t("ip_cidr_4a2a72")}</Label>
-          <Textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder="1.2.3.4&#10;10.0.0.0/8" />
+          <Textarea
+            rows={8}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="1.2.3.4&#10;10.0.0.0/8"
+          />
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>{t("misc.label.cancel")}</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            {t("misc.label.cancel")}
+          </Button>
           <Button
             size="sm"
             onClick={() => {
               if (!tunnelId) return;
-              const ips = text.split("\n").map((s) => s.trim()).filter(Boolean);
+              const ips = text
+                .split("\n")
+                .map((s) => s.trim())
+                .filter(Boolean);
               void (async () => {
-                const res = await client.tunnel.whitelist.$patch({ json: { id: tunnelId, whitelist_ips: ips } });
+                const res = await client.tunnel.whitelist.$patch({
+                  json: { id: tunnelId, whitelist_ips: ips },
+                });
                 if (res.ok) {
                   toast.success(t("zh_29b8bd"));
                   onOpenChange(false);

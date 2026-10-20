@@ -36,8 +36,7 @@ const router = new Hono<AppEnv>();
  * `datetime('now', '+8 hours', '-n days')`, which is directly comparable with the
  * `datetime(col / 1000, 'unixepoch', '+8 hours')` fragments built by `utils/date`.
  */
-const localNowMinusDays = (days: number): string =>
-  `datetime('now', '+8 hours', '-${days} days')`;
+const localNowMinusDays = (days: number): string => `datetime('now', '+8 hours', '-${days} days')`;
 
 router.get(
   "/info",
@@ -127,25 +126,17 @@ router.patch(
   zValidator("json", UserUpdateSchema),
   async (c) => {
     const user = c.get("user");
-    const {
-      auto_renew,
-      notify_subscriptions,
-      admin_notify_subscriptions,
-      api_key,
-      subscription_key,
-    } = c.req.valid("json");
+    const { auto_renew, notify_subscriptions, admin_notify_subscriptions, api_key, subscription_key } =
+      c.req.valid("json");
     const data: Prisma.UserUpdateInput = {};
     if (auto_renew !== undefined) {
       data.auto_renew = auto_renew;
     }
     if (notify_subscriptions !== undefined) {
-      data.notify_subscriptions = normalizeNotifySubscriptions(
-        notify_subscriptions,
-      ) as Prisma.InputJsonValue;
+      data.notify_subscriptions = normalizeNotifySubscriptions(notify_subscriptions) as Prisma.InputJsonValue;
     }
     if (admin_notify_subscriptions !== undefined && user.super_admin) {
-      data.admin_notify_subscriptions =
-        admin_notify_subscriptions as unknown as Prisma.InputJsonValue;
+      data.admin_notify_subscriptions = admin_notify_subscriptions as unknown as Prisma.InputJsonValue;
     }
     let newApiKey: string | undefined;
     if (api_key !== undefined) {
@@ -366,16 +357,12 @@ router.get(
     ];
     const localCommissionCreatedAt = toLocalTZ("commission_log.created_at");
     if (start_date) {
-      earningsWhereConditions.push(
-        `DATE(${localCommissionCreatedAt}) >= '${formatDate(start_date)}'`,
-      );
+      earningsWhereConditions.push(`DATE(${localCommissionCreatedAt}) >= '${formatDate(start_date)}'`);
     } else {
       earningsWhereConditions.push(`${localCommissionCreatedAt} > ${localNowMinusDays(interval)}`);
     }
     if (end_date) {
-      earningsWhereConditions.push(
-        `DATE(${localCommissionCreatedAt}) <= '${formatDate(end_date)}'`,
-      );
+      earningsWhereConditions.push(`DATE(${localCommissionCreatedAt}) <= '${formatDate(end_date)}'`);
     }
     const earningsDateGroupBy = getDateGroupBy("commission_log.created_at", aggregate_by);
     const earningsQuery = `

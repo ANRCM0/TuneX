@@ -40,11 +40,20 @@ async function makePlan(overrides: Record<string, unknown> = {}) {
 
 async function makeGroup(userId: number, nodeType: "in" | "out", overrides: Record<string, unknown> = {}) {
   return db.nodeGroup.create({
-    data: { name: `${nodeType}-${Math.random().toString(36).slice(2, 6)}`, node_type: nodeType, user_id: userId, ...overrides } as never,
+    data: {
+      name: `${nodeType}-${Math.random().toString(36).slice(2, 6)}`,
+      node_type: nodeType,
+      user_id: userId,
+      ...overrides,
+    } as never,
   });
 }
 
-async function subscribe(userId: number, plan: { id: number }, options: { expiredAt?: Date | null; traffic?: number | null; used?: number } = {}) {
+async function subscribe(
+  userId: number,
+  plan: { id: number },
+  options: { expiredAt?: Date | null; traffic?: number | null; used?: number } = {},
+) {
   return db.userPlan.create({
     data: {
       user_id: userId,
@@ -233,16 +242,20 @@ describe("getUserNodeGroups", () => {
     const plan = await makePlan({ allow_custom_in_node_group: true, allow_custom_out_node_group: true });
     await subscribe(ownerId, plan);
 
-    await expect(
-      groups.checkUserNodeGroup({ id: ownerId }, inGroup.id, outGroup.id),
-    ).rejects.toMatchObject({ status: 403, message: "该入口节点组不允许使用此出口节点组" });
+    await expect(groups.checkUserNodeGroup({ id: ownerId }, inGroup.id, outGroup.id)).rejects.toMatchObject({
+      status: 403,
+      message: "该入口节点组不允许使用此出口节点组",
+    });
 
     await db.nodeGroup.update({ where: { id: inGroup.id }, data: { allow_out_node_groups: [outGroup.id] } });
-    await expect(groups.checkUserNodeGroup({ id: ownerId }, inGroup.id, outGroup.id)).resolves.toBeUndefined();
-
     await expect(
-      groups.checkUserNodeGroup({ id: ownerId }, inGroup.id, 999999),
-    ).rejects.toMatchObject({ status: 403, message: "节点组无权限" });
+      groups.checkUserNodeGroup({ id: ownerId }, inGroup.id, outGroup.id),
+    ).resolves.toBeUndefined();
+
+    await expect(groups.checkUserNodeGroup({ id: ownerId }, inGroup.id, 999999)).rejects.toMatchObject({
+      status: 403,
+      message: "节点组无权限",
+    });
   });
 });
 

@@ -40,9 +40,7 @@ const server = serve(
   },
   async (info) => {
     await start();
-    console.log(
-      `Server is running in ${process.env.NODE_ENV} mode: http://localhost:${info.port}`,
-    );
+    console.log(`Server is running in ${process.env.NODE_ENV} mode: http://localhost:${info.port}`);
   },
 );
 

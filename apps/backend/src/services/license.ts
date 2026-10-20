@@ -136,7 +136,7 @@ export class LicenseService {
 
   async getLicense(force = false): Promise<LicenseContent | null> {
     if (!force) {
-      const license = ((await this.redisService.getLicense()) as unknown as LicenseContent | null);
+      const license = (await this.redisService.getLicense()) as unknown as LicenseContent | null;
       if (license && license.site_url === SITE_URL) {
         return license;
       }
@@ -156,7 +156,7 @@ export class LicenseService {
   }
 
   async updateLicense(new_site_url: string): Promise<void> {
-    const content = ((await this.redisService.getLicense()) as unknown as LicenseContent | null);
+    const content = (await this.redisService.getLicense()) as unknown as LicenseContent | null;
     if (!content) {
       throw new HTTPException(404, { message: "请先购买 License" });
     }
@@ -192,4 +192,7 @@ export class LicenseService {
 }
 
 /** Self-registration. */
-export const licenseService = service<LicenseService>(TOKENS.License, () => new LicenseService(instance.resolve<RedisService>(TOKENS.Redis)));
+export const licenseService = service<LicenseService>(
+  TOKENS.License,
+  () => new LicenseService(instance.resolve<RedisService>(TOKENS.Redis)),
+);

@@ -67,7 +67,13 @@ describe("createWithdrawRequest", () => {
 
     const request = await service.createWithdrawRequest(userA, 30, "alipay", "acct-1");
 
-    expect(request).toMatchObject({ user_id: userA, amount: 30, method: "alipay", account: "acct-1", status: "pending" });
+    expect(request).toMatchObject({
+      user_id: userA,
+      amount: 30,
+      method: "alipay",
+      account: "acct-1",
+      status: "pending",
+    });
     const user = await db.user.findUniqueOrThrow({ where: { id: userA } });
     expect(user.commission_balance).toBe(70);
 

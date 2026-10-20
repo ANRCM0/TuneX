@@ -1,12 +1,7 @@
 import { formatDate, formatDateTime } from "@relayx/shared/date";
 import { db } from "../db";
 import { service, TOKENS } from "../container";
-import {
-  formatStatsDate,
-  getDateGroupBy,
-  getDateInterval,
-  toLocalTZ,
-} from "../utils/date";
+import { formatStatsDate, getDateGroupBy, getDateInterval, toLocalTZ } from "../utils/date";
 import { redisService, type RedisService } from "./redis";
 
 /**
@@ -134,9 +129,7 @@ export class StatsService {
   }
 
   /** `GET /admin/stats/user` — new-user counts bucketed by day/month/year. */
-  async getUserStats(
-    query: StatsQuery,
-  ): Promise<{ date: string; total: number }[]> {
+  async getUserStats(query: StatsQuery): Promise<{ date: string; total: number }[]> {
     const { start_date, end_date, aggregate_by } = query;
     const { conditions, params } = this.rangeConditions(
       toLocalTZ("created_at"),
@@ -152,10 +145,7 @@ export class StatsService {
         GROUP BY ${dateGroupBy}
         ORDER BY ${dateGroupBy}
       `;
-    const stats = await db.$queryRawUnsafe<{ date: unknown; total: unknown }[]>(
-      sql,
-      ...params,
-    );
+    const stats = await db.$queryRawUnsafe<{ date: unknown; total: unknown }[]>(sql, ...params);
     return stats.map((item) => ({
       date: formatStatsDate(item.date, aggregate_by),
       total: Number(item.total),
@@ -166,13 +156,7 @@ export class StatsService {
   async getTrafficStats(
     query: TrafficStatsQuery,
   ): Promise<{ date: string; traffic: number; traffic_cost: number }[]> {
-    const {
-      start_date,
-      end_date,
-      aggregate_by,
-      in_node_group_id,
-      out_node_group_id,
-    } = query;
+    const { start_date, end_date, aggregate_by, in_node_group_id, out_node_group_id } = query;
     const { conditions, params } = this.rangeConditions(
       toLocalTZ("tunnel_traffic.date"),
       start_date,
@@ -199,9 +183,10 @@ export class StatsService {
         GROUP BY ${dateGroupBy}
         ORDER BY ${dateGroupBy}
       `;
-    const stats = await db.$queryRawUnsafe<
-      { date: unknown; traffic: unknown; traffic_cost: unknown }[]
-    >(sql, ...params);
+    const stats = await db.$queryRawUnsafe<{ date: unknown; traffic: unknown; traffic_cost: unknown }[]>(
+      sql,
+      ...params,
+    );
     const result = stats.map((item) => ({
       date: formatStatsDate(item.date, aggregate_by),
       traffic: Number(item.traffic),
@@ -238,7 +223,4 @@ export class StatsService {
 }
 
 /** Self-registration. */
-export const statsService = service<StatsService>(
-  TOKENS.Stats,
-  () => new StatsService(redisService),
-);
+export const statsService = service<StatsService>(TOKENS.Stats, () => new StatsService(redisService));

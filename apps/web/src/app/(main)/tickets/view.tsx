@@ -8,15 +8,28 @@ import { client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "status", "label": t("misc.label.status"), "variant": "select"}];
+const FILTERS: FilterDef[] = [{ key: "status", label: t("misc.label.status"), variant: "select" }];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -24,16 +37,40 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/ticket", page, perPage, status], () => client.ticket.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/ticket", page, perPage, status],
+    () => client.ticket.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const doPatch = makePatcher(mutate);
   const patch = makePatch(client.ticket, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "id", header: "ID", enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "title", header: t("zh_748d7d"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "status", header: t("misc.label.status"), enableSorting: true, cell: (r) => <span>{labelEnum(r.getValue())}</span> },
-    { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "id",
+        header: "ID",
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "title",
+        header: t("zh_748d7d"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: t("misc.label.status"),
+        enableSorting: true,
+        cell: (r) => <span>{labelEnum(r.getValue())}</span>,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",
@@ -47,8 +84,17 @@ export default function View() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => void doPatch(client.ticket[":id"].$patch, { param: { id }, json: { status: "closed" } }, t("zh_d3c60e"))}>{t("zh_992e0f")}</DropdownMenuItem>
-
+                <DropdownMenuItem
+                  onClick={() =>
+                    void doPatch(
+                      client.ticket[":id"].$patch,
+                      { param: { id }, json: { status: "closed" } },
+                      t("zh_d3c60e"),
+                    )
+                  }
+                >
+                  {t("zh_992e0f")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -81,7 +127,6 @@ export default function View() {
             </div>
           </div>
         )}
-
       />
     </div>
   );

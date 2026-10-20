@@ -45,7 +45,7 @@ function makeTunnel(options: {
   return {
     id: options.id,
     user_id: options.userId ?? 1,
-    in_node_group: { user_id: options.inGroupOwner ?? (options.userId ?? 1) },
+    in_node_group: { user_id: options.inGroupOwner ?? options.userId ?? 1 },
     out_node_group:
       options.outGroupOwner === undefined
         ? null

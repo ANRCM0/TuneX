@@ -37,9 +37,7 @@ export class NodeGroupService {
   ): Promise<void> {
     const groups = await this.getUserNodeGroups(user);
     const in_node_group = groups.find((group) => group.id === in_node_group_id);
-    const out_node_group = out_node_group_id
-      ? groups.find((group) => group.id === out_node_group_id)
-      : null;
+    const out_node_group = out_node_group_id ? groups.find((group) => group.id === out_node_group_id) : null;
     if (!in_node_group || (out_node_group_id && !out_node_group)) {
       throw new HTTPException(403, { message: "节点组无权限" });
     }

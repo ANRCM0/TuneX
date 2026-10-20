@@ -44,8 +44,10 @@ export class MemoryRedis {
 
   // ── expiry ───────────────────────────────────────────────────────────────────
   private purgeExpired(now = Date.now()): void {
-    for (const [key, entry] of this.strings) if (entry.exp !== null && entry.exp <= now) this.strings.delete(key);
-    for (const [key, entry] of this.hashes) if (entry.exp !== null && entry.exp <= now) this.hashes.delete(key);
+    for (const [key, entry] of this.strings)
+      if (entry.exp !== null && entry.exp <= now) this.strings.delete(key);
+    for (const [key, entry] of this.hashes)
+      if (entry.exp !== null && entry.exp <= now) this.hashes.delete(key);
     for (const [key, entry] of this.sets) if (entry.exp !== null && entry.exp <= now) this.sets.delete(key);
   }
 
@@ -104,6 +106,23 @@ export class MemoryRedis {
     return this.expireKey(key, seconds) ? 1 : 0;
   }
 
+  /** Fixed-window counter (see middlewares/rate_limit.ts). Keeps the entry's TTL. */
+  async incr(key: string): Promise<number> {
+    const now = Date.now();
+    const entry = this.live(this.strings.get(key), now);
+    const next = entry ? Number.parseInt(entry.v, 10) + 1 : 1;
+    this.strings.set(key, { v: String(next), exp: entry ? entry.exp : null });
+    return next;
+  }
+
+  /** Remaining TTL in seconds, mirroring Redis: -2 missing, -1 no expiry. */
+  async ttl(key: string): Promise<number> {
+    const entry = this.live(this.strings.get(key));
+    if (!entry) return -2;
+    if (entry.exp === null) return -1;
+    return Math.max(1, Math.ceil((entry.exp - Date.now()) / 1000));
+  }
+
   async ping(): Promise<"PONG"> {
     return "PONG";
   }
@@ -114,7 +133,9 @@ export class MemoryRedis {
     this.hashes.set(key, hash);
     let added = 0;
     const entries: [string, string][] =
-      typeof field === "object" ? Object.entries(field).map(([k, v]) => [k, String(v)]) : [[field, String(value)]];
+      typeof field === "object"
+        ? Object.entries(field).map(([k, v]) => [k, String(v)])
+        : [[field, String(value)]];
     for (const [f, v] of entries) {
       if (!hash.m.has(f)) added += 1;
       hash.m.set(f, v);
@@ -178,7 +199,12 @@ export class MemoryRedis {
   // ── keyspace ─────────────────────────────────────────────────────────────────
   async keys(pattern: string): Promise<string[]> {
     this.purgeExpired();
-    const regex = new RegExp(`^${pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
+    const regex = new RegExp(
+      `^${pattern
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, ".*")
+        .replace(/\?/g, ".")}$`,
+    );
     const all = [...this.strings.keys(), ...this.hashes.keys(), ...this.sets.keys()];
     return all.filter((key) => regex.test(key));
   }
@@ -260,7 +286,12 @@ export class MemoryRedis {
 
   /** Direct access for tests / the health endpoint. */
   get stats(): { strings: number; hashes: number; sets: number; channels: number } {
-    return { strings: this.strings.size, hashes: this.hashes.size, sets: this.sets.size, channels: this.channels.size };
+    return {
+      strings: this.strings.size,
+      hashes: this.hashes.size,
+      sets: this.sets.size,
+      channels: this.channels.size,
+    };
   }
 }
 
@@ -396,4 +427,3 @@ export class RedisLock {
     }
   }
 }
-

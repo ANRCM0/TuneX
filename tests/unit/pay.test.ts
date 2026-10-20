@@ -119,9 +119,7 @@ describe("signing", () => {
 
   it("escapes slashes before Base64 for the JSON signature", () => {
     const pay = new TestPay(payment());
-    expect(pay.generateJsonBase64Sign({ url: "http://a/b", n: 1 })).toBe(
-      "f287a48c2317bfcf174aa21ee513829c",
-    );
+    expect(pay.generateJsonBase64Sign({ url: "http://a/b", n: 1 })).toBe("f287a48c2317bfcf174aa21ee513829c");
   });
 
   it("verifies a well-formed signature and rejects malformed ones", () => {

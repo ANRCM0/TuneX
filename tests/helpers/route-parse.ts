@@ -192,7 +192,12 @@ export function registrationsWithDocs(source: string): ParsedRegistration[] {
       methods = args[0]
         .slice(1, -1)
         .split(",")
-        .map((m) => m.trim().replace(/^["']|["']$/g, "").toUpperCase())
+        .map((m) =>
+          m
+            .trim()
+            .replace(/^["']|["']$/g, "")
+            .toUpperCase(),
+        )
         .filter(Boolean);
       path = args[1].slice(1, -1);
       rest = args.slice(2);
@@ -203,9 +208,7 @@ export function registrationsWithDocs(source: string): ParsedRegistration[] {
       rest = args.slice(1);
     }
 
-    const targets = rest.flatMap((arg) =>
-      [...arg.matchAll(/zValidator\(\s*"(\w+)"/g)].map((m) => m[1]),
-    );
+    const targets = rest.flatMap((arg) => [...arg.matchAll(/zValidator\(\s*"(\w+)"/g)].map((m) => m[1]));
     const docs = docsIn(rest);
     for (const method of methods) out.push({ method, path, targets: targets.sort(), docs });
   }
@@ -237,9 +240,7 @@ export function modulePath(spec: string): string | null {
 /** Full mount prefix per router identifier, from the two `.route(...)` chains. */
 export function mountPrefixes(app: string): Map<string, string> {
   const chain = (segment: string) =>
-    [...segment.matchAll(/\.route\(\s*"([^"]+)"\s*,\s*(\w+)\s*\)/g)].map(
-      (m) => [m[1], m[2]] as const,
-    );
+    [...segment.matchAll(/\.route\(\s*"([^"]+)"\s*,\s*(\w+)\s*\)/g)].map((m) => [m[1], m[2]] as const);
   const adminStart = app.indexOf("const adminRoutes");
   const routesStart = app.indexOf("const routes = app");
   const adminEntries = chain(app.slice(adminStart, routesStart));

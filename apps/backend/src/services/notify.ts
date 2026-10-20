@@ -5,10 +5,7 @@ import { escapeMarkdown } from "@relayx/shared/telegram";
 import { SITE_URL } from "../config";
 import { db } from "../db";
 import { service } from "../container";
-import {
-  getAdminChannels,
-  getChannels,
-} from "./notify-types";
+import { getAdminChannels, getChannels } from "./notify-types";
 import { emailService, type EmailService } from "./email";
 import { telegramService, type TelegramService } from "./telegram";
 import { userService, type UserService } from "./user";
@@ -122,11 +119,7 @@ export class NotifyService {
   private userService: UserService;
   private emailService: EmailService;
 
-  constructor(
-    telegramService: TelegramService,
-    userService: UserService,
-    emailService: EmailService,
-  ) {
+  constructor(telegramService: TelegramService, userService: UserService, emailService: EmailService) {
     this.telegramService = telegramService;
     this.userService = userService;
     this.emailService = emailService;
@@ -136,11 +129,7 @@ export class NotifyService {
     return escapeMarkdown(String(value));
   }
 
-  private buildTelegramMessage(
-    title: string,
-    fields: NotifyField[],
-    emoji?: string,
-  ): string {
+  private buildTelegramMessage(title: string, fields: NotifyField[], emoji?: string): string {
     const heading = emoji ? `${emoji} ${title}` : title;
     const lines = [`*${this.esc(heading)}*`, ""];
     for (const f of fields) {
@@ -264,13 +253,8 @@ export class NotifyService {
 
     const superAdmins = await this.userService.getSuperAdmins();
     if (superAdmins.length > 0) {
-      const adminFields: NotifyField[] = [
-        { label: "用户邮箱", value: user.email },
-        ...sharedFields,
-      ];
-      const adminButtons: NotifyButton[] = [
-        { text: "查看充值记录", url: `${SITE_URL}/admin/topups` },
-      ];
+      const adminFields: NotifyField[] = [{ label: "用户邮箱", value: user.email }, ...sharedFields];
+      const adminButtons: NotifyButton[] = [{ text: "查看充值记录", url: `${SITE_URL}/admin/topups` }];
       for (const admin of superAdmins) {
         const channels = getAdminChannels(admin.admin_notify_subscriptions, "user_topup");
         await this.dispatch({
@@ -301,12 +285,7 @@ export class NotifyService {
     });
   }
 
-  async notifySubscribePlan(
-    user: User,
-    plan: Plan,
-    price: number,
-    balance: number,
-  ): Promise<void> {
+  async notifySubscribePlan(user: User, plan: Plan, price: number, balance: number): Promise<void> {
     const channels = getChannels(user.notify_subscriptions, "subscribe_plan");
     if (!channels.email && !channels.telegram) return;
 

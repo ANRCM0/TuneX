@@ -251,16 +251,15 @@ class DnsClient {
 
   constructor(credentials: HuaweiCredentials) {
     this.credentials = credentials;
-    this.baseUrl = `https://dns.${credentials.region}.myhuaweicloud.com`;
+    // Overridable for the integration fixture and for private endpoints.
+    this.baseUrl = process.env.HUAWEI_DNS_API_BASE || `https://dns.${credentials.region}.myhuaweicloud.com`;
   }
 
   async listPublicZones(request: ListPublicZonesRequest): Promise<ListPublicZonesResponse> {
     return this.request<ListPublicZonesResponse>("GET", "/v2/zones", request.params);
   }
 
-  async listRecordSetsWithLine(
-    request: ListRecordSetsWithLineRequest,
-  ): Promise<ListRecordSetsResponse> {
+  async listRecordSetsWithLine(request: ListRecordSetsWithLineRequest): Promise<ListRecordSetsResponse> {
     return this.request<ListRecordSetsResponse>("GET", "/v2.1/recordsets", request.params);
   }
 
@@ -290,9 +289,7 @@ class DnsClient {
     );
   }
 
-  async batchDeleteRecordSetWithLine(
-    request: BatchDeleteRecordSetWithLineRequest,
-  ): Promise<unknown> {
+  async batchDeleteRecordSetWithLine(request: BatchDeleteRecordSetWithLineRequest): Promise<unknown> {
     return this.request<unknown>(
       "POST",
       `/v2.1/zones/${request.zoneId}/recordsets/batch-delete`,
@@ -302,12 +299,7 @@ class DnsClient {
   }
 
   /** Huawei Cloud AK/SK (`SDK-HMAC-SHA256`) signed request. */
-  private async request<T>(
-    method: string,
-    path: string,
-    params?: QueryParams,
-    body?: unknown,
-  ): Promise<T> {
+  private async request<T>(method: string, path: string, params?: QueryParams, body?: unknown): Promise<T> {
     const query = canonicalQuery(params ?? {});
     const payload = body === undefined ? "" : JSON.stringify(body);
     const url = query ? `${this.baseUrl}${path}?${query}` : `${this.baseUrl}${path}`;
@@ -320,18 +312,11 @@ class DnsClient {
     };
 
     const signedHeaderNames = Object.keys(headers).sort();
-    const canonicalHeaders = `${signedHeaderNames
-      .map((name) => `${name}:${headers[name]}`)
-      .join("\n")}\n`;
+    const canonicalHeaders = `${signedHeaderNames.map((name) => `${name}:${headers[name]}`).join("\n")}\n`;
     const signedHeaders = signedHeaderNames.join(";");
-    const canonicalRequest = [
-      method,
-      path,
-      query,
-      canonicalHeaders,
-      signedHeaders,
-      sha256Hex(payload),
-    ].join("\n");
+    const canonicalRequest = [method, path, query, canonicalHeaders, signedHeaders, sha256Hex(payload)].join(
+      "\n",
+    );
     const stringToSign = ["SDK-HMAC-SHA256", xSdkDate, sha256Hex(canonicalRequest)].join("\n");
     const signingKey = this.signingKey(xSdkDate);
     const signature = hmacSha256(signingKey, stringToSign).toString("hex");
@@ -386,10 +371,7 @@ export class HuaweiDNSProvider implements DNSProvider {
   }
 
   async listRecords(): Promise<DNSRecord[]> {
-    const request = new ListRecordSetsWithLineRequest()
-      .withName(this.domain)
-      .withLimit(500)
-      .withOffset(0);
+    const request = new ListRecordSetsWithLineRequest().withName(this.domain).withLimit(500).withOffset(0);
     const response = await this.client.listRecordSetsWithLine(request);
     const fqdn = `${this.domain}.`;
     const records: DNSRecord[] = [];
@@ -493,10 +475,7 @@ export class HuaweiDNSProvider implements DNSProvider {
   }
 
   async deleteRecords(): Promise<void> {
-    const request = new ListRecordSetsWithLineRequest()
-      .withName(this.domain)
-      .withLimit(100)
-      .withOffset(0);
+    const request = new ListRecordSetsWithLineRequest().withName(this.domain).withLimit(100).withOffset(0);
     const response = await this.client.listRecordSetsWithLine(request);
     const fqdn = `${this.domain}.`;
     const recordsetIds =

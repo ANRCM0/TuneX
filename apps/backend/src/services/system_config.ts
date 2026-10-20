@@ -94,4 +94,7 @@ export class SystemConfigService {
 }
 
 /** Self-registration. */
-export const systemConfigService = service<SystemConfigService>(TOKENS.SystemConfig, () => new SystemConfigService());
+export const systemConfigService = service<SystemConfigService>(
+  TOKENS.SystemConfig,
+  () => new SystemConfigService(),
+);

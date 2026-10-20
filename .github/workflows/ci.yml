@@ -43,8 +43,10 @@ jobs:
         run: pnpm seed
       - name: Typecheck
         run: pnpm -r typecheck
-      - name: Unit tests
-        run: pnpm test
+      - name: Prettier check
+        run: pnpm lint
+      - name: Unit tests (with coverage gate)
+        run: pnpm test:coverage
       - name: Web build (Next.js standalone)
         # The console is a workspace package: typecheck/tests run above, but the
         # production build is a separate gate (Turbopack, RSC, route manifest).

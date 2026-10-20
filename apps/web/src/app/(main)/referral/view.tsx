@@ -55,12 +55,17 @@ export default function ReferralPage() {
 
   const commissionLog = useSWR(["/user/commission/log"], async () => {
     const res = await client.user.commission.log.$get({ query: { page: "1", perPage: "10" } });
-    return (await res.json()) as { data?: { id: number; type?: string; amount?: number; created_at?: string }[] };
+    return (await res.json()) as {
+      data?: { id: number; type?: string; amount?: number; created_at?: string }[];
+    };
   });
 
   const withdrawList = useSWR(["/commission/withdraw"], async () => {
     const res = await client.commission.withdraw.$get({ query: { page: "1", perPage: "10" } });
-    return (await res.json()) as { data?: { id: number; amount?: number; status?: string; created_at?: string }[]; total?: number };
+    return (await res.json()) as {
+      data?: { id: number; amount?: number; status?: string; created_at?: string }[];
+      total?: number;
+    };
   });
 
   const withdraw = async () => {
@@ -81,19 +86,25 @@ export default function ReferralPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader><CardTitle className="text-sm">{t("zh_3125ea")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{t("zh_3125ea")}</CardTitle>
+          </CardHeader>
           <CardContent className="text-2xl font-semibold tabular-nums">
             ¥{Number(info.data?.commission ?? 0).toFixed(2)}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-sm">{t("misc.label.balance")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{t("misc.label.balance")}</CardTitle>
+          </CardHeader>
           <CardContent className="text-2xl font-semibold tabular-nums">
             ¥{Number(info.data?.balance ?? 0).toFixed(2)}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-sm">{t("misc.label.actions")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{t("misc.label.actions")}</CardTitle>
+          </CardHeader>
           <CardContent className="flex gap-2">
             <Button size="sm" onClick={() => setOpen(true)}>
               <Wallet className="size-3.5" /> {t("referral.requestWithdrawal")}
@@ -128,16 +139,26 @@ export default function ReferralPage() {
           />
         </ChartCard>
         <Card>
-          <CardHeader><CardTitle className="text-sm">{t("zh_7f4235")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">{t("zh_7f4235")}</CardTitle>
+          </CardHeader>
           <CardContent className="flex flex-col items-center gap-2">
-            {url ? <div className="rounded-lg bg-white p-3"><QRCode value={url} size={132} /></div> : <p className="text-muted-foreground text-xs">{t("zh_79f778")}</p>}
+            {url ? (
+              <div className="rounded-lg bg-white p-3">
+                <QRCode value={url} size={132} />
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-xs">{t("zh_79f778")}</p>
+            )}
             <code className="text-muted-foreground max-w-full truncate text-xs">{url || "—"}</code>
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_11c4c2")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_11c4c2")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
           {(commissionLog.data?.data ?? []).length === 0 ? (
             <p className="text-muted-foreground text-xs">{t("app.noCommissionRecords")}</p>
@@ -154,7 +175,9 @@ export default function ReferralPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_b52f7a")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_b52f7a")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
           {(withdrawList.data?.data ?? []).length === 0 ? (
             <p className="text-muted-foreground text-xs">{t("app.noWithdrawals")}</p>
@@ -162,7 +185,9 @@ export default function ReferralPage() {
             (withdrawList.data?.data ?? []).map((w) => (
               <div key={w.id} className="flex items-center justify-between border-b py-1 last:border-0">
                 <span className="tabular-nums">¥{Number(w.amount ?? 0).toFixed(2)}</span>
-                <span className="text-muted-foreground text-xs">{w.status} · {w.created_at?.slice(0, 10)}</span>
+                <span className="text-muted-foreground text-xs">
+                  {w.status} · {w.created_at?.slice(0, 10)}
+                </span>
               </div>
             ))
           )}
@@ -171,16 +196,25 @@ export default function ReferralPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>{t("referral.requestWithdrawal")}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t("referral.requestWithdrawal")}</DialogTitle>
+          </DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label className="text-xs">{t("misc.label.amount")}</Label>
-              <Input value={amount} inputMode="decimal" onChange={(e) => setAmount(e.target.value)} placeholder={t("100_c34b20")} />
+              <Input
+                value={amount}
+                inputMode="decimal"
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={t("100_c34b20")}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs">{t("zh_9f9ca5")}</Label>
               <Select value={method} onValueChange={setMethod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="alipay">{t("zh_66f117")}</SelectItem>
                   <SelectItem value="wechat">{t("zh_68406d")}</SelectItem>
@@ -191,8 +225,12 @@ export default function ReferralPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>{t("misc.label.cancel")}</Button>
-            <Button size="sm" onClick={() => void withdraw()}>{t("zh_e4bc33")}</Button>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+              {t("misc.label.cancel")}
+            </Button>
+            <Button size="sm" onClick={() => void withdraw()}>
+              {t("zh_e4bc33")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

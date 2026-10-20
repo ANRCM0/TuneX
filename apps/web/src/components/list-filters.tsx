@@ -33,7 +33,8 @@ export function useListFilters(defs: FilterDef[]) {
   const parsers = React.useMemo(() => {
     const out: Record<string, unknown> = {};
     for (const d of defs) {
-      out[d.key] = d.variant === "multiSelect" ? parseAsArrayOf(parseAsString).withDefault([]) : parseAsString;
+      out[d.key] =
+        d.variant === "multiSelect" ? parseAsArrayOf(parseAsString).withDefault([]) : parseAsString;
     }
     // nuqs accepts a map of parsers; keys are dynamic so the shape is asserted here.
     return out as Parameters<typeof useQueryStates>[0];
@@ -60,7 +61,9 @@ export function useListFilters(defs: FilterDef[]) {
         <PopoverTrigger>
           <Button variant="outline" size="sm">
             <Filter className="size-3.5" /> {t("filters.filters")}
-            {active > 0 ? <span className="bg-primary text-primary-foreground rounded px-1 text-[10px]">{active}</span> : null}
+            {active > 0 ? (
+              <span className="bg-primary text-primary-foreground rounded px-1 text-[10px]">{active}</span>
+            ) : null}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 space-y-3" align="start">

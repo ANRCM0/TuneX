@@ -8,15 +8,33 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch } from "@/lib/actions";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "name", "label": t("zh_57916d"), "variant": "text"}, {"key": "user.email", "label": t("misc.label.users"), "variant": "text"}, {"key": "in_node_group.name", "label": t("zh_a2a58f"), "variant": "select"}, {"key": "out_node_group.name", "label": t("zh_59de81"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "name", label: t("zh_57916d"), variant: "text" },
+  { key: "user.email", label: t("misc.label.users"), variant: "text" },
+  { key: "in_node_group.name", label: t("zh_a2a58f"), variant: "select" },
+  { key: "out_node_group.name", label: t("zh_59de81"), variant: "select" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -24,22 +42,75 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/tunnel/stats", page, perPage, status], () => adminClient.tunnel.stats.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/tunnel/stats", page, perPage, status],
+    () => adminClient.tunnel.stats.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const patch = makePatch(adminClient.tunnel.stats, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "name", header: t("zh_57916d"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "user.email", header: t("misc.label.users"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "in_node_group.name", header: t("zh_a2a58f"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "out_node_group.name", header: t("zh_59de81"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "stats.currentConns", header: t("zh_9c4a1b"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "stats.currentClients", header: t("ip_02d291"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "stats.totalConns", header: t("zh_b9f114"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "stats.inputSpeed", header: t("zh_ecedcf"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "stats.outputSpeed", header: t("zh_810f5f"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "stats.totalErrs", header: t("zh_dd8688"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-
+      {
+        accessorKey: "name",
+        header: t("zh_57916d"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "user.email",
+        header: t("misc.label.users"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "in_node_group.name",
+        header: t("zh_a2a58f"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "out_node_group.name",
+        header: t("zh_59de81"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "stats.currentConns",
+        header: t("zh_9c4a1b"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "stats.currentClients",
+        header: t("ip_02d291"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "stats.totalConns",
+        header: t("zh_b9f114"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "stats.inputSpeed",
+        header: t("zh_ecedcf"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "stats.outputSpeed",
+        header: t("zh_810f5f"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "stats.totalErrs",
+        header: t("zh_dd8688"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
     ],
     [],
   );
@@ -67,7 +138,6 @@ export default function View() {
             </div>
           </div>
         )}
-
       />
     </div>
   );

@@ -43,6 +43,11 @@ export function SheetHeader({ className, ...props }: React.ComponentProps<"div">
 export function SheetTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return <DialogPrimitive.Title className={cn("font-semibold", className)} {...props} />;
 }
-export function SheetDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
-  return <DialogPrimitive.Description className={cn("text-muted-foreground text-sm", className)} {...props} />;
+export function SheetDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  return (
+    <DialogPrimitive.Description className={cn("text-muted-foreground text-sm", className)} {...props} />
+  );
 }

@@ -171,9 +171,7 @@ router.get(
   }),
   async (c) => {
     const user = c.get("user");
-    const hideNodeStatus = await systemConfigService.getConfig(
-      SystemConfigName.HIDE_NODE_STATUS,
-    );
+    const hideNodeStatus = await systemConfigService.getConfig(SystemConfigName.HIDE_NODE_STATUS);
     let groups = await nodeGroupService.getUserNodeGroups(user);
     if (hideNodeStatus) {
       groups = groups.filter((group) => group.user_id === user.id);
@@ -224,9 +222,9 @@ router.get(
       };
     });
     if (orphanNodes.length > 0) {
-      Promise.all(
-        orphanNodes.map((n) => redisService.delNodeSysinfo(n.node_group_id, n.node_id)),
-      ).catch(() => {});
+      Promise.all(orphanNodes.map((n) => redisService.delNodeSysinfo(n.node_group_id, n.node_id))).catch(
+        () => {},
+      );
     }
     return c.json(data);
   },

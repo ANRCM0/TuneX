@@ -54,9 +54,7 @@ router.post(
     const { email } = c.req.valid("json");
     const to = email || c.get("user").email;
     const siteName =
-      ((await systemConfigService.getConfig(
-        SystemConfigName.SITE_NAME,
-      )) as string) ?? "RelayX";
+      ((await systemConfigService.getConfig(SystemConfigName.SITE_NAME)) as string) ?? "RelayX";
 
     const sent = await emailService.sendEmail(
       to,

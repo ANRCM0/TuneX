@@ -15,11 +15,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import {
-  API_MAP,
-  appLevelRegistrations,
-  replicaRegistrations,
-} from "../helpers/route-parse";
+import { API_MAP, appLevelRegistrations, replicaRegistrations } from "../helpers/route-parse";
 
 interface RouteRegistration {
   method: string;
@@ -42,6 +38,7 @@ const DOCUMENTED_EXTRAS = [
   "GET /auth/me",
   "POST /auth/verify-email",
   "POST /auth/verify-email/request",
+  "GET /metrics",
 ];
 
 const PRESENT = existsSync(API_MAP);
@@ -51,10 +48,7 @@ describe.skipIf(!PRESENT)("route table parity", () => {
     ? (JSON.parse(readFileSync(API_MAP, "utf8")) as { routes: RouteRegistration[] }).routes
     : [];
 
-  const replicaTable = new Set<string>([
-    ...replicaRegistrations().keys(),
-    ...appLevelRegistrations().keys(),
-  ]);
+  const replicaTable = new Set<string>([...replicaRegistrations().keys(), ...appLevelRegistrations().keys()]);
   const upstreamTable = new Set(api.map((route) => `${route.method} ${route.path}`));
 
   it("has the documented upstream shape", () => {
@@ -73,6 +67,6 @@ describe.skipIf(!PRESENT)("route table parity", () => {
   });
 
   it("still has the documented replica count", () => {
-    expect(replicaTable.size).toBe(170);
+    expect(replicaTable.size).toBe(171);
   });
 });

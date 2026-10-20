@@ -8,15 +8,31 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "user", "label": t("misc.label.users"), "variant": "text"}, {"key": "status", "label": t("misc.label.status"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "user", label: t("misc.label.users"), variant: "text" },
+  { key: "status", label: t("misc.label.status"), variant: "select" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -24,20 +40,64 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/withdraw", page, perPage, status], () => adminClient.withdraw.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/withdraw", page, perPage, status],
+    () => adminClient.withdraw.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const doPatch = makePatcher(mutate);
   const patch = makePatch(adminClient.withdraw, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "id", header: "ID", enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "user", header: t("misc.label.users"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "amount", header: t("zh_67272d"), enableSorting: true, cell: (r) => <MoneyCell value={r.getValue()} /> },
-    { accessorKey: "method", header: t("zh_9f9ca5"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "account", header: t("zh_63e816"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "status", header: t("misc.label.status"), enableSorting: false, cell: (r) => <span>{labelEnum(r.getValue())}</span> },
-    { accessorKey: "remark", header: t("zh_e03614"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "created_at", header: t("zh_e85ad6"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "id",
+        header: "ID",
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "user",
+        header: t("misc.label.users"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "amount",
+        header: t("zh_67272d"),
+        enableSorting: true,
+        cell: (r) => <MoneyCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "method",
+        header: t("zh_9f9ca5"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "account",
+        header: t("zh_63e816"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: t("misc.label.status"),
+        enableSorting: false,
+        cell: (r) => <span>{labelEnum(r.getValue())}</span>,
+      },
+      {
+        accessorKey: "remark",
+        header: t("zh_e03614"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("zh_e85ad6"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",
@@ -51,9 +111,21 @@ export default function View() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => void doPatch(adminClient.withdraw[":id"].approve.$post, { param: { id } }, t("zh_4b3c96"))}>{t("admin.withdraw.approve")}</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" onClick={() => void doPatch(adminClient.withdraw[":id"].reject.$post, { param: { id } }, t("zh_4c7c52"))}>{t("admin.withdraw.reject")}</DropdownMenuItem>
-
+                <DropdownMenuItem
+                  onClick={() =>
+                    void doPatch(adminClient.withdraw[":id"].approve.$post, { param: { id } }, t("zh_4b3c96"))
+                  }
+                >
+                  {t("admin.withdraw.approve")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() =>
+                    void doPatch(adminClient.withdraw[":id"].reject.$post, { param: { id } }, t("zh_4c7c52"))
+                  }
+                >
+                  {t("admin.withdraw.reject")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -86,7 +158,6 @@ export default function View() {
             </div>
           </div>
         )}
-
       />
     </div>
   );

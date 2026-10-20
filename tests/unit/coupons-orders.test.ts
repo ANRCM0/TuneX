@@ -28,7 +28,12 @@ async function makeCoupon(overrides: Record<string, unknown> = {}) {
   });
 }
 
-async function makeOrder(userId: number, couponId: number | null, orderId: string, status: "pending" | "success" = "pending") {
+async function makeOrder(
+  userId: number,
+  couponId: number | null,
+  orderId: string,
+  status: "pending" | "success" = "pending",
+) {
   return db.topupOrder.create({
     data: {
       user_id: userId,

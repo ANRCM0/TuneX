@@ -27,7 +27,7 @@ const SPECIAL_CHARS = [
   "{",
   "}",
   ".",
-  "!"
+  "!",
 ];
 
 export const escapeMarkdown = (text: string): string => {

@@ -21,11 +21,7 @@ async function enqueueNodeDisconnect(node_id: number): Promise<void> {
       default?: { add: (name: string, data: unknown, opts?: unknown) => Promise<unknown> };
     };
     const queue = mod.queue ?? mod.queueDefault ?? mod.default;
-    await queue?.add(
-      "notify_node_disconnect",
-      { node_id },
-      { delay: NOTIFY_NODE_DISCONNECT_DELAY_MS },
-    );
+    await queue?.add("notify_node_disconnect", { node_id }, { delay: NOTIFY_NODE_DISCONNECT_DELAY_MS });
   } catch (e) {
     logger.error(e, "Failed to enqueue notify_node_disconnect");
   }

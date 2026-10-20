@@ -22,10 +22,7 @@ export interface SentryOptions {
   dsn: string;
   environment: string;
   enabled: boolean;
-  beforeSend?: (
-    event: unknown,
-    hint?: { originalException?: unknown },
-  ) => unknown | null;
+  beforeSend?: (event: unknown, hint?: { originalException?: unknown }) => unknown | null;
 }
 
 export function sentry(options: SentryOptions): MiddlewareHandler {
@@ -40,10 +37,7 @@ export function sentry(options: SentryOptions): MiddlewareHandler {
       const hint = { originalException: err };
       const keep = options.beforeSend ? options.beforeSend({}, hint) : {};
       if (keep) {
-        logger.error(
-          { err, environment: options.environment ?? NODE_ENV, path: c.req.path },
-          "sentry event",
-        );
+        logger.error({ err, environment: options.environment ?? NODE_ENV, path: c.req.path }, "sentry event");
       }
       throw err;
     }

@@ -38,7 +38,9 @@ describe("effectiveAccess", () => {
   });
 
   it("lets a super admin through even on a personal licence", () => {
-    expect(effectiveAccess({ super_admin: true, admin_access: access }, { type: "personal" })).toEqual(access);
+    expect(effectiveAccess({ super_admin: true, admin_access: access }, { type: "personal" })).toEqual(
+      access,
+    );
   });
 
   it("returns an empty map for an absent user", () => {

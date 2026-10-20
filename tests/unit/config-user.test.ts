@@ -120,9 +120,7 @@ describe("UserService", () => {
     const unlinked = await db.user.create({ data: { email: "unlinked@example.test" } });
 
     await users.changePassword(linked.id, "new-secret");
-    expect(stackAuthCalls).toEqual([
-      { kind: "update", args: ["uid-1", { password: "new-secret" }] },
-    ]);
+    expect(stackAuthCalls).toEqual([{ kind: "update", args: ["uid-1", { password: "new-secret" }] }]);
 
     await expect(users.changePassword(unlinked.id, "x")).rejects.toMatchObject({
       status: 400,

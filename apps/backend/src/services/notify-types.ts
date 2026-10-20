@@ -41,9 +41,7 @@ export function supportsEmailNotification(type: string): boolean {
 }
 
 /** Accepts both the legacy string[] shape and the current record shape. */
-export function normalizeNotifySubscriptions(
-  raw: unknown,
-): Partial<Record<string, NotifyChannelFlags>> {
+export function normalizeNotifySubscriptions(raw: unknown): Partial<Record<string, NotifyChannelFlags>> {
   if (!raw) return {};
   if (Array.isArray(raw)) {
     const result: Partial<Record<string, NotifyChannelFlags>> = {};
@@ -75,9 +73,7 @@ export function getChannels(raw: unknown, type: string): NotifyChannelFlags {
   return map[type] ?? { email: false, telegram: false };
 }
 
-export function normalizeAdminNotifySubscriptions(
-  raw: unknown,
-): Partial<Record<string, NotifyChannelFlags>> {
+export function normalizeAdminNotifySubscriptions(raw: unknown): Partial<Record<string, NotifyChannelFlags>> {
   const result: Partial<Record<string, NotifyChannelFlags>> = {};
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
@@ -99,9 +95,7 @@ export function getAdminChannels(raw: unknown, type: string): NotifyChannelFlags
   return map[type] ?? { email: false, telegram: false };
 }
 
-export function buildAdminNotifySubscriptionsResponse(
-  raw: unknown,
-): Record<string, NotifyChannelFlags> {
+export function buildAdminNotifySubscriptionsResponse(raw: unknown): Record<string, NotifyChannelFlags> {
   const defaults: Record<string, NotifyChannelFlags> = {};
   for (const type of Object.values(AdminNotifyType)) {
     defaults[type] = getAdminChannels(raw, type);

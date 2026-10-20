@@ -123,13 +123,7 @@ describe("pub/sub facade", () => {
 describe("pipeline", () => {
   it("executes queued commands in order and returns errors as tuples", async () => {
     const r = redis();
-    const results = r
-      .pipeline()
-      .hset("h", "f", "v")
-      .sadd("s", "m")
-      .expire("h", 60)
-      .hgetall("h")
-      .exec();
+    const results = r.pipeline().hset("h", "f", "v").sadd("s", "m").expire("h", 60).hgetall("h").exec();
 
     expect(results).toHaveLength(4);
     expect(results[0]).toEqual([null, undefined]);

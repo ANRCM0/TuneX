@@ -52,7 +52,9 @@ describe("tickLocalScheduler", () => {
     );
     const { jobs } = await import("../../apps/backend/src/bullmq/jobs");
     const atSecondFive = new Date("2026-01-02T04:00:05.000Z");
-    const expected = jobs.filter((job) => job.cron && cronMatches(job.cron, atSecondFive)).map((job) => job.name);
+    const expected = jobs
+      .filter((job) => job.cron && cronMatches(job.cron, atSecondFive))
+      .map((job) => job.name);
     expect(expected).toEqual(["cron_push_node_config"]);
     await expect(tickLocalScheduler(atSecondFive)).resolves.toEqual(expected);
     await expect(tickLocalScheduler(atSecondFive)).resolves.toEqual([]);

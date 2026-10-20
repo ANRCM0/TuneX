@@ -8,7 +8,10 @@ import type { PrismaClient } from "../../apps/backend/src/db";
 
 const temp: TempDatabase = createTempDatabase("socket-handlers");
 
-type Handler = (data: Record<string, unknown>, callback?: (result: { error?: string }) => void) => Promise<void>;
+type Handler = (
+  data: Record<string, unknown>,
+  callback?: (result: { error?: string }) => void,
+) => Promise<void>;
 
 let db: PrismaClient;
 let register: (socket: unknown) => void;

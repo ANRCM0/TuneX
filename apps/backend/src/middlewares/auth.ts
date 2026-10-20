@@ -58,6 +58,8 @@ export const noAuthPathsRegex: RegExp[] = [
   /^\/system\/config\/site/,
   /^\/license\/notify/,
   /^\/license/,
+  // Prometheus scrape endpoint: gated by DIAG_TOKEN or loopback in routes/metrics.ts.
+  /^\/metrics$/,
   // Local auth: the browser has no session yet when it calls these. /auth/me and
   // /auth/verify-email stay protected.
   /^\/auth\/(sign-in|sign-up|sign-out|refresh)$/,
@@ -205,10 +207,8 @@ async function resolveCookieUser(payload: JWTPayload, parentId?: number): Promis
   const uid = (me as { id?: string }).id;
 
   // `uid` is nullable and not unique upstream (a StackAuth account can be linked to one
-    // RelayX user), so this is a `findFirst`, not a `findUnique`.
-    let user = uid
-      ? await db.user.findFirst({ where: { uid }, include: { admin_roles: true } })
-      : null;
+  // RelayX user), so this is a `findFirst`, not a `findUnique`.
+  let user = uid ? await db.user.findFirst({ where: { uid }, include: { admin_roles: true } }) : null;
 
   if (!user) {
     const existingByEmail = await db.user.findUnique({ where: { email }, include: { admin_roles: true } });
@@ -311,9 +311,7 @@ export const authRequired = async (c: Context<AppEnv>, next: Next) => {
         return true;
       },
     });
-    return (
-      bearer as unknown as (c: Context<AppEnv>, next: Next) => Promise<Response>
-    )(c, next);
+    return (bearer as unknown as (c: Context<AppEnv>, next: Next) => Promise<Response>)(c, next);
   }
 
   return next();

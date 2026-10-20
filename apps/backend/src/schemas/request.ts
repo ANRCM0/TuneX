@@ -14,12 +14,7 @@ import {
   CommissionLogType,
 } from "@prisma/client";
 import { AdminNotifyType, NotifyType } from "../services/notify-types";
-import {
-  NodeGroupSchema,
-  PaymentSchema,
-  TunnelSchema,
-  UserSchema,
-} from "../generated/zod";
+import { NodeGroupSchema, PaymentSchema, TunnelSchema, UserSchema } from "../generated/zod";
 
 /**
  * Upstream: src/schemas/request.ts (277 lines) — ported 1:1.
@@ -45,11 +40,7 @@ export const TunnelChainSchema = z.object({
   node_type: z.nativeEnum(NodeType),
 });
 
-export const ALLOWED_SHADOWSOCKS_METHODS = [
-  "chacha20-ietf-poly1305",
-  "aes-128-gcm",
-  "aes-256-gcm",
-];
+export const ALLOWED_SHADOWSOCKS_METHODS = ["chacha20-ietf-poly1305", "aes-128-gcm", "aes-256-gcm"];
 
 export const WireGuardPeerSchema = z.object({
   publicKey: z.string(),
@@ -141,9 +132,7 @@ export const TunnelImportRequestSchema = z.object({
 });
 
 export const BatchIdSchema = z.object({
-  ids: z
-    .string()
-    .transform((val) => val.split(",").map(Number)),
+  ids: z.string().transform((val) => val.split(",").map(Number)),
 });
 
 export const BatchTunnelRequestSchema = z.object({
@@ -224,12 +213,7 @@ export const CommissionLogQuerySchema = TableRequestSchema.extend({
 });
 
 export const NodeQuerySchema = TableRequestSchema.extend({
-  node_group_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
-    .nullish(),
+  node_group_id: z.union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])]).nullish(),
   ip: z.string().nullish(),
   node_id: z.string().optional(),
   status: z.nativeEnum(Status).nullish(),
@@ -249,10 +233,7 @@ export const NotifyChannelFlagsSchema = z.object({
   telegram: z.boolean(),
 });
 
-export const NotifySubscriptionsSchema = z.record(
-  z.nativeEnum(NotifyType),
-  NotifyChannelFlagsSchema,
-);
+export const NotifySubscriptionsSchema = z.record(z.nativeEnum(NotifyType), NotifyChannelFlagsSchema);
 
 export const AdminNotifySubscriptionsSchema = z.record(
   z.nativeEnum(AdminNotifyType),
@@ -288,41 +269,21 @@ export const BalanceAdjustSchema = z.object({
 export const TunnelQuerySchema = TableRequestSchema.extend({
   name: z.string().nullish(),
   in_node_group_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
+    .union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])])
     .nullish(),
   out_node_group_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
+    .union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])])
     .nullish(),
   in_tunnel_chain_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
+    .union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])])
     .nullish(),
   out_tunnel_chain_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
+    .union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])])
     .nullish(),
-  status: z
-    .union([
-      z.array(z.nativeEnum(Status)),
-      z.nativeEnum(Status).transform((val) => [val]),
-    ])
-    .nullish(),
+  status: z.union([z.array(z.nativeEnum(Status)), z.nativeEnum(Status).transform((val) => [val])]).nullish(),
   ip_type: z.nativeEnum(IpType).optional(),
   tunnel_type: z
-    .union([
-      z.array(z.nativeEnum(TunnelType)),
-      z.nativeEnum(TunnelType).transform((val) => [val]),
-    ])
+    .union([z.array(z.nativeEnum(TunnelType)), z.nativeEnum(TunnelType).transform((val) => [val])])
     .nullish(),
   listen_port: z.coerce.number().nullish(),
 });
@@ -346,16 +307,10 @@ export const TunnelTrafficStatsQuerySchema = z.object({
 export const TunnelStatsQuerySchema = TableRequestSchema.extend({
   name: z.string().nullish(),
   in_node_group_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
+    .union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])])
     .nullish(),
   out_node_group_id: z
-    .union([
-      z.array(z.coerce.number()),
-      z.coerce.number().transform((val) => [val]),
-    ])
+    .union([z.array(z.coerce.number()), z.coerce.number().transform((val) => [val])])
     .nullish(),
 });
 

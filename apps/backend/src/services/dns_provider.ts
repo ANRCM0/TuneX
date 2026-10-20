@@ -2,10 +2,7 @@ import type { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { db } from "../db";
 import { service } from "../container";
-import {
-  DNSProviderQuerySchema,
-  DNSProviderRequestSchema,
-} from "../schemas/request";
+import { DNSProviderQuerySchema, DNSProviderRequestSchema } from "../schemas/request";
 
 /**
  * Upstream: src/services/dns_provider.ts (module 094) — ported 1:1.

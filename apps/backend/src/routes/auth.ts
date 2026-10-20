@@ -41,9 +41,13 @@ import {
   verifyToken,
 } from "../services/local_auth";
 import type { AppEnv, SessionUser } from "../types";
+import { clearFailures, isLocked, LOGIN_MAX_FAILURES, recordFailure } from "../middlewares/rate_limit";
 
 const systemConfigService = () => instance.resolve<SystemConfigService>(TOKENS.SystemConfig);
-const mailService = () => instance.resolve<{ sendEmail: (to: string, subject: string, text: string, html?: string) => Promise<boolean> }>(TOKENS.Mail);
+const mailService = () =>
+  instance.resolve<{
+    sendEmail: (to: string, subject: string, text: string, html?: string) => Promise<boolean>;
+  }>(TOKENS.Mail);
 const redisService = () => instance.resolve<RedisService>(TOKENS.Redis);
 
 const app = new Hono<AppEnv>();
@@ -54,6 +58,8 @@ const Credentials = z.object({
 });
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+/** Lock duration in seconds; mirrors `middlewares/rate_limit.ts`. */
+const LOGIN_LOCK_SECONDS_DEFAULT = Number.parseInt(process.env.LOGIN_LOCK_SECONDS || "900", 10);
 
 function assertLocalMode(): void {
   if (AUTH_MODE !== "local") {
@@ -70,7 +76,10 @@ function assertLocalMode(): void {
  * middleware decodes before `JSON.parse`. Deviation from upstream's raw-JSON cookie, see
  * docs/DEVIATIONS.md §30.
  */
-function setSessionCookies(c: Parameters<typeof setCookie>[0], pair: Awaited<ReturnType<typeof issueTokens>>) {
+function setSessionCookies(
+  c: Parameters<typeof setCookie>[0],
+  pair: Awaited<ReturnType<typeof issueTokens>>,
+) {
   for (const cookie of authCookies(pair)) {
     setCookie(c, cookie.name, cookie.value, {
       path: "/",
@@ -148,17 +157,34 @@ app.post("/sign-in", zValidator("json", Credentials), async (c) => {
   const { email, password } = c.req.valid("json");
   const normalized = normalizeEmail(email);
 
+  // Account lockout is keyed on the submitted address, so it holds across source IPs.
+  const lock = isLocked(normalized);
+  if (lock.locked) {
+    c.header("Retry-After", String(lock.retryAfter));
+    throw new HTTPException(429, {
+      message: `尝试次数过多，请 ${Math.ceil(lock.retryAfter / 60)} 分钟后再试`,
+    });
+  }
+
   const user = await db.user.findUnique({
     where: { email: normalized },
     include: { admin_roles: true, credential: true },
   });
   if (!user?.credential || !(await verifyPassword(password, user.credential.password_hash))) {
+    const result = recordFailure(normalized);
+    if (result.locked) {
+      c.header("Retry-After", String(LOGIN_LOCK_SECONDS_DEFAULT));
+      throw new HTTPException(429, {
+        message: `连续 ${LOGIN_MAX_FAILURES} 次失败，账户已锁定 ${Math.ceil(LOGIN_LOCK_SECONDS_DEFAULT / 60)} 分钟`,
+      });
+    }
     throw new HTTPException(401, { message: "邮箱或密码不正确" });
   }
   if (user.status === "inactive") {
     throw new HTTPException(403, { message: "用户账户已被封禁" });
   }
 
+  clearFailures(normalized);
   const pair = await issueTokens(user.id);
   setSessionCookies(c, pair);
   await redisService().setUserSub(String(user.id), user.id);
@@ -193,7 +219,12 @@ app.get("/me", async (c) => {
   const user = c.get("user");
   if (!user) throw new HTTPException(401, { message: "Unauthorized" });
   const credential = await db.localCredential.findUnique({ where: { user_id: user.id } });
-  return c.json({ user: { ...publicUser(user as SessionUser & { credential?: null }), email_verified: credential?.email_verified ?? true } });
+  return c.json({
+    user: {
+      ...publicUser(user as SessionUser & { credential?: null }),
+      email_verified: credential?.email_verified ?? true,
+    },
+  });
 });
 
 /**
@@ -213,7 +244,10 @@ app.post("/verify-email/request", async (c) => {
   if (credential.email_verified) return c.json({ ok: true, alreadyVerified: true });
 
   const now = Date.now();
-  if (credential.verification_sent_at && now - credential.verification_sent_at.getTime() < AUTH_VERIFY_RESEND_SECONDS * 1000) {
+  if (
+    credential.verification_sent_at &&
+    now - credential.verification_sent_at.getTime() < AUTH_VERIFY_RESEND_SECONDS * 1000
+  ) {
     throw new HTTPException(429, { message: "发送过于频繁，请稍后再试" });
   }
 
@@ -259,43 +293,47 @@ app.post("/verify-email/request", async (c) => {
  * the direct-mode shortcut, allowed only when no mail transport is configured — otherwise a
  * caller could skip ownership proof by simply omitting the token.
  */
-app.post("/verify-email", zValidator("json", z.object({ token: z.string().min(16).max(128).optional() }).partial()), async (c) => {
-  assertLocalMode();
-  const user = c.get("user");
-  if (!user) throw new HTTPException(401, { message: "Unauthorized" });
+app.post(
+  "/verify-email",
+  zValidator("json", z.object({ token: z.string().min(16).max(128).optional() }).partial()),
+  async (c) => {
+    assertLocalMode();
+    const user = c.get("user");
+    if (!user) throw new HTTPException(401, { message: "Unauthorized" });
 
-  const credential = await db.localCredential.findUnique({ where: { user_id: user.id } });
-  if (!credential) throw new HTTPException(400, { message: "该账户不支持邮箱验证" });
-  if (credential.email_verified) return c.json({ ok: true, alreadyVerified: true });
+    const credential = await db.localCredential.findUnique({ where: { user_id: user.id } });
+    if (!credential) throw new HTTPException(400, { message: "该账户不支持邮箱验证" });
+    if (credential.email_verified) return c.json({ ok: true, alreadyVerified: true });
 
-  const { token } = c.req.valid("json");
+    const { token } = c.req.valid("json");
 
-  if (token) {
-    const expired =
-      credential.verification_token_expires_at !== null &&
-      credential.verification_token_expires_at.getTime() < Date.now();
-    if (expired || !emailTokenMatches(token, credential.verification_token_hash)) {
-      throw new HTTPException(400, { message: "验证链接无效或已过期" });
+    if (token) {
+      const expired =
+        credential.verification_token_expires_at !== null &&
+        credential.verification_token_expires_at.getTime() < Date.now();
+      if (expired || !emailTokenMatches(token, credential.verification_token_hash)) {
+        throw new HTTPException(400, { message: "验证链接无效或已过期" });
+      }
+      await db.localCredential.update({
+        where: { user_id: user.id },
+        data: {
+          email_verified: true,
+          verification_token_hash: null,
+          verification_token_expires_at: null,
+        },
+      });
+      return c.json({ ok: true });
+    }
+
+    if (AUTH_VERIFY_MODE !== "direct") {
+      throw new HTTPException(400, { message: "请使用邮件中的链接验证" });
     }
     await db.localCredential.update({
       where: { user_id: user.id },
-      data: {
-        email_verified: true,
-        verification_token_hash: null,
-        verification_token_expires_at: null,
-      },
+      data: { email_verified: true, verification_token_hash: null, verification_token_expires_at: null },
     });
-    return c.json({ ok: true });
-  }
-
-  if (AUTH_VERIFY_MODE !== "direct") {
-    throw new HTTPException(400, { message: "请使用邮件中的链接验证" });
-  }
-  await db.localCredential.update({
-    where: { user_id: user.id },
-    data: { email_verified: true, verification_token_hash: null, verification_token_expires_at: null },
-  });
-  return c.json({ ok: true, direct: true });
-});
+    return c.json({ ok: true, direct: true });
+  },
+);
 
 export default app;

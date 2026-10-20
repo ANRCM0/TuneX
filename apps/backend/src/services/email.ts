@@ -81,11 +81,7 @@ export class EmailService {
 
   isSmtpEnabled(config: EmailConfig): boolean {
     return Boolean(
-      config.smtpHost &&
-        config.smtpPort &&
-        config.smtpUser &&
-        config.smtpPass &&
-        config.smtpFrom,
+      config.smtpHost && config.smtpPort && config.smtpUser && config.smtpPass && config.smtpFrom,
     );
   }
 
@@ -93,12 +89,7 @@ export class EmailService {
     return Boolean(config.resendApiKey && config.resendFrom);
   }
 
-  async sendEmail(
-    to: string,
-    subject: string,
-    text: string,
-    html?: string,
-  ): Promise<boolean> {
+  async sendEmail(to: string, subject: string, text: string, html?: string): Promise<boolean> {
     if (!to) {
       return false;
     }
@@ -137,10 +128,7 @@ export class EmailService {
           }),
         });
         if (!res.ok) {
-          logger.error(
-            { status: res.status, body: await res.text() },
-            "Failed to send email via Resend",
-          );
+          logger.error({ status: res.status, body: await res.text() }, "Failed to send email via Resend");
           return false;
         }
         return true;
@@ -155,8 +143,5 @@ export class EmailService {
 
 export const emailService = service<EmailService>(
   TOKENS.Mail,
-  () =>
-    new EmailService(
-      instance.resolve<SystemConfigService>(TOKENS.SystemConfig),
-    ),
+  () => new EmailService(instance.resolve<SystemConfigService>(TOKENS.SystemConfig)),
 );

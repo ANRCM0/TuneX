@@ -204,9 +204,7 @@ router.put(
           note,
           referral_commission_rate,
           referral_first_only,
-          admin_roles: admin_role_ids
-            ? { set: admin_role_ids.map((roleId) => ({ id: roleId })) }
-            : undefined,
+          admin_roles: admin_role_ids ? { set: admin_role_ids.map((roleId) => ({ id: roleId })) } : undefined,
         },
       });
       const adminExists = await tx.user.findFirst({

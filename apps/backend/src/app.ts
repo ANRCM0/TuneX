@@ -9,17 +9,15 @@ import { logger } from "./logger";
 import { getRequestIP } from "./middlewares/ip";
 import { requestLogger } from "./middlewares/request-logger";
 import { sentry } from "./middlewares/sentry";
-import {
-  adminPermissionGuard,
-  adminRequired,
-  authRequired,
-  superAdminRequired,
-} from "./middlewares/auth";
+import { adminPermissionGuard, adminRequired, authRequired, superAdminRequired } from "./middlewares/auth";
 import { businessLicenseRequired } from "./middlewares/license";
+import { BUCKETS, rateLimit } from "./middlewares/rate_limit";
+import { requestMetrics } from "./middlewares/metrics";
 import { instance, TOKENS } from "./container";
 import type { TelegramService } from "./services/telegram";
 
 import health from "./routes/health";
+import metrics from "./routes/metrics";
 import auth from "./routes/auth";
 import queuedash from "./bullmq/queuedash";
 
@@ -60,13 +58,14 @@ import { initBullMQ } from "./bullmq/queue";
 
 const app = new Hono();
 
-app.use(getRequestIP, requestLogger);
+app.use(getRequestIP, requestLogger, requestMetrics);
 if (!isProduction()) {
   app.use("*", cors());
 }
 
 app.route("/queuedash", queuedash);
 app.route("/health", health);
+app.route("/metrics", metrics);
 
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
@@ -97,6 +96,16 @@ app.use(
   authRequired,
 );
 
+// Rate limits sit in front of the auth guard: sign-in/sign-up are public, and the limiter
+// must answer 429 before any credential work happens.
+app.use("/auth/sign-in", rateLimit(BUCKETS.signIn));
+app.use("/auth/sign-up", rateLimit(BUCKETS.signUp));
+app.use("/auth/verify-email/request", rateLimit(BUCKETS.verifyMail));
+// Payment callbacks and the node observer are unauthenticated by design (see
+// noAuthPathsRegex); bound them so a spoofed burst cannot exhaust the process.
+app.use("/pay/*", rateLimit(BUCKETS.callback));
+app.use("/tunnel/observer", rateLimit(BUCKETS.observer));
+
 // Local auth lives behind the guard so `/auth/me` sees `c.get("user")`; the sign-in,
 // sign-up, sign-out and refresh endpoints are whitelisted by `noAuthPathsRegex`.
 // (Hono appends middleware to routes registered *earlier*, so mount order matters here —
@@ -116,8 +125,7 @@ app.get(
       info: {
         title: "RelayX API",
         version: "1.0.0",
-        description:
-          "RelayX API 接口文档，请使用 Bearer Token 进行认证，格式为 `Bearer <apiKey>`",
+        description: "RelayX API 接口文档，请使用 Bearer Token 进行认证，格式为 `Bearer <apiKey>`",
       },
       components: {
         securitySchemes: {

@@ -14,7 +14,10 @@ import { DateCell, MoneyCell } from "@/components/cells";
 import { setPageTitle } from "@/components/page-title";
 
 type License = { type?: string; expired_at?: string; site_url?: string };
-type History = { data?: { id: number; order_id?: string; amount?: number; status?: string; created_at?: string }[]; total?: number };
+type History = {
+  data?: { id: number; order_id?: string; amount?: number; status?: string; created_at?: string }[];
+  total?: number;
+};
 
 export default function AdminLicensePage() {
   const license = useSWR(["/license", "admin"], async () => {
@@ -59,18 +62,43 @@ export default function AdminLicensePage() {
       <h2 className="text-lg font-semibold">{t("nav.license")}</h2>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_46f0f1")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_46f0f1")}</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-2 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("misc.label.type")}</span><span>{license.data?.type === "business" ? t("zh_7b6c3b") : license.data?.type === "personal" ? t("zh_af5013") : t("zh_f1ebc7")}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("misc.label.expires")}</span><DateCell value={license.data?.expired_at} /></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("app.site")}</span><span>{license.data?.site_url ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("zh_d7d38a")}</span><span>{coupon.data?.code ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("zh_06f59e")}</span><span>{payInfo.data?.price != null ? `¥${payInfo.data.price}` : "—"}</span></div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("misc.label.type")}</span>
+            <span>
+              {license.data?.type === "business"
+                ? t("zh_7b6c3b")
+                : license.data?.type === "personal"
+                  ? t("zh_af5013")
+                  : t("zh_f1ebc7")}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("misc.label.expires")}</span>
+            <DateCell value={license.data?.expired_at} />
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("app.site")}</span>
+            <span>{license.data?.site_url ?? "—"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("zh_d7d38a")}</span>
+            <span>{coupon.data?.code ?? "—"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("zh_06f59e")}</span>
+            <span>{payInfo.data?.price != null ? `¥${payInfo.data.price}` : "—"}</span>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_501661")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_501661")}</CardTitle>
+        </CardHeader>
         <CardContent className="flex items-end gap-2">
           <div className="grid flex-1 gap-1.5">
             <Label className="text-xs">License Key</Label>
@@ -108,7 +136,9 @@ export default function AdminLicensePage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("nav.orders")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("nav.orders")}</CardTitle>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -121,14 +151,22 @@ export default function AdminLicensePage() {
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="h-20 text-center">{t("misc.empty.noData")}</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={4} className="h-20 text-center">
+                    {t("misc.empty.noData")}
+                  </TableCell>
+                </TableRow>
               ) : (
                 rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="text-xs">{r.order_id ?? r.id}</TableCell>
-                    <TableCell><MoneyCell value={r.amount} /></TableCell>
+                    <TableCell>
+                      <MoneyCell value={r.amount} />
+                    </TableCell>
                     <TableCell>{r.status ?? "—"}</TableCell>
-                    <TableCell><DateCell value={r.created_at} /></TableCell>
+                    <TableCell>
+                      <DateCell value={r.created_at} />
+                    </TableCell>
                   </TableRow>
                 ))
               )}

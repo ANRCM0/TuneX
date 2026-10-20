@@ -41,7 +41,5 @@ const LABEL: Record<string, string> = {
 };
 
 export function BadgeStatus({ status, className }: { status: string; className?: string }) {
-  return (
-    <Badge className={cn(STATUS_CLASS[status], className)}>{LABEL[status] ?? status}</Badge>
-  );
+  return <Badge className={cn(STATUS_CLASS[status], className)}>{LABEL[status] ?? status}</Badge>;
 }

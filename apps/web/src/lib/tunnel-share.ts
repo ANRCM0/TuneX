@@ -95,8 +95,15 @@ export function buildShare(t: ShareTunnel): ShareResult | null {
       if (!p.uuid || !p.publicKey) return null;
       const dest = (p.dest ?? "www.apple.com:443").trim();
       const sni = dest.includes(":") ? dest.slice(0, dest.lastIndexOf(":")) : dest;
-      const q = ["type=tcp", "encryption=none", "security=reality", "flow=xtls-rprx-vision", "fp=chrome",
-        `sni=${encodeURIComponent(sni)}`, `pbk=${encodeURIComponent(p.publicKey)}`];
+      const q = [
+        "type=tcp",
+        "encryption=none",
+        "security=reality",
+        "flow=xtls-rprx-vision",
+        "fp=chrome",
+        `sni=${encodeURIComponent(sni)}`,
+        `pbk=${encodeURIComponent(p.publicKey)}`,
+      ];
       if (p.shortId) q.push(`sid=${encodeURIComponent(p.shortId)}`);
       return { url: `vless://${p.uuid}@${host}:${port}?${q.join("&")}${tag}` };
     }
@@ -161,7 +168,9 @@ export function buildShare(t: ShareTunnel): ShareResult | null {
       })
         .toString()
         .replace(/\+/g, "%20");
-      return { url: `mierus://${encodeURIComponent(p.username)}:${encodeURIComponent(p.password)}@${host}?${q}${tag}` };
+      return {
+        url: `mierus://${encodeURIComponent(p.username)}:${encodeURIComponent(p.password)}@${host}?${q}${tag}`,
+      };
     }
     case "openvpn": {
       if (!p.ca || !p.clientCert || !p.clientKey || !p.tlsCrypt) return null;

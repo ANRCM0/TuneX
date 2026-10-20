@@ -19,7 +19,7 @@ router.post(
     tags: ["优惠券管理"],
     responses: {
       201: {
-        description: "优惠券创建成功"
+        description: "优惠券创建成功",
       },
     },
   }),
@@ -59,7 +59,9 @@ router.get(
   ),
   async (c) => {
     const { page, perPage, sort, code, type, valid_cycle } = c.req.valid("query");
-    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({ [sort2.id]: sort2.desc ? "desc" : "asc" }));
+    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({
+      [sort2.id]: sort2.desc ? "desc" : "asc",
+    }));
     const where = {
       code: code ? { contains: code } : undefined,
       type: type ? type : undefined,

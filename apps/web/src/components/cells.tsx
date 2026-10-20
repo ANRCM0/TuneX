@@ -84,7 +84,9 @@ export function MultiCell({ value }: { value: unknown }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-default underline decoration-dotted">{list.length} {t("zh_12de8e")}</span>
+          <span className="cursor-default underline decoration-dotted">
+            {list.length} {t("zh_12de8e")}
+          </span>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <div className="flex flex-col gap-0.5">
@@ -108,7 +110,12 @@ export function QrCell({ onClick }: { onClick?: () => void }) {
 
 export function LinkCell({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline">
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 underline"
+    >
       {children} <ExternalLink className="size-3" />
     </a>
   );

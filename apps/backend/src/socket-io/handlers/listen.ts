@@ -16,8 +16,7 @@ async function repushTunnelGroup(tunnel_id: number): Promise<void> {
     select: { category: true, in_node_group_id: true, out_node_group_id: true },
   });
   if (!tunnel) return;
-  const group_id =
-    tunnel.category === "port_forward" ? tunnel.in_node_group_id : tunnel.out_node_group_id;
+  const group_id = tunnel.category === "port_forward" ? tunnel.in_node_group_id : tunnel.out_node_group_id;
   if (group_id) {
     await redisService.deleteNodeConfigHash([group_id]);
   }

@@ -15,7 +15,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
-const fmt = (d?: Date) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : "");
+const fmt = (d?: Date) =>
+  d
+    ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    : "";
 
 export function DatePicker({
   value,
@@ -34,9 +37,16 @@ export function DatePicker({
     <Popover>
       <PopoverTrigger>
         <span className="inline-flex w-full">
-          <Button variant="outline" size="sm" className={cn("w-full justify-start gap-2 font-normal", className)} onClick={() => setOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("w-full justify-start gap-2 font-normal", className)}
+            onClick={() => setOpen(true)}
+          >
             <CalendarIcon className="size-3.5" />
-            <span className={cn(!value && "text-muted-foreground")}>{value || placeholder || t("filters.pickDate")}</span>
+            <span className={cn(!value && "text-muted-foreground")}>
+              {value || placeholder || t("filters.pickDate")}
+            </span>
             {value ? (
               <X
                 className="ml-auto size-3.5 opacity-60 hover:opacity-100"
@@ -87,7 +97,12 @@ export function DateRangePicker({
     <Popover>
       <PopoverTrigger>
         <span className="inline-flex w-full">
-          <Button variant="outline" size="sm" className={cn("w-full justify-start gap-2 font-normal", className)} onClick={() => setOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("w-full justify-start gap-2 font-normal", className)}
+            onClick={() => setOpen(true)}
+          >
             <CalendarIcon className="size-3.5" />
             <span className={cn(!start && !end && "text-muted-foreground")}>
               {start || end ? `${start || "…"} → ${end || "…"}` : t("filters.pickRange")}

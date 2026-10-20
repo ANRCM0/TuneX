@@ -148,7 +148,9 @@ export class CommissionService {
     const [data, total] = await db.$transaction([
       db.withdrawRequest.findMany({
         where,
-        orderBy: (orderBy as Prisma.WithdrawRequestOrderByWithRelationInput[] | undefined) || [{ id: "desc" }],
+        orderBy: (orderBy as Prisma.WithdrawRequestOrderByWithRelationInput[] | undefined) || [
+          { id: "desc" },
+        ],
         skip: (page - 1) * perPage,
         take: perPage,
         include: {

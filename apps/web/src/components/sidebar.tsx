@@ -10,8 +10,28 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, Banknote, ChartLine, ChevronDown, CircuitBoard, Coins, CreditCard, Gift, Globe,
-  History, House, Key, Lock, Package, Server, Settings, ShieldCheck, ShoppingCart, TicketCheck, UserRound, Wallet, type LucideIcon,
+  Activity,
+  Banknote,
+  ChartLine,
+  ChevronDown,
+  CircuitBoard,
+  Coins,
+  CreditCard,
+  Gift,
+  Globe,
+  History,
+  House,
+  Key,
+  Lock,
+  Package,
+  Server,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  TicketCheck,
+  UserRound,
+  Wallet,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
@@ -44,7 +64,9 @@ export const USER_NAV = (opts: { business: boolean; allowCustomNodeGroups: boole
   {
     title: t("nav.nodes2"),
     items: [
-      ...(opts.allowCustomNodeGroups ? [{ title: t("nav.nodeGroups"), url: "/node-groups", icon: Server }] : []),
+      ...(opts.allowCustomNodeGroups
+        ? [{ title: t("nav.nodeGroups"), url: "/node-groups", icon: Server }]
+        : []),
       { title: t("nav.nodeStatus"), url: "/node-stats", icon: Activity },
     ],
   },
@@ -79,9 +101,15 @@ export const USER_NAV = (opts: { business: boolean; allowCustomNodeGroups: boole
     : []),
 ];
 
-export const ADMIN_NAV = (visible: (key: string) => boolean, badges: { tickets?: number; withdraw?: number }): NavGroup[] =>
+export const ADMIN_NAV = (
+  visible: (key: string) => boolean,
+  badges: { tickets?: number; withdraw?: number },
+): NavGroup[] =>
   [
-    { title: t("nav.overview"), items: [{ title: t("nav.home"), url: "/admin", icon: House, exactMatch: true }] },
+    {
+      title: t("nav.overview"),
+      items: [{ title: t("nav.home"), url: "/admin", icon: House, exactMatch: true }],
+    },
     {
       title: t("nav.basics"),
       items: [
@@ -235,7 +263,11 @@ export function Sidebar({
         <LocaleSwitch />
       </div>
       <div className="text-muted-foreground px-2 py-2 text-xs">
-        {t("zh_2b86dd")} <a className="underline" href="https://docs.relayx.cc" target="_blank" rel="noreferrer">RelayX</a> {t("zh_976d81")}
+        {t("zh_2b86dd")}{" "}
+        <a className="underline" href="https://docs.relayx.cc" target="_blank" rel="noreferrer">
+          RelayX
+        </a>{" "}
+        {t("zh_976d81")}
       </div>
     </div>
   );

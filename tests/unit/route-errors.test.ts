@@ -60,9 +60,13 @@ beforeAll(async () => {
   // Register after importing the app: the real licence service registers its
   // factory at module load, and the container is last-wins.
   const { register, TOKENS } = await import("../../apps/backend/src/container");
-  register(TOKENS.License, () => ({
-    getLicense: async () => ({ type: "business", expired_at: new Date(Date.now() + 86400_000) }),
-  }) as unknown as LicenseService);
+  register(
+    TOKENS.License,
+    () =>
+      ({
+        getLicense: async () => ({ type: "business", expired_at: new Date(Date.now() + 86400_000) }),
+      }) as unknown as LicenseService,
+  );
 
   adminKey = "admin-api-key";
   userKey = "user-api-key";

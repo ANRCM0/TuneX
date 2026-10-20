@@ -11,7 +11,14 @@ import * as React from "react";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
@@ -37,7 +44,9 @@ function CommandBlock({ value, downloadName }: { value: string; downloadName?: s
     );
   return (
     <div className="space-y-2">
-      <pre className="bg-muted max-h-40 overflow-auto rounded-md p-3 text-xs break-all whitespace-pre-wrap">{value}</pre>
+      <pre className="bg-muted max-h-40 overflow-auto rounded-md p-3 text-xs break-all whitespace-pre-wrap">
+        {value}
+      </pre>
       <div className="flex gap-2">
         <Button size="sm" variant="outline" onClick={copy}>
           <Copy className="size-3.5" /> {t("app.copy")}
@@ -86,11 +95,16 @@ export function DeployDialog({
     [origin, group?.token, opts],
   );
 
-  const set = <K extends keyof DeployOptions>(k: K, v: DeployOptions[K]) => setOpts((s) => ({ ...s, [k]: v }));
+  const set = <K extends keyof DeployOptions>(k: K, v: DeployOptions[K]) =>
+    setOpts((s) => ({ ...s, [k]: v }));
   const field = (key: keyof DeployOptions, label: string, placeholder?: string) => (
     <div className="grid gap-1.5">
       <Label className="text-xs">{label}</Label>
-      <Input value={String(opts[key] ?? "")} placeholder={placeholder} onChange={(e) => set(key, e.target.value as never)} />
+      <Input
+        value={String(opts[key] ?? "")}
+        placeholder={placeholder}
+        onChange={(e) => set(key, e.target.value as never)}
+      />
     </div>
   );
 

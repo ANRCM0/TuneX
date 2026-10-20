@@ -26,7 +26,7 @@ router.post(
     tags: ["套餐管理"],
     responses: {
       201: {
-        description: "套餐创建成功"
+        description: "套餐创建成功",
       },
     },
   }),
@@ -79,7 +79,9 @@ router.get(
   ),
   async (c) => {
     const { page, perPage, sort, name, status, billing_cycle } = c.req.valid("query");
-    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({ [sort2.id]: sort2.desc ? "desc" : "asc" }));
+    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({
+      [sort2.id]: sort2.desc ? "desc" : "asc",
+    }));
     const plans = await db.plan.findMany({
       skip: (page - 1) * perPage,
       take: perPage,

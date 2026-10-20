@@ -114,8 +114,7 @@ export function TunnelFormDialog({
     }
   }, [open, initial]);
 
-  const set = <K extends keyof TunnelDraft>(k: K, v: TunnelDraft[K]) =>
-    setDraft((d) => ({ ...d, [k]: v }));
+  const set = <K extends keyof TunnelDraft>(k: K, v: TunnelDraft[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
   const submit = async () => {
     const next: Partial<Record<keyof TunnelDraft, string>> = {};
@@ -216,7 +215,11 @@ export function TunnelFormDialog({
         {step === 0 ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t("zh_57916d")} error={errors.name}>
-              <Input value={draft.name} onChange={(e) => set("name", e.target.value)} placeholder={t("zh_4b4833")} />
+              <Input
+                value={draft.name}
+                onChange={(e) => set("name", e.target.value)}
+                placeholder={t("zh_4b4833")}
+              />
             </Field>
             <Field label={t("zh_81508b")}>
               <Select value={draft.tunnel_type} onValueChange={(v) => set("tunnel_type", v)}>
@@ -233,7 +236,11 @@ export function TunnelFormDialog({
               </Select>
             </Field>
             <Field label={t("zh_4fc129")} hint={t("zh_349f76")}>
-              <Input value={draft.listen_ip} onChange={(e) => set("listen_ip", e.target.value)} placeholder="0.0.0.0" />
+              <Input
+                value={draft.listen_ip}
+                onChange={(e) => set("listen_ip", e.target.value)}
+                placeholder="0.0.0.0"
+              />
             </Field>
             <Field label={t("zh_7e95f4")} error={errors.listen_port}>
               <Input
@@ -266,12 +273,24 @@ export function TunnelFormDialog({
               <div className="mb-1.5 flex items-center justify-between">
                 <Label className="text-xs">{t("zh_5ea1bb")}</Label>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm"
-                    onClick={() => set("tunnel_chains", [...draft.tunnel_chains, { node_type: "in", node_group_id: "" }])}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      set("tunnel_chains", [...draft.tunnel_chains, { node_type: "in", node_group_id: "" }])
+                    }
+                  >
                     <Plus className="size-3.5" /> {t("zh_9a3832")}
                   </Button>
-                  <Button type="button" variant="outline" size="sm"
-                    onClick={() => set("tunnel_chains", [...draft.tunnel_chains, { node_type: "out", node_group_id: "" }])}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      set("tunnel_chains", [...draft.tunnel_chains, { node_type: "out", node_group_id: "" }])
+                    }
+                  >
                     <Plus className="size-3.5" /> {t("zh_8cc6e6")}
                   </Button>
                 </div>
@@ -310,7 +329,12 @@ export function TunnelFormDialog({
                         variant="ghost"
                         size="icon"
                         aria-label={t("zh_a56aad")}
-                        onClick={() => set("tunnel_chains", draft.tunnel_chains.filter((_, idx) => idx !== i))}
+                        onClick={() =>
+                          set(
+                            "tunnel_chains",
+                            draft.tunnel_chains.filter((_, idx) => idx !== i),
+                          )
+                        }
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
@@ -354,7 +378,10 @@ export function TunnelFormDialog({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    set("forward_addresses", [...draft.forward_addresses, { address: "", weight: "1", host: "" }])
+                    set("forward_addresses", [
+                      ...draft.forward_addresses,
+                      { address: "", weight: "1", host: "" },
+                    ])
                   }
                 >
                   <Plus className="size-3.5" /> {t("zh_3951f0")}
@@ -398,7 +425,10 @@ export function TunnelFormDialog({
                       aria-label={t("zh_dc36dc")}
                       disabled={draft.forward_addresses.length === 1}
                       onClick={() =>
-                        set("forward_addresses", draft.forward_addresses.filter((_, idx) => idx !== i))
+                        set(
+                          "forward_addresses",
+                          draft.forward_addresses.filter((_, idx) => idx !== i),
+                        )
                       }
                     >
                       <Trash2 className="size-3.5" />
@@ -426,7 +456,10 @@ export function TunnelFormDialog({
               </Select>
             </Field>
             <Field label={t("zh_082e19")}>
-              <Select value={draft.forward_addresses_protocol} onValueChange={(v) => set("forward_addresses_protocol", v)}>
+              <Select
+                value={draft.forward_addresses_protocol}
+                onValueChange={(v) => set("forward_addresses_protocol", v)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -463,13 +496,25 @@ export function TunnelFormDialog({
               </Select>
             </Field>
             <Field label={t("ip_da9dda")}>
-              <Input value={draft.ip_limit} onChange={(e) => set("ip_limit", e.target.value)} placeholder={t("zh_7fda80")} />
+              <Input
+                value={draft.ip_limit}
+                onChange={(e) => set("ip_limit", e.target.value)}
+                placeholder={t("zh_7fda80")}
+              />
             </Field>
             <Field label={t("zh_23d4e0")}>
-              <Input value={draft.client_limit} onChange={(e) => set("client_limit", e.target.value)} placeholder={t("zh_7fda80")} />
+              <Input
+                value={draft.client_limit}
+                onChange={(e) => set("client_limit", e.target.value)}
+                placeholder={t("zh_7fda80")}
+              />
             </Field>
             <Field label={t("zh_df3439")}>
-              <Input value={draft.bandwidth_limit} onChange={(e) => set("bandwidth_limit", e.target.value)} placeholder={t("zh_7fda80")} />
+              <Input
+                value={draft.bandwidth_limit}
+                onChange={(e) => set("bandwidth_limit", e.target.value)}
+                placeholder={t("zh_7fda80")}
+              />
             </Field>
             <Field label="PROXY protocol">
               <div className="flex h-9 items-center">
@@ -518,7 +563,11 @@ function Field({
     <div className="grid gap-1.5">
       <Label className="text-xs">{label}</Label>
       {children}
-      {error ? <p className="text-destructive text-xs">{error}</p> : hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
+      {error ? (
+        <p className="text-destructive text-xs">{error}</p>
+      ) : hint ? (
+        <p className="text-muted-foreground text-xs">{hint}</p>
+      ) : null}
     </div>
   );
 }

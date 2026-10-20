@@ -23,11 +23,7 @@ export function makeDelete(node: unknown, style: DeleteStyle, onDone: () => Prom
   };
 }
 
-export function makePatch(
-  node: unknown,
-  onDone: () => Promise<unknown> | void,
-  okMsg = t("zh_3c5be5"),
-) {
+export function makePatch(node: unknown, onDone: () => Promise<unknown> | void, okMsg = t("zh_3c5be5")) {
   return async (args: { param?: Record<string, string | number>; json?: unknown }) => {
     const fn = node as unknown as (a: typeof args) => Promise<Response>;
     const res = await fn(args);

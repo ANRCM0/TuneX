@@ -114,7 +114,15 @@ describe("other endpoints", () => {
       return jsonResponse({ pay_url: "https://pay.test/1" });
     });
 
-    const result = await service.payLicense("pay-1", "alipay", "year" as never, "https://back.test", "1.2.3.4", "business" as never, "C10");
+    const result = await service.payLicense(
+      "pay-1",
+      "alipay",
+      "year" as never,
+      "https://back.test",
+      "1.2.3.4",
+      "business" as never,
+      "C10",
+    );
 
     expect(result).toEqual({ pay_url: "https://pay.test/1" });
     const body = JSON.parse(String(fetchCalls[0].init?.body));

@@ -63,8 +63,7 @@ beforeAll(async () => {
   db = dbModule.db;
   const { StatsService: Service } = await import("../../apps/backend/src/services/stats");
   service = new Service({
-    getTunnelTraffic: async (cost: boolean) =>
-      cost ? redisValues.cost : redisValues.traffic,
+    getTunnelTraffic: async (cost: boolean) => (cost ? redisValues.cost : redisValues.traffic),
   } as never);
 }, 60_000);
 

@@ -120,9 +120,7 @@ async function cronSaveTraffic(_job: Job): Promise<number> {
     select: { id: true },
   });
   await db.tunnelTraffic.createMany({
-    data: trafficsArray.filter((traffic) =>
-      tunnels.some((tunnel) => tunnel.id === traffic.tunnel_id),
-    ),
+    data: trafficsArray.filter((traffic) => tunnels.some((tunnel) => tunnel.id === traffic.tunnel_id)),
   });
   await redisService.clearTunnelTraffic();
   // Upstream returns `traffics.length`, which is `undefined` on the record it holds; the
@@ -274,9 +272,7 @@ async function cronResetTableOrder(_job: Job): Promise<void> {
 }
 
 async function cronUpdateAgent(_job: Job): Promise<void> {
-  const autoUpdateAgent = await systemConfigService.getConfig(
-    SystemConfigName.AUTO_UPDATE_AGENT,
-  );
+  const autoUpdateAgent = await systemConfigService.getConfig(SystemConfigName.AUTO_UPDATE_AGENT);
   if (!autoUpdateAgent) {
     return;
   }

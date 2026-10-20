@@ -48,9 +48,7 @@ function sum(values: number[]): number {
 }
 
 /** Prisma JSON column input: `undefined` leaves the value untouched, `null` stores JSON null. */
-function toJsonInput(
-  value: unknown,
-): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+function toJsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
   if (value === undefined) return undefined;
   if (value === null) return Prisma.JsonNull;
   return value as Prisma.InputJsonValue;
@@ -593,9 +591,7 @@ router.post(
   async (c) => {
     const { node_id } = c.req.valid("query");
     const { events } = c.req.valid("json");
-    const observerPeriod = await systemConfigService.getConfig<number>(
-      SystemConfigName.OBSERVER_PERIOD,
-    );
+    const observerPeriod = await systemConfigService.getConfig<number>(SystemConfigName.OBSERVER_PERIOD);
     const statsTtl = (observerPeriod ?? 0) * 3;
     const traffics: { tunnel_id: number; traffic: number; traffic_cost: number }[] = [];
     const nodeStatsEntries: { tunnel_id: number; stats: TunnelNodeStats }[] = [];
@@ -690,8 +686,7 @@ router.get(
   zValidator("query", TunnelTrafficStatsQuerySchema),
   async (c) => {
     const user = c.get("user");
-    const { start_date, end_date, in_node_group_id, out_node_group_id, aggregate_by } =
-      c.req.valid("query");
+    const { start_date, end_date, in_node_group_id, out_node_group_id, aggregate_by } = c.req.valid("query");
     const whereConditions = [`tunnel.user_id = ${user.id}`];
     const localTrafficDate = toLocalTZ("tunnel_traffic.date");
     if (start_date) {
@@ -721,9 +716,7 @@ router.get(
         GROUP BY ${dateGroupBy}
         ORDER BY ${dateGroupBy}
       `;
-    const ret = await db.$queryRawUnsafe<
-      { date: unknown; traffic: number; traffic_cost: number }[]
-    >(query);
+    const ret = await db.$queryRawUnsafe<{ date: unknown; traffic: number; traffic_cost: number }[]>(query);
     const tunnels: { date: string; traffic: number; traffic_cost: number }[] = ret.map((item) => ({
       date: formatStatsDate(item.date, aggregate_by),
       traffic: item.traffic,
@@ -884,8 +877,7 @@ router.get(
   zValidator("query", TunnelStatsQuerySchema),
   async (c) => {
     const user = c.get("user");
-    const { page, perPage, sort, name, in_node_group_id, out_node_group_id } =
-      c.req.valid("query");
+    const { page, perPage, sort, name, in_node_group_id, out_node_group_id } = c.req.valid("query");
     const where = {
       user_id: user.id,
       name: name ? { contains: name } : undefined,
@@ -957,9 +949,7 @@ router.get(
   }),
   zValidator("query", z.object({ token: z.string() })),
   async (c) => {
-    const enabled = await systemConfigService.getConfig<boolean>(
-      SystemConfigName.ENABLE_SUBSCRIPTION,
-    );
+    const enabled = await systemConfigService.getConfig<boolean>(SystemConfigName.ENABLE_SUBSCRIPTION);
     if (!enabled) {
       throw new HTTPException(404, { message: "订阅功能未开启" });
     }
@@ -979,9 +969,7 @@ router.get(
     const GB = 1024 ** 3;
     const downloadBytes = Math.round(usedGB * GB);
     const totalBytes = Math.round(totalGB * GB);
-    const expireSeconds = userPlan?.expired_at
-      ? Math.floor(userPlan.expired_at.getTime() / 1000)
-      : 0;
+    const expireSeconds = userPlan?.expired_at ? Math.floor(userPlan.expired_at.getTime() / 1000) : 0;
     c.header(
       "Subscription-Userinfo",
       `upload=0; download=${downloadBytes}; total=${totalBytes}; expire=${expireSeconds}`,

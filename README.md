@@ -4,16 +4,16 @@ A reconstruction of the RelayX tunnel panel, built from the decompiled binary an
 
 ## Layout
 
-| Path | What |
-| --- | --- |
-| `apps/backend` | Hono API, Prisma/SQLite, Socket.IO, BullMQ |
-| `apps/web` | Panel UI — Next.js 16 App Router + React 19 + Tailwind v4 (port 3000, proxies `/api`) |
-| `apps/license-server` | Self-hosted license issuer (port 3100) |
-| `apps/agent` | Go node agent |
-| `packages/shared` | Shared package (workspace) |
-| `tests` | Vitest unit tests |
-| `scripts` | `verify.sh` and the live `e2e-local.sh` harness |
-| `docs` | Conventions, deviations, agent notes, parity, verification |
+| Path                  | What                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| `apps/backend`        | Hono API, Prisma/SQLite, Socket.IO, BullMQ                                            |
+| `apps/web`            | Panel UI — Next.js 16 App Router + React 19 + Tailwind v4 (port 3000, proxies `/api`) |
+| `apps/license-server` | Self-hosted license issuer (port 3100)                                                |
+| `apps/agent`          | Go node agent                                                                         |
+| `packages/shared`     | Shared package (workspace)                                                            |
+| `tests`               | Vitest unit tests                                                                     |
+| `scripts`             | `verify.sh` and the live `e2e-local.sh` harness                                       |
+| `docs`                | Conventions, deviations, agent notes, parity, verification                            |
 
 Architecture: Hono on Node, Prisma against SQLite, Socket.IO for node agents, BullMQ when Redis is configured, and a business-license gate on pay / ticket / commission / parts of `/admin`. The web app is a single-origin BFF: it serves the UI and proxies `/api`, `/socket.io`, `/openapi.json` and `/docs` to the backend, exactly like the upstream image.
 
@@ -84,36 +84,42 @@ Details and the implemented-vs-stubbed table: [docs/AGENT.md](docs/AGENT.md).
 
 ## Scripts
 
-| Script | Effect |
-| --- | --- |
-| `pnpm db:generate` | `prisma generate` for `apps/backend/prisma/schema.prisma` |
-| `pnpm db:push` | Push the schema to SQLite |
-| `pnpm db:reset` | `prisma db push --force-reset` (destroys data) |
-| `pnpm db:studio` | Prisma Studio |
-| `pnpm seed` | Seed the super admin and print `api_key` |
-| `pnpm dev` | Backend with `tsx watch` |
-| `pnpm start` | Backend without watch |
-| `pnpm typecheck` | `tsc --noEmit` in every workspace package |
-| `pnpm test` | `vitest run` |
-| `pnpm test:e2e` | `vitest run tests/e2e` |
-| `pnpm agent:build` | `go build -o dist/relayx-agent ./cmd/relayx-agent` |
+| Script                                       | Effect                                                       |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| `pnpm db:generate`                           | `prisma generate` for `apps/backend/prisma/schema.prisma`    |
+| `pnpm db:push`                               | Push the schema to SQLite                                    |
+| `pnpm db:reset`                              | `prisma db push --force-reset` (destroys data)               |
+| `pnpm db:studio`                             | Prisma Studio                                                |
+| `pnpm seed`                                  | Seed the super admin and print `api_key`                     |
+| `pnpm db:migrate`                            | Create/apply migrations in development                       |
+| `pnpm db:deploy`                             | Apply committed migrations (deployment)                      |
+| `pnpm db:drift`                              | Fail when migrations or the generated MySQL schema are stale |
+| `pnpm db:mysql:generate` / `db:mysql:deploy` | Regenerate / apply the MySQL variant                         |
+| `pnpm lint` / `pnpm format`                  | Prettier check / rewrite                                     |
+| `pnpm test:coverage`                         | Unit suite with the coverage gate                            |
+| `pnpm dev`                                   | Backend with `tsx watch`                                     |
+| `pnpm start`                                 | Backend without watch                                        |
+| `pnpm typecheck`                             | `tsc --noEmit` in every workspace package                    |
+| `pnpm test`                                  | `vitest run`                                                 |
+| `pnpm test:e2e`                              | `vitest run tests/e2e`                                       |
+| `pnpm agent:build`                           | `go build -o dist/relayx-agent ./cmd/relayx-agent`           |
 
 Backend-only: `pnpm --filter @relayx/backend zod:generate` regenerates scalar zod models. License server: `dev`, `start`, `typecheck`, `test`.
 
 Repo scripts (not pnpm scripts):
 
-| Script | Effect |
-| --- | --- |
-| `bash scripts/verify.sh` | install + prisma push + typecheck + unit tests + license tests + `go vet`/`go test` + agent build |
-| `bash scripts/verify.sh --e2e` | the same, then the live full-stack E2E |
-| `bash scripts/e2e-local.sh` | boots a private license server, backend, echo target, agent **and the web console** on a throwaway database, then asserts the config push, TCP forwarding, observer path, traffic accounting and the console login round-trip |
+| Script                         | Effect                                                                                                                                                                                                                        |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bash scripts/verify.sh`       | install + prisma push + typecheck + unit tests + license tests + `go vet`/`go test` + agent build                                                                                                                             |
+| `bash scripts/verify.sh --e2e` | the same, then the live full-stack E2E                                                                                                                                                                                        |
+| `bash scripts/e2e-local.sh`    | boots a private license server, backend, echo target, agent **and the web console** on a throwaway database, then asserts the config push, TCP forwarding, observer path, traffic accounting and the console login round-trip |
 
 ## Tests
 
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0 (backend, license server, shared, web)
-- `pnpm test` — 53 files, 496 passed (the live smoke case self-skips when no backend is listening)
+- `pnpm test` — 59 files, 528 passed (the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok
@@ -125,12 +131,12 @@ Some suites compare the replica against the reverse-engineering evidence tree (`
 
 `.github/workflows/docker.yml` builds three images with GitHub Actions:
 
-| Image | Dockerfile | Context |
-| --- | --- | --- |
-| `ghcr.io/<owner>/tunex-backend` | `apps/backend/Dockerfile` | repository root |
-| `ghcr.io/<owner>/tunex-node-agent` | `apps/agent/Dockerfile` | `apps/agent` |
-| `ghcr.io/<owner>/tunex-license-server` | `apps/license-server/Dockerfile` | `apps/license-server` |
-| `ghcr.io/<owner>/tunex-web` | `apps/web/Dockerfile` | repository root (workspace deps) |
+| Image                                  | Dockerfile                       | Context                          |
+| -------------------------------------- | -------------------------------- | -------------------------------- |
+| `ghcr.io/<owner>/tunex-backend`        | `apps/backend/Dockerfile`        | repository root                  |
+| `ghcr.io/<owner>/tunex-node-agent`     | `apps/agent/Dockerfile`          | `apps/agent`                     |
+| `ghcr.io/<owner>/tunex-license-server` | `apps/license-server/Dockerfile` | `apps/license-server`            |
+| `ghcr.io/<owner>/tunex-web`            | `apps/web/Dockerfile`            | repository root (workspace deps) |
 
 A push to `master`/`main` publishes `dev` and `dev-<sha>`; a `v*` tag publishes the semver tags (`0.0.1`, `0.0`, `0`) plus `latest`. The backend image applies the Prisma schema on start (`DB_PUSH_ON_START=0` disables that, `SEED_ON_START=1` seeds the super admin).
 
@@ -147,15 +153,15 @@ module the backend guards execute. Details, tests and deviations: [docs/WEB.md](
 
 Mounted in `apps/backend/src/app.ts`.
 
-| Group | Guard |
-| --- | --- |
-| `/queuedash`, `/health` | none (before auth) |
-| `/auth/*` | public for sign-up/sign-in/sign-out/refresh; `/auth/me` needs a session (local mode) |
-| web (`apps/web`) | server-side `proxy` gate: signed-in + email verified only |
-| `/docs`, `/openapi.json` | business license |
-| `/admin/*` | auth, admin, admin permission; extra business license and/or super-admin on pay, plan coupon, topup activity, ticket, withdraw, role |
-| `/pay`, `/plan/coupon`, `/ticket/*`, `/commission/*` | auth + business license |
-| `/tunnel`, `/node`, `/node/group`, `/user`, `/license`, `/plan`, `/topup`, `/system/config`, `/bot`, `/in_node_group_dns`, `/dns_provider` | auth |
+| Group                                                                                                                                      | Guard                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `/queuedash`, `/health`                                                                                                                    | none (before auth)                                                                                                                   |
+| `/auth/*`                                                                                                                                  | public for sign-up/sign-in/sign-out/refresh; `/auth/me` needs a session (local mode)                                                 |
+| web (`apps/web`)                                                                                                                           | server-side `proxy` gate: signed-in + email verified only                                                                            |
+| `/docs`, `/openapi.json`                                                                                                                   | business license                                                                                                                     |
+| `/admin/*`                                                                                                                                 | auth, admin, admin permission; extra business license and/or super-admin on pay, plan coupon, topup activity, ticket, withdraw, role |
+| `/pay`, `/plan/coupon`, `/ticket/*`, `/commission/*`                                                                                       | auth + business license                                                                                                              |
+| `/tunnel`, `/node`, `/node/group`, `/user`, `/license`, `/plan`, `/topup`, `/system/config`, `/bot`, `/in_node_group_dns`, `/dns_provider` | auth                                                                                                                                 |
 
 `/license` is mounted twice on the public router, matching upstream.
 

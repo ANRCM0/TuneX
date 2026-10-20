@@ -135,7 +135,11 @@ describe("payment callback", () => {
     gatewayMode = "paid";
     const first = await app.request(
       `/pay/${payment.id}/callback`,
-      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(callbackBody("ORD-OK", "TR-OK")) },
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(callbackBody("ORD-OK", "TR-OK")),
+      },
       env as never,
     );
     expect(first.status).toBe(200);
@@ -145,7 +149,11 @@ describe("payment callback", () => {
 
     const second = await app.request(
       `/pay/${payment.id}/callback`,
-      { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(callbackBody("ORD-OK", "TR-OK")) },
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(callbackBody("ORD-OK", "TR-OK")),
+      },
       env as never,
     );
     expect(second.status).toBe(200);
@@ -199,7 +207,9 @@ describe("payment callback", () => {
       env as never,
     );
     expect(unconfirmed.status).toBe(502);
-    expect((await db.topupOrder.findUniqueOrThrow({ where: { order_id: "ORD-QUERY" } })).status).toBe("pending");
+    expect((await db.topupOrder.findUniqueOrThrow({ where: { order_id: "ORD-QUERY" } })).status).toBe(
+      "pending",
+    );
     expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).balance).toBe(5);
   });
 });
@@ -217,38 +227,48 @@ describe("topup bonus", () => {
 });
 
 describe("renewUsersPlan", () => {
-  it("renews an expiring plan when the balance covers it and skips the rest", { timeout: 30_000 }, async () => {
-    const plan = await db.plan.create({
-      data: {
-        name: "renew-me",
-        price: 10,
-        renewable: true,
-        billing_cycle: "month",
-        allow_custom_in_node_group: false,
-        allow_custom_out_node_group: false,
-        all_in_node_groups: false,
-        all_out_node_groups: false,
-      },
-    });
-    const due = await db.user.create({ data: { email: "due@example.test", balance: 50, auto_renew: true } });
-    const poor = await db.user.create({ data: { email: "poor@example.test", balance: 1, auto_renew: true } });
-    const later = await db.user.create({ data: { email: "later@example.test", balance: 50, auto_renew: true } });
-    const soon = new Date(Date.now() + 30_000);
-    const far = new Date(Date.now() + 10 * 86400_000);
-    await db.userPlan.create({ data: { user_id: due.id, plan_id: plan.id, expired_at: soon } });
-    await db.userPlan.create({ data: { user_id: poor.id, plan_id: plan.id, expired_at: soon } });
-    await db.userPlan.create({ data: { user_id: later.id, plan_id: plan.id, expired_at: far } });
+  it(
+    "renews an expiring plan when the balance covers it and skips the rest",
+    { timeout: 30_000 },
+    async () => {
+      const plan = await db.plan.create({
+        data: {
+          name: "renew-me",
+          price: 10,
+          renewable: true,
+          billing_cycle: "month",
+          allow_custom_in_node_group: false,
+          allow_custom_out_node_group: false,
+          all_in_node_groups: false,
+          all_out_node_groups: false,
+        },
+      });
+      const due = await db.user.create({
+        data: { email: "due@example.test", balance: 50, auto_renew: true },
+      });
+      const poor = await db.user.create({
+        data: { email: "poor@example.test", balance: 1, auto_renew: true },
+      });
+      const later = await db.user.create({
+        data: { email: "later@example.test", balance: 50, auto_renew: true },
+      });
+      const soon = new Date(Date.now() + 30_000);
+      const far = new Date(Date.now() + 10 * 86400_000);
+      await db.userPlan.create({ data: { user_id: due.id, plan_id: plan.id, expired_at: soon } });
+      await db.userPlan.create({ data: { user_id: poor.id, plan_id: plan.id, expired_at: soon } });
+      await db.userPlan.create({ data: { user_id: later.id, plan_id: plan.id, expired_at: far } });
 
-    await plans.renewUsersPlan();
+      await plans.renewUsersPlan();
 
-    expect((await db.user.findUniqueOrThrow({ where: { id: due.id } })).balance).toBe(40);
-    const renewed = await db.userPlan.findUniqueOrThrow({ where: { user_id: due.id } });
-    expect(renewed.expired_at!.getTime()).toBeGreaterThan(soon.getTime() + 29 * 86400_000);
-    expect((await db.user.findUniqueOrThrow({ where: { id: poor.id } })).balance).toBe(1);
-    expect((await db.user.findUniqueOrThrow({ where: { id: later.id } })).balance).toBe(50);
-    expect(await db.planOrder.count({ where: { user_id: due.id } })).toBe(1);
-    expect(await db.planOrder.count({ where: { user_id: { in: [poor.id, later.id] } } })).toBe(0);
-  });
+      expect((await db.user.findUniqueOrThrow({ where: { id: due.id } })).balance).toBe(40);
+      const renewed = await db.userPlan.findUniqueOrThrow({ where: { user_id: due.id } });
+      expect(renewed.expired_at!.getTime()).toBeGreaterThan(soon.getTime() + 29 * 86400_000);
+      expect((await db.user.findUniqueOrThrow({ where: { id: poor.id } })).balance).toBe(1);
+      expect((await db.user.findUniqueOrThrow({ where: { id: later.id } })).balance).toBe(50);
+      expect(await db.planOrder.count({ where: { user_id: due.id } })).toBe(1);
+      expect(await db.planOrder.count({ where: { user_id: { in: [poor.id, later.id] } } })).toBe(0);
+    },
+  );
 });
 
 describe("observer traffic cost", () => {
@@ -266,9 +286,15 @@ describe("observer traffic cost", () => {
       },
     });
     await db.userPlan.create({ data: { user_id: buyer.id, plan_id: plan.id, traffic_used: 0 } });
-    const inn = await db.nodeGroup.create({ data: { name: "in", node_type: "in", user_id: owner.id, traffic_rate: 2 } });
-    const out = await db.nodeGroup.create({ data: { name: "out", node_type: "out", user_id: owner.id, traffic_rate: 3 } });
-    const hop = await db.nodeGroup.create({ data: { name: "hop", node_type: "in", user_id: owner.id, traffic_rate: 4 } });
+    const inn = await db.nodeGroup.create({
+      data: { name: "in", node_type: "in", user_id: owner.id, traffic_rate: 2 },
+    });
+    const out = await db.nodeGroup.create({
+      data: { name: "out", node_type: "out", user_id: owner.id, traffic_rate: 3 },
+    });
+    const hop = await db.nodeGroup.create({
+      data: { name: "hop", node_type: "in", user_id: owner.id, traffic_rate: 4 },
+    });
     const tunnel = await db.tunnel.create({
       data: {
         name: "metered",

@@ -217,9 +217,7 @@ async function serve(
   process.stdout.write(`[*] RelayX 自建授权服务器监听 ${server.url}\n`);
   process.stdout.write(`[*] 数据库: ${absoluteDbPath}   content 模式: ${config.contentMode}\n`);
   process.stdout.write(`[*] 面板侧配置: LICENSE_URL=http://<本机地址>:${server.port}\n`);
-  process.stdout.write(
-    `[*] 签发: tsx ${entry} --db ${absoluteDbPath} issue --site-url <面板SITE_URL>\n`,
-  );
+  process.stdout.write(`[*] 签发: tsx ${entry} --db ${absoluteDbPath} issue --site-url <面板SITE_URL>\n`);
 
   return new Promise<number>((resolve) => {
     let stopping = false;

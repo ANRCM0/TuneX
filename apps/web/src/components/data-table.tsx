@@ -108,7 +108,10 @@ export function DataTable<T>({
   });
 
   const sortable = Boolean(draggable && onReorder && (sorting?.length ?? 0) === 0);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
   const selected = table.getFilteredSelectedRowModel().rows.map((r) => r.original);
   const pageCount = Math.max(1, Math.ceil(total / perPage));
 
@@ -130,70 +133,89 @@ export function DataTable<T>({
   return (
     <div className={cn("flex w-full min-w-0 flex-col gap-3", isMobile && selected.length > 0 && "pb-56")}>
       {error ? (
-        <div className="text-destructive rounded-md border p-4 text-sm">{t("app.failedToLoadPleaseRetry")}</div>
+        <div className="text-destructive rounded-md border p-4 text-sm">
+          {t("app.failedToLoadPleaseRetry")}
+        </div>
       ) : isMobile && mobileCard ? (
         <div className="flex flex-col gap-2">
           {data.length === 0 ? (
-            <div className="text-muted-foreground rounded-md border p-8 text-center text-sm">{t("misc.empty.noData")}</div>
+            <div className="text-muted-foreground rounded-md border p-8 text-center text-sm">
+              {t("misc.empty.noData")}
+            </div>
           ) : (
             data.map((row, i) => <div key={i}>{mobileCard(row)}</div>)
           )}
         </div>
       ) : (
         <div className="max-md:[&_button:not([role=switch])]:min-h-11 max-md:[&_button:not([role=switch])]:min-w-11 overflow-hidden rounded-md border">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={sortable ? (e) => {
-            const { active, over } = e as DragEndEvent;
-            if (!over || active.id === over.id) return;
-            const ids = table.getRowModel().rows.map((r) => r.id);
-            const from = ids.indexOf(String(active.id));
-            const to = ids.indexOf(String(over.id));
-            if (from < 0 || to < 0) return;
-            void move(table.getRowModel().rows[from].original, to - from);
-          } : undefined}>
-          <SortableContext items={table.getRowModel().rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id}>
-                  {hg.headers.map((header) => (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={
+              sortable
+                ? (e) => {
+                    const { active, over } = e as DragEndEvent;
+                    if (!over || active.id === over.id) return;
+                    const ids = table.getRowModel().rows.map((r) => r.id);
+                    const from = ids.indexOf(String(active.id));
+                    const to = ids.indexOf(String(over.id));
+                    if (from < 0 || to < 0) return;
+                    void move(table.getRowModel().rows[from].original, to - from);
+                  }
+                : undefined
+            }
+          >
+            <SortableContext
+              items={table.getRowModel().rows.map((r) => r.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((hg) => (
+                    <TableRow key={hg.id}>
+                      {hg.headers.map((header) => (
+                        <TableHead key={header.id} colSpan={header.colSpan}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableHead>
+                      ))}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="text-muted-foreground h-24 text-center">
-                    {t("app.loading")}
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    {emptyState ?? t("misc.empty.noData")}
-                  </TableCell>
-                </TableRow>
-              ) : sortable ? (
-                <SortableRows table={table} getRowClassName={getRowClassName} />
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className={getRowClassName?.({ original: row.original })}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          </SortableContext>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="text-muted-foreground h-24 text-center">
+                        {t("app.loading")}
+                      </TableCell>
+                    </TableRow>
+                  ) : table.getRowModel().rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                        {emptyState ?? t("misc.empty.noData")}
+                      </TableCell>
+                    </TableRow>
+                  ) : sortable ? (
+                    <SortableRows table={table} getRowClassName={getRowClassName} />
+                  ) : (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className={getRowClassName?.({ original: row.original })}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </SortableContext>
           </DndContext>
         </div>
       )}
@@ -214,7 +236,14 @@ export function DataTable<T>({
             >
               <ChevronsLeft />
             </Button>
-            <Button aria-label={t("zh_b41561")} variant="outline" size="icon" className="size-8" onClick={() => onPageChange(page - 1)} disabled={page <= 1}>
+            <Button
+              aria-label={t("zh_b41561")}
+              variant="outline"
+              size="icon"
+              className="size-8"
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1}
+            >
               <ChevronLeft />
             </Button>
             <Button
@@ -241,7 +270,9 @@ export function DataTable<T>({
         </div>
         {actionBar && selected.length > 0 && (
           <div className="bg-background sticky bottom-0 flex items-center gap-2 rounded-md border p-2 shadow-sm">
-            <span className="text-muted-foreground text-xs">{t("zh_17f328")} {selected.length} {t("zh_12de8e")}</span>
+            <span className="text-muted-foreground text-xs">
+              {t("zh_17f328")} {selected.length} {t("zh_12de8e")}
+            </span>
             {actionBar(selected)}
           </div>
         )}

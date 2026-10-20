@@ -48,30 +48,30 @@ relayx/
 These exist, typecheck, and are relied on by everything. If you need a change, message the
 Lead instead of editing.
 
-| File | Provides |
-| --- | --- |
-| `apps/backend/src/config.ts` | env loading, `isProduction()`, `SITE_URL`, `LICENSE_URL`, … |
-| `apps/backend/src/db.ts` | `prisma` / `db` (same client) and `Db` type |
-| `apps/backend/src/logger.ts` | `logger` (pino) |
-| `apps/backend/src/container.ts` | `TOKENS`, `register`/`resolve`/`service`/`instance` |
-| `apps/backend/src/types.ts` | `AppEnv`, `SessionUser`, `SessionPlan` |
-| `apps/backend/src/openapi.ts` | `describeRoute`, `h2`, `zValidator`, `resolver` |
-| `apps/backend/src/generated/zod/index.ts` | `<Model>Schema` for every Prisma model (generated) |
-| `apps/backend/src/schemas/request.ts` | all request schemas |
-| `apps/backend/src/schemas/response.ts` | all response schemas |
-| `apps/backend/src/services/redis.ts` | `KEY`, `client`, `lock`, `RedisService`, `redisService` |
-| `apps/backend/src/services/redis-memory.ts` | in-process Redis used when `REDIS_URL` is empty |
-| `apps/backend/src/services/system_config.ts` | `DefaultConfig`, `systemConfigService` |
-| `apps/backend/src/services/notify-types.ts` | `NotifyType`, `AdminNotifyType`, channel helpers |
-| `apps/backend/src/services/license.ts` | `licenseService`, `LicenseType`, `CouponValidCycle` |
-| `apps/backend/src/services/stackauth.ts` | `stackAuthService` |
-| `apps/backend/src/services/email.ts` | `emailService.sendEmail(to, subject, text, html?)` |
-| `apps/backend/src/services/fernet.ts` | `fernetService.encrypt/decrypt` |
-| `apps/backend/src/services/io-registry.ts` | `setIo` / `getIo` |
-| `apps/backend/src/middlewares/*` | `getRequestIP`, `requestLogger`, `sentry`, `authRequired`, `adminRequired`, `adminPermissionGuard`, `superAdminRequired`, `businessLicenseRequired`, `planRequired` |
-| `apps/backend/src/routes/health.ts`, `routes/license.ts`, `routes/system_config.ts`, `routes/admin/system_config.ts` | those routes |
-| `apps/backend/src/app.ts`, `src/index.ts`, `src/seed.ts` | assembly |
-| `packages/shared/**` | shared contracts |
+| File                                                                                                                 | Provides                                                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/backend/src/config.ts`                                                                                         | env loading, `isProduction()`, `SITE_URL`, `LICENSE_URL`, …                                                                                                         |
+| `apps/backend/src/db.ts`                                                                                             | `prisma` / `db` (same client) and `Db` type                                                                                                                         |
+| `apps/backend/src/logger.ts`                                                                                         | `logger` (pino)                                                                                                                                                     |
+| `apps/backend/src/container.ts`                                                                                      | `TOKENS`, `register`/`resolve`/`service`/`instance`                                                                                                                 |
+| `apps/backend/src/types.ts`                                                                                          | `AppEnv`, `SessionUser`, `SessionPlan`                                                                                                                              |
+| `apps/backend/src/openapi.ts`                                                                                        | `describeRoute`, `h2`, `zValidator`, `resolver`                                                                                                                     |
+| `apps/backend/src/generated/zod/index.ts`                                                                            | `<Model>Schema` for every Prisma model (generated)                                                                                                                  |
+| `apps/backend/src/schemas/request.ts`                                                                                | all request schemas                                                                                                                                                 |
+| `apps/backend/src/schemas/response.ts`                                                                               | all response schemas                                                                                                                                                |
+| `apps/backend/src/services/redis.ts`                                                                                 | `KEY`, `client`, `lock`, `RedisService`, `redisService`                                                                                                             |
+| `apps/backend/src/services/redis-memory.ts`                                                                          | in-process Redis used when `REDIS_URL` is empty                                                                                                                     |
+| `apps/backend/src/services/system_config.ts`                                                                         | `DefaultConfig`, `systemConfigService`                                                                                                                              |
+| `apps/backend/src/services/notify-types.ts`                                                                          | `NotifyType`, `AdminNotifyType`, channel helpers                                                                                                                    |
+| `apps/backend/src/services/license.ts`                                                                               | `licenseService`, `LicenseType`, `CouponValidCycle`                                                                                                                 |
+| `apps/backend/src/services/stackauth.ts`                                                                             | `stackAuthService`                                                                                                                                                  |
+| `apps/backend/src/services/email.ts`                                                                                 | `emailService.sendEmail(to, subject, text, html?)`                                                                                                                  |
+| `apps/backend/src/services/fernet.ts`                                                                                | `fernetService.encrypt/decrypt`                                                                                                                                     |
+| `apps/backend/src/services/io-registry.ts`                                                                           | `setIo` / `getIo`                                                                                                                                                   |
+| `apps/backend/src/middlewares/*`                                                                                     | `getRequestIP`, `requestLogger`, `sentry`, `authRequired`, `adminRequired`, `adminPermissionGuard`, `superAdminRequired`, `businessLicenseRequired`, `planRequired` |
+| `apps/backend/src/routes/health.ts`, `routes/license.ts`, `routes/system_config.ts`, `routes/admin/system_config.ts` | those routes                                                                                                                                                        |
+| `apps/backend/src/app.ts`, `src/index.ts`, `src/seed.ts`                                                             | assembly                                                                                                                                                            |
+| `packages/shared/**`                                                                                                 | shared contracts                                                                                                                                                    |
 
 `app.ts` already mounts **every** route module, including yours. Route files you own
 currently exist as placeholders that export `new Hono()`; replace their bodies, keep

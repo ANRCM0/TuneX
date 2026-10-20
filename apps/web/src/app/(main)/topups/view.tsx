@@ -9,9 +9,22 @@ import { client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 import useSWR from "swr";
@@ -23,9 +36,21 @@ import { toast } from "sonner";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "order_id", "label": t("zh_459868"), "variant": "text"}, {"key": "payment.name", "label": t("zh_a87078"), "variant": "select"}, {"key": "status", "label": t("misc.label.status"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "order_id", label: t("zh_459868"), variant: "text" },
+  { key: "payment.name", label: t("zh_a87078"), variant: "select" },
+  { key: "status", label: t("misc.label.status"), variant: "select" },
+];
 
-function TopupCreateDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void }) {
+function TopupCreateDialog({
+  open,
+  onOpenChange,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onDone: () => void;
+}) {
   const { data: activities } = useSWR(["/topup/activities"], async () => {
     if (!open) return null;
     const res = await client.topup.activities.$get({ query: {} });
@@ -55,18 +80,27 @@ function TopupCreateDialog({ open, onOpenChange, onDone }: { open: boolean; onOp
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader><DialogTitle>{t("account.topUp")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("account.topUp")}</DialogTitle>
+        </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("misc.label.amount")}</Label>
-            <Input value={amount} inputMode="decimal" onChange={(e) => setAmount(e.target.value)} placeholder={t("10_12a7f6")} />
+            <Input
+              value={amount}
+              inputMode="decimal"
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder={t("10_12a7f6")}
+            />
           </div>
           {activities?.data?.length ? (
             <div className="bg-muted/60 rounded-md p-2 text-xs">
               {t("zh_eb6d3f")}
               {activities.data.map((a, i) => (
                 <span key={i} className="ml-1">
-                  {a.type === "percentage" ? tf("value_69449e", { value: a.value ?? 0 }) : tf("value_5d7604", { value: a.value ?? 0 })}
+                  {a.type === "percentage"
+                    ? tf("value_69449e", { value: a.value ?? 0 })
+                    : tf("value_5d7604", { value: a.value ?? 0 })}
                   {a.min_amount ? tf("value_a420b0", { value: a.min_amount }) : ""}
                 </span>
               ))}
@@ -75,28 +109,34 @@ function TopupCreateDialog({ open, onOpenChange, onDone }: { open: boolean; onOp
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("zh_a87078")}</Label>
             <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {(channels?.data?.length ?? 0) > 0
-                  ? channels!.data!.map((c, i) => (
-                      <SelectItem key={i} value={c.method ?? String(i)}>
-                        {c.name ?? c.method ?? tf("n_d65cc9", { n: i + 1 })}
-                      </SelectItem>
-                    ))
-                  : (
-                      <>
-                        <SelectItem value="alipay">{t("zh_66f117")}</SelectItem>
-                        <SelectItem value="wxpay">{t("zh_68406d")}</SelectItem>
-                        <SelectItem value="usdt">USDT</SelectItem>
-                      </>
-                    )}
+                {(channels?.data?.length ?? 0) > 0 ? (
+                  channels!.data!.map((c, i) => (
+                    <SelectItem key={i} value={c.method ?? String(i)}>
+                      {c.name ?? c.method ?? tf("n_d65cc9", { n: i + 1 })}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="alipay">{t("zh_66f117")}</SelectItem>
+                    <SelectItem value="wxpay">{t("zh_68406d")}</SelectItem>
+                    <SelectItem value="usdt">USDT</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>{t("misc.label.cancel")}</Button>
-          <Button size="sm" onClick={() => void submit()}>{t("zh_5ac849")}</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            {t("misc.label.cancel")}
+          </Button>
+          <Button size="sm" onClick={() => void submit()}>
+            {t("zh_5ac849")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -128,18 +168,57 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/topup", page, perPage, status], () => client.topup.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/topup", page, perPage, status],
+    () => client.topup.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const patch = makePatch(client.topup, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "order_id", header: t("zh_459868"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "price", header: t("misc.label.amount"), enableSorting: true, cell: (r) => <MoneyCell value={r.getValue()} /> },
-    { accessorKey: "balance", header: t("misc.label.balance"), enableSorting: true, cell: (r) => <MoneyCell value={r.getValue()} /> },
-    { accessorKey: "bonus", header: t("zh_662dc8"), enableSorting: true, cell: (r) => <MoneyCell value={r.getValue()} /> },
-    { accessorKey: "payment.name", header: t("zh_a87078"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "status", header: t("misc.label.status"), enableSorting: false, cell: (r) => <span>{labelEnum(r.getValue())}</span> },
-    { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "order_id",
+        header: t("zh_459868"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "price",
+        header: t("misc.label.amount"),
+        enableSorting: true,
+        cell: (r) => <MoneyCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "balance",
+        header: t("misc.label.balance"),
+        enableSorting: true,
+        cell: (r) => <MoneyCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "bonus",
+        header: t("zh_662dc8"),
+        enableSorting: true,
+        cell: (r) => <MoneyCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "payment.name",
+        header: t("zh_a87078"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: t("misc.label.status"),
+        enableSorting: false,
+        cell: (r) => <span>{labelEnum(r.getValue())}</span>,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
 
       {
         id: "actions",
@@ -165,7 +244,10 @@ export default function View() {
               <DropdownMenuItem
                 onClick={() =>
                   void (async () => {
-                    const res = await client.topup[":id"].cancel.$patch({ param: { id: String(c.row.original.id) }, json: {} });
+                    const res = await client.topup[":id"].cancel.$patch({
+                      param: { id: String(c.row.original.id) },
+                      json: {},
+                    });
                     if (res.ok) {
                       toast.success(t("zh_da518e"));
                       await mutate();
@@ -185,7 +267,11 @@ export default function View() {
 
   return (
     <div className="p-4 md:p-6">
-      <div className="mb-3 flex justify-end"><Button size="sm" onClick={() => setTopupOpen(true)}>{t("account.topUp")}</Button></div>
+      <div className="mb-3 flex justify-end">
+        <Button size="sm" onClick={() => setTopupOpen(true)}>
+          {t("account.topUp")}
+        </Button>
+      </div>
       <ListPage<Row>
         title={t("admin.overview.topUps")}
         description={t("8_pay_url_pending_badges_ba8455")}
@@ -207,7 +293,6 @@ export default function View() {
             </div>
           </div>
         )}
-
       />
       <TopupCreateDialog open={topupOpen} onOpenChange={setTopupOpen} onDone={() => void mutate()} />
     </div>

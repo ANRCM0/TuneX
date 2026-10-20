@@ -16,11 +16,7 @@ import type { DNSProvider, DNSProviderConfig } from "./interface";
 
 const providerCache = new Map<string, DNSProvider>();
 
-function buildProvider(
-  type: DNSProviderType,
-  domain: string,
-  config: DNSProviderConfig,
-): DNSProvider {
+function buildProvider(type: DNSProviderType, domain: string, config: DNSProviderConfig): DNSProvider {
   switch (type) {
     case DNSProviderType.cloudflare:
       return new CloudflareDNSProvider(domain, config);
@@ -71,11 +67,7 @@ export function getDNSProvider(
 
 /** Factory surface, also reachable through the container like every other service. */
 export interface DNSProviderFactory {
-  get(
-    type: DNSProviderType,
-    domain: string,
-    config: Prisma.JsonValue | null | undefined,
-  ): DNSProvider;
+  get(type: DNSProviderType, domain: string, config: Prisma.JsonValue | null | undefined): DNSProvider;
 }
 
 export const dnsProviderFactory = service<DNSProviderFactory>("DNSProviderFactory", () => ({

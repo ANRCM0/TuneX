@@ -50,11 +50,7 @@ export function compactJson(value: unknown): string {
 }
 
 /** Build the opaque `content` string for the given mode. */
-export function buildContent(
-  mode: ContentMode,
-  payload: LicensePayload,
-  fernetSecret: string,
-): string {
+export function buildContent(mode: ContentMode, payload: LicensePayload, fernetSecret: string): string {
   switch (mode) {
     case "fernet":
       return fernetEncrypt(fernetSecret, Buffer.from(compactJson(payload), "utf8"));

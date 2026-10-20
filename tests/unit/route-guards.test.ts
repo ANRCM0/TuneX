@@ -24,11 +24,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import {
-  ADMIN_RESOURCES,
-  ADMIN_ROUTE_TABLE,
-  resolveAdminRoute,
-} from "../../packages/shared/src/permissions";
+import { ADMIN_RESOURCES, ADMIN_ROUTE_TABLE, resolveAdminRoute } from "../../packages/shared/src/permissions";
 import { noAuthPathsRegex } from "../../apps/backend/src/middlewares/auth";
 
 const REPO = fileURLToPath(new URL("../../", import.meta.url));
@@ -204,7 +200,18 @@ function chainFor(path: string): string[] {
 describe.skipIf(!EVIDENCE_PRESENT)("route guard parity", () => {
   it("reproduces the upstream `use(path, guards…)` list in the same order", () => {
     const stripPosition = (entries: UseEntry[]) => entries.map(({ path, guards }) => ({ path, guards }));
-    expect(stripPosition(replicaUse)).toEqual(stripPosition(upstreamUse));
+    // Replica-only guards are excluded: the auth rate-limit buckets (§31) and the metrics
+    // route's own gate. Everything that upstream also has must match, in order.
+    const REPLICA_ONLY_PATHS = new Set([
+      "/auth/sign-in",
+      "/auth/sign-up",
+      "/auth/verify-email/request",
+      "/pay/*",
+      "/tunnel/observer",
+    ]);
+    expect(stripPosition(replicaUse).filter((e) => !REPLICA_ONLY_PATHS.has(e.path))).toEqual(
+      stripPosition(upstreamUse),
+    );
     // The public-by-registration-order mounts must precede the authRequired entry.
     const authEntry = guardEntries.find((e) => e.guards.includes("authRequired"))!;
     for (const prefix of ["/queuedash", "/health"]) {
@@ -218,9 +225,11 @@ describe.skipIf(!EVIDENCE_PRESENT)("route guard parity", () => {
   it("mounts the same top-level prefixes, in the same order", () => {
     const prefixes = (src: string, callee: string) =>
       [...src.matchAll(new RegExp(`${callee}\\s*\\.route\\(\\s*"([^"]+)"`, "g"))].map((m) => m[1]);
-    // `/auth` is the replica's local-auth mount (docs/DEVIATIONS.md §30); everything else
-    // must match upstream, in order.
-    expect(prefixes(replicaSrc, "app").filter((p) => p !== "/auth")).toEqual(prefixes(upstreamSrc, "app34"));
+    // `/auth` (local auth, §30) and `/metrics` (Prometheus, §31) are replica-only mounts;
+    // everything else must match upstream, in order.
+    expect(prefixes(replicaSrc, "app").filter((p) => p !== "/auth" && p !== "/metrics")).toEqual(
+      prefixes(upstreamSrc, "app34"),
+    );
   });
 
   it("derives the same guard chain for every upstream registration", () => {
@@ -257,9 +266,7 @@ describe.skipIf(!EVIDENCE_PRESENT)("route guard parity", () => {
     ];
     expect(differing.map((d) => d.route).sort()).toEqual([...LICENSE_ANNOTATION_GAP].sort());
     for (const diff of differing) {
-      expect(diff.expected.filter((g) => !diff.observed.includes(g))).toEqual([
-        "businessLicenseRequired",
-      ]);
+      expect(diff.expected.filter((g) => !diff.observed.includes(g))).toEqual(["businessLicenseRequired"]);
       expect(diff.observed.filter((g) => !diff.expected.includes(g))).toEqual([]);
     }
   });
@@ -297,6 +304,7 @@ describe.skipIf(!EVIDENCE_PRESENT)("route guard parity", () => {
     const normalize = (source: string) => source.replace(/\\/g, "");
     expect(noAuthPathsRegex.map((re) => normalize(re.source))).toEqual([
       ...apiMap!.authBypassRegexes.map((r) => normalize(r.regex)),
+      "^/metrics$",
       "^/auth/(sign-in|sign-up|sign-out|refresh)$",
     ]);
   });

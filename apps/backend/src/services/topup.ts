@@ -96,7 +96,10 @@ export class TopupService {
     });
   }
 
-  async getTopupOrders(query: TopupOrderQuery, user_id?: number): Promise<{ data: TopupOrder[]; total: number }> {
+  async getTopupOrders(
+    query: TopupOrderQuery,
+    user_id?: number,
+  ): Promise<{ data: TopupOrder[]; total: number }> {
     const { page, perPage, sort, status, payment, order_id, email } = query;
     const orderBy = sort?.map((sort2) => {
       return {
@@ -168,7 +171,9 @@ export class TopupService {
       throw new HTTPException(404, { message: "充值订单不存在或状态不正确" });
     }
     const referralMode = await this.systemConfig.getConfig<string>(SystemConfigName.REFERRAL_MODE);
-    const commissionRate = await this.systemConfig.getConfig<number>(SystemConfigName.REFERRAL_COMMISSION_RATE);
+    const commissionRate = await this.systemConfig.getConfig<number>(
+      SystemConfigName.REFERRAL_COMMISSION_RATE,
+    );
     await db.$transaction(async (tx) => {
       if (!(await settleTopupOrder(tx, topup_order))) {
         throw new HTTPException(409, { message: "充值订单状态已变更" });

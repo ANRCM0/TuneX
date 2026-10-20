@@ -60,6 +60,10 @@ export interface RedisLike {
   get(key: string): Promise<string | null>;
   del(...keys: string[]): Promise<number>;
   expire(key: string, seconds: number): Promise<number>;
+  /** Atomic counter used by the rate limiter; absent on the in-memory substitute. */
+  incr?(key: string): Promise<number>;
+  /** Remaining TTL in seconds (-1 = no expiry, -2 = missing); pairs with `incr`. */
+  ttl?(key: string): Promise<number>;
   ping(): Promise<unknown>;
   hset(key: string, field: string, value: string): Promise<unknown>;
   hget(key: string, field: string): Promise<string | null>;
@@ -248,7 +252,9 @@ export class RedisService {
     return aggregated;
   }
 
-  async incrTunnelTraffics(traffics: { tunnel_id: number; traffic: number; traffic_cost: number }[]): Promise<void> {
+  async incrTunnelTraffics(
+    traffics: { tunnel_id: number; traffic: number; traffic_cost: number }[],
+  ): Promise<void> {
     const pipeline = client.pipeline();
     for (const traffic of traffics) {
       pipeline.hincrbyfloat(KEY.TUNNEL_TRAFFIC, traffic.tunnel_id.toString(), traffic.traffic);
@@ -261,7 +267,10 @@ export class RedisService {
     const key = is_cost ? KEY.TUNNEL_TRAFFIC_COST : KEY.TUNNEL_TRAFFIC;
     if (tunnel_ids) {
       const ret = await client.hmget(key, ...tunnel_ids.map((id) => id.toString()));
-      return Object.fromEntries(tunnel_ids.map((id, index) => [id, ret[index] ?? null])) as Record<string, string>;
+      return Object.fromEntries(tunnel_ids.map((id, index) => [id, ret[index] ?? null])) as Record<
+        string,
+        string
+      >;
     }
     return await client.hgetall(key);
   }
@@ -314,7 +323,10 @@ export class RedisService {
     const sysinfo = await client.hgetall(key);
     for (const node_id of Object.keys(sysinfo)) {
       const sysinfo_obj = JSON.parse(sysinfo[node_id]) as SysinfoPayload;
-      if (new Date(sysinfo_obj.last_active as string).getTime() < new Date(Date.now() - 1000 * 60 * 10).getTime()) {
+      if (
+        new Date(sysinfo_obj.last_active as string).getTime() <
+        new Date(Date.now() - 1000 * 60 * 10).getTime()
+      ) {
         await client.hdel(key, node_id);
       }
     }

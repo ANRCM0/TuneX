@@ -35,7 +35,9 @@ describe("date helpers", () => {
     const month = getDateGroupBy("created_at", "month");
     const year = getDateGroupBy("created_at", "year");
     const rows = db
-      .prepare(`SELECT created_at, ${day} AS day, ${month} AS month, ${year} AS year FROM t ORDER BY created_at`)
+      .prepare(
+        `SELECT created_at, ${day} AS day, ${month} AS month, ${year} AS year FROM t ORDER BY created_at`,
+      )
       .all() as { day: string; month: string; year: string }[];
 
     expect(rows[0]).toMatchObject({ day: "2024-12-31", month: "2024-12", year: "2024" });

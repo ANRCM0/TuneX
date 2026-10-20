@@ -6,30 +6,30 @@ The replica's Hono tree was first enumerated with `node --import tsx` importing 
 
 ## Route counts
 
-| Set | Count |
-| --- | --- |
-| Upstream registrations | 160 |
-| Upstream distinct method+path | 157 |
-| Replica distinct method+path | 163 |
-| Upstream method+path missing from the replica | **0** |
+| Set                                                    | Count |
+| ------------------------------------------------------ | ----- |
+| Upstream registrations                                 | 160   |
+| Upstream distinct method+path                          | 157   |
+| Replica distinct method+path                           | 163   |
+| Upstream method+path missing from the replica          | **0** |
 | Replica method+path not in the upstream `routes` array | **6** |
 
 The 6 extras are real upstream mounts that the api map records outside the `routes` array (they are registered before `authRequired`, or they are the docs endpoints):
 
-| Method | Path |
-| --- | --- |
-| GET | `/queuedash` |
-| GET | `/health` |
-| GET | `/health/diag` |
-| GET | `/health/heap` |
-| GET | `/docs` |
-| GET | `/openapi.json` |
+| Method | Path            |
+| ------ | --------------- |
+| GET    | `/queuedash`    |
+| GET    | `/health`       |
+| GET    | `/health/diag`  |
+| GET    | `/health/heap`  |
+| GET    | `/docs`         |
+| GET    | `/openapi.json` |
 
 `/license` is mounted twice in `app.ts`, matching upstream. Hono collapses that to one method+path in this unique-route diff, so the duplicate registration is not visible as an extra path.
 
 ## What this diff does not prove
 
-- Response *body schemas* (`content` blocks) are only spot-checked. The rest of the OpenAPI surface — `describeRoute` presence, operation summary, documented status codes and their descriptions — is compared per route; see "Documentation parity".
+- Response _body schemas_ (`content` blocks) are only spot-checked. The rest of the OpenAPI surface — `describeRoute` presence, operation summary, documented status codes and their descriptions — is compared per route; see "Documentation parity".
 - Handler bodies are not compared, only their declarations: the app-level guard chain ("Guard parity") and the per-route validator targets ("Validator parity").
 - Aggregation SQL is covered by `tests/unit/date.test.ts` (the helper strings, plus a SQLite check that 2024-12-31 16:00:00Z buckets as 2025-01-01 / 2025-01 / 2025 in Asia/Shanghai).
 
@@ -39,24 +39,24 @@ The 6 extras are real upstream mounts that the api map records outside the `rout
 
 Results:
 
-| Check | Result |
-| --- | --- |
-| Ordered `use(path, guards…)` list vs upstream | identical: `authRequired` on `*`, `adminRequired` + `adminPermissionGuard` on `/admin/*`, nine `businessLicenseRequired` entries, `superAdminRequired` before `businessLicenseRequired` on `/admin/role` and `/admin/role/*` |
-| Top-level mount prefixes vs upstream | identical, including the two `/license` registrations and `/queuedash` + `/health` before `authRequired` |
-| Derived guard chain for the 160 upstream registrations | 153 exact; 7 differ only by `businessLicenseRequired` (see below) |
-| `resolveAdminRoute` vs upstream `adminResource` | 81/81 same `key` and `matchedPrefix`, including `$staff` for `GET /admin/node/group/summary` and `$super` for the four `/admin/role` routes. No admin route resolves to `undefined`, which `adminPermissionGuard` turns into a 403 for every non-super-admin |
-| Public routes vs `noAuthPathsRegex` | the 11 upstream-public registrations match; none of the other 149 do; the nine regexes match upstream's nine |
+| Check                                                  | Result                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ordered `use(path, guards…)` list vs upstream          | identical: `authRequired` on `*`, `adminRequired` + `adminPermissionGuard` on `/admin/*`, nine `businessLicenseRequired` entries, `superAdminRequired` before `businessLicenseRequired` on `/admin/role` and `/admin/role/*`                                 |
+| Top-level mount prefixes vs upstream                   | identical, including the two `/license` registrations and `/queuedash` + `/health` before `authRequired`                                                                                                                                                     |
+| Derived guard chain for the 160 upstream registrations | 153 exact; 7 differ only by `businessLicenseRequired` (see below)                                                                                                                                                                                            |
+| `resolveAdminRoute` vs upstream `adminResource`        | 81/81 same `key` and `matchedPrefix`, including `$staff` for `GET /admin/node/group/summary` and `$super` for the four `/admin/role` routes. No admin route resolves to `undefined`, which `adminPermissionGuard` turns into a 403 for every non-super-admin |
+| Public routes vs `noAuthPathsRegex`                    | the 11 upstream-public registrations match; none of the other 149 do; the nine regexes match upstream's nine                                                                                                                                                 |
 
 ### Seven routes where `api_map.json` over-reports licensing
 
 Hono's non-wildcard `use(path, mw)` is an exact-path match. The upstream bundle compiles a literal segment to `[^/]+`-style tokens and a trailing `*` to `(?:|/.*)` (`work/backend_bundle.ts.js:213864-213871`); the installed hono 4.13.13 behaves the same (`/admin/pay` fires for `/admin/pay`, not `/admin/pay/1`). Upstream and replica register the identical lines, so runtime behaviour matches — the annotation is what is wrong:
 
-| Route | `api_map.json` | Actually wired (both sides) |
-| --- | --- | --- |
-| `PATCH`/`DELETE /admin/pay/:id`, `PATCH /admin/pay/:id/order` | `licenceGated` | `authRequired, adminRequired, adminPermissionGuard` |
-| `PATCH /admin/plan/coupon/:id` | `licenceGated` | same |
-| `PATCH /admin/topup/activity/:id` | `licenceGated` | same |
-| `GET`/`POST /pay/:id/callback` | `licenceGated` + public | `authRequired` only (public via `^/pay/.*/callback`) |
+| Route                                                         | `api_map.json`          | Actually wired (both sides)                          |
+| ------------------------------------------------------------- | ----------------------- | ---------------------------------------------------- |
+| `PATCH`/`DELETE /admin/pay/:id`, `PATCH /admin/pay/:id/order` | `licenceGated`          | `authRequired, adminRequired, adminPermissionGuard`  |
+| `PATCH /admin/plan/coupon/:id`                                | `licenceGated`          | same                                                 |
+| `PATCH /admin/topup/activity/:id`                             | `licenceGated`          | same                                                 |
+| `GET`/`POST /pay/:id/callback`                                | `licenceGated` + public | `authRequired` only (public via `^/pay/.*/callback`) |
 
 Wiring evidence: `112__src__app.ts:63-73` vs `apps/backend/src/app.ts:130-140`. The test pins the set of seven and fails if it changes; a mutation of any one `use(...)` line fails two tests.
 
@@ -72,12 +72,12 @@ Not covered here: middleware registered inside route files (`zValidator`, per-ha
 
 `tests/unit/route-docs.test.ts` parses every replica `describeRoute({...})` block and compares it with `api_map.json` (`openapiDoc`, `operationSummary`, `documentedStatusCodes`) plus the response descriptions read from the decompiled registration that `evidence` points at.
 
-| Check | Result |
-| --- | --- |
-| `describeRoute` presence | 158/160, matching `openapiDoc`; the two `router.on([...])` callback routes have none, as upstream |
-| Operation summaries | identical for all 160 |
-| Status codes | identical for all 160 — distribution `200`×75, `204`×70, `201`×7, `204+404`×2, `204+400`×1, none×5 |
-| Response descriptions | identical for every documented entry |
+| Check                    | Result                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| `describeRoute` presence | 158/160, matching `openapiDoc`; the two `router.on([...])` callback routes have none, as upstream  |
+| Operation summaries      | identical for all 160                                                                              |
+| Status codes             | identical for all 160 — distribution `200`×75, `204`×70, `201`×7, `204+404`×2, `204+400`×1, none×5 |
+| Response descriptions    | identical for every documented entry                                                               |
 
 The runtime document is exercised too: `GET /openapi.json` returns 200 with 116 paths (the 118 upstream path templates minus `/docs` and `/openapi.json` themselves), and `scripts/e2e-local.sh` asserts the document is served and that `/bot` still publishes the raw JSON object.
 
@@ -87,13 +87,13 @@ This closed 21 wrong success codes (`200` where upstream documents and the handl
 
 `tests/unit/route-validators.test.ts` rebuilds the mount tree from `app.ts` (single-import identifiers, the `adminRoutes` chain, the top-level `routes` chain), parses `router.<verb>(path, …)` and `router.on([verbs], path, …)` in all 31 router modules, and compares the `zValidator("json"|"query"|"param")` targets with `requestSchemas[].in` in `api_map.json`.
 
-| Check | Result |
-| --- | --- |
-| Upstream registrations found | 160/160 (they collapse to the same 157 distinct method+path keys) |
-| Target lists | identical for every route |
-| Totals | `json` 62, `query` 61, `param` 47 on both sides |
-| Multi-method | `router.on(["POST", "GET"], "/:id/callback")` contributes both verbs |
-| Parser guard | a route-file call must be `router.*`/`app.*`, so `c.get("ip")` is not counted as a registration |
+| Check                        | Result                                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| Upstream registrations found | 160/160 (they collapse to the same 157 distinct method+path keys)                               |
+| Target lists                 | identical for every route                                                                       |
+| Totals                       | `json` 62, `query` 61, `param` 47 on both sides                                                 |
+| Multi-method                 | `router.on(["POST", "GET"], "/:id/callback")` contributes both verbs                            |
+| Parser guard                 | a route-file call must be `router.*`/`app.*`, so `c.get("ip")` is not counted as a registration |
 
 Mutation: turning one `zValidator("json")` into `"query"` fails two cases.
 
@@ -101,23 +101,23 @@ Mutation: turning one `zValidator("json")` into `"query"` fails two cases.
 
 `tests/unit/schema-parity.test.ts` parses `apps/backend/prisma/schema.prisma` and the decompiled `relayx-analysis/work/prisma_schema.prisma` and compares every field, then checks the generated Zod file against the replica's own schema.
 
-| Check | Result |
-| --- | --- |
-| Models / enums | 23 / 18 on both sides, same names |
-| Enum values | identical for all 18 |
-| Fields | 297 total (241 scalar, 56 relation); same name, base type, `?`, `[]`, `@id`, `@unique`, `@default` on both sides — **0 differences** |
-| Generated Zod | one schema per model; every scalar column present with the documented type mapping; `.nullable()` on exactly the 56 nullable scalar columns; no relation columns |
-| Regression check | dropping one `.nullable()` in the generated file fails two cases; the field comparison fails on any added/removed/renamed column |
+| Check            | Result                                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Models / enums   | 23 / 18 on both sides, same names                                                                                                                                |
+| Enum values      | identical for all 18                                                                                                                                             |
+| Fields           | 297 total (241 scalar, 56 relation); same name, base type, `?`, `[]`, `@id`, `@unique`, `@default` on both sides — **0 differences**                             |
+| Generated Zod    | one schema per model; every scalar column present with the documented type mapping; `.nullable()` on exactly the 56 nullable scalar columns; no relation columns |
+| Regression check | dropping one `.nullable()` in the generated file fails two cases; the field comparison fails on any added/removed/renamed column                                 |
 
 ## Schema spot check (2026-10-17)
 
-| Check | Result |
-| --- | --- |
-| Request export names vs `069__src__schemas__request.ts` | Same set, except upstream `TunnelChainSchema2` is `TunnelChainSchema` here (rename only) |
-| Response export names vs `070__src__schemas__response.ts` | Same set (upstream `import_client19` is a bundler local, not a schema) |
-| `ProtocolSchema` fields | Match `069:25-48`, including the `ss` method refine and the same Chinese message |
-| `TunnelRequestSchema` omit + extend | Match `069:65-82` |
-| Generated zod vs `schema.prisma` | 23 models, every scalar column present. Relations are intentionally omitted. Nullability was not re-checked column by column |
+| Check                                                     | Result                                                                                                                       |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Request export names vs `069__src__schemas__request.ts`   | Same set, except upstream `TunnelChainSchema2` is `TunnelChainSchema` here (rename only)                                     |
+| Response export names vs `070__src__schemas__response.ts` | Same set (upstream `import_client19` is a bundler local, not a schema)                                                       |
+| `ProtocolSchema` fields                                   | Match `069:25-48`, including the `ss` method refine and the same Chinese message                                             |
+| `TunnelRequestSchema` omit + extend                       | Match `069:65-82`                                                                                                            |
+| Generated zod vs `schema.prisma`                          | 23 models, every scalar column present. Relations are intentionally omitted. Nullability was not re-checked column by column |
 
 ## Commission arithmetic
 

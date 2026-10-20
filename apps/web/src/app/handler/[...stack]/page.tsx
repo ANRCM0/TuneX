@@ -97,7 +97,12 @@ export default function HandlerPage() {
       <div className="grid gap-3">
         <div className="grid gap-1.5">
           <Label className="text-xs">{t("auth.email")}</Label>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
         </div>
         <div className="grid gap-1.5">
           <Label className="text-xs">{t("auth.password")}</Label>
@@ -132,7 +137,6 @@ export default function HandlerPage() {
     </Shell>
   );
 }
-
 
 /**
  * Verification card.
@@ -181,7 +185,12 @@ function VerifyEmailCard({ token }: { token: string | null }) {
     setStatus("sending");
     setDevLink(null);
     const res = await fetch("/api/auth/verify-email/request", { method: "POST" });
-    const data = (await res.json().catch(() => ({}))) as { sent?: boolean; link?: string; hint?: string; error?: string };
+    const data = (await res.json().catch(() => ({}))) as {
+      sent?: boolean;
+      link?: string;
+      hint?: string;
+      error?: string;
+    };
     if (!res.ok) {
       setStatus("error");
       setMessage(data.error ?? `HTTP ${res.status}`);
@@ -200,7 +209,11 @@ function VerifyEmailCard({ token }: { token: string | null }) {
   return (
     <Shell title={t("auth.verifyEmail")}>
       <p className="text-muted-foreground text-sm">
-        {status === "verified" ? t("auth.verified") : status === "sent" ? t("auth.mailSent") : t("auth.verifyHint")}
+        {status === "verified"
+          ? t("auth.verified")
+          : status === "sent"
+            ? t("auth.mailSent")
+            : t("auth.verifyHint")}
       </p>
       {devLink ? (
         <div className="grid gap-1">
@@ -211,7 +224,11 @@ function VerifyEmailCard({ token }: { token: string | null }) {
         </div>
       ) : null}
       {status === "error" ? <p className="text-destructive text-xs">{message}</p> : null}
-      <Button className="w-full" disabled={status === "sending" || status === "verified"} onClick={() => void resend()}>
+      <Button
+        className="w-full"
+        disabled={status === "sending" || status === "verified"}
+        onClick={() => void resend()}
+      >
         {status === "sending" ? t("auth.working") : t("auth.resendMail")}
       </Button>
       <Button variant="ghost" className="w-full" onClick={() => router.push("/handler/sign-out")}>

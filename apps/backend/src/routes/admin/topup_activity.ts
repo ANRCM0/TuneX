@@ -19,7 +19,7 @@ router.post(
     tags: ["充值活动管理"],
     responses: {
       201: {
-        description: "充值活动创建成功"
+        description: "充值活动创建成功",
       },
     },
   }),
@@ -62,7 +62,9 @@ router.get(
   ),
   async (c) => {
     const { page, perPage, sort, type } = c.req.valid("query");
-    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({ [sort2.id]: sort2.desc ? "desc" : "asc" }));
+    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({
+      [sort2.id]: sort2.desc ? "desc" : "asc",
+    }));
     const where = {
       type,
     };

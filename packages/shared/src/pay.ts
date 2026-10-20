@@ -102,7 +102,10 @@ export abstract class BasePay {
 
   generateJsonBase64Sign(data: Record<string, unknown>): string {
     const json = JSON.stringify(data).replace(/\//g, "\\/");
-    return crypto.createHash("md5").update(Buffer.from(json).toString("base64") + this.apiKey).digest("hex");
+    return crypto
+      .createHash("md5")
+      .update(Buffer.from(json).toString("base64") + this.apiKey)
+      .digest("hex");
   }
 
   verifySign(data: Record<string, any>): boolean {
@@ -136,7 +139,7 @@ export abstract class BasePay {
     price: number,
     redirect_url: string,
     client_ip: string,
-    pay_type?: string
+    pay_type?: string,
   ): Promise<[string, string]>;
 
   abstract notify(data: Record<string, any>): [string, string];
@@ -173,7 +176,7 @@ export class EPay extends BasePay {
     price: number,
     redirect_url: string,
     client_ip: string,
-    pay_type?: string
+    pay_type?: string,
   ): Promise<[string, string]> {
     const data: Record<string, unknown> = {
       pid: Number(this.pid),
@@ -183,7 +186,7 @@ export class EPay extends BasePay {
       return_url: redirect_url,
       name: order_id,
       money: this.getRealPrice(price),
-      device: "jump"
+      device: "jump",
     };
     if (pay_type) {
       data["type"] = pay_type;
@@ -191,7 +194,7 @@ export class EPay extends BasePay {
     data["sign"] = this.generateSign(data);
     data["sign_type"] = "MD5";
     const response = await this.client.post("/mapi.php", data, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
     const ret = response.data;
     if (ret.code !== 1 && ret.code !== "1") {
@@ -239,13 +242,17 @@ export class EPay extends BasePay {
       const response = await this.client.get("/api.php", {
         params: { act: "order", pid: this.pid, key: this.apiKey, trade_no: order.trade_id },
         timeout: 1e4,
-        maxRedirects: 0
+        maxRedirects: 0,
       });
       result = response.data;
     } catch {
       throw new Error("Payment gateway order query failed");
     }
-    if (!result || (result.code !== 1 && result.code !== "1") || (result.status !== 1 && result.status !== "1")) {
+    if (
+      !result ||
+      (result.code !== 1 && result.code !== "1") ||
+      (result.status !== 1 && result.status !== "1")
+    ) {
       throw new Error("Payment gateway has not confirmed payment");
     }
     this.validateOrder(result, order);
@@ -269,7 +276,7 @@ export class BEPUSDT extends BasePay {
     price: number,
     redirect_url: string,
     _client_ip: string,
-    pay_type?: string
+    pay_type?: string,
   ): Promise<[string, string]> {
     const amount = this.getRealPrice(price);
     const path = pay_type ? "/api/v1/order/create-transaction" : "/api/v1/order/create-order";
@@ -280,13 +287,13 @@ export class BEPUSDT extends BasePay {
           amount,
           notify_url: this.payment.notify_url,
           redirect_url: `${redirect_url}?trade_status=TRADE_SUCCESS`,
-          no_rate: false
+          no_rate: false,
         }
       : {
           order_id,
           amount,
           notify_url: this.payment.notify_url,
-          redirect_url: `${redirect_url}?trade_status=TRADE_SUCCESS`
+          redirect_url: `${redirect_url}?trade_status=TRADE_SUCCESS`,
         };
     data["signature"] = this.generateSign(data);
     const response = await this.client.post(path, data);
@@ -340,7 +347,7 @@ export class Heleket extends BasePay {
     price: number,
     redirect_url: string,
     _client_ip: string,
-    pay_type?: string
+    pay_type?: string,
   ): Promise<[string, string]> {
     const amount = this.getRealPrice(price).toFixed(2);
     const data: Record<string, unknown> = {
@@ -349,7 +356,7 @@ export class Heleket extends BasePay {
       order_id,
       url_return: redirect_url,
       url_success: `${redirect_url}?trade_status=TRADE_SUCCESS`,
-      url_callback: this.payment.notify_url
+      url_callback: this.payment.notify_url,
     };
     if (this.config.network) {
       data.network = this.config.network;
@@ -364,8 +371,8 @@ export class Heleket extends BasePay {
       headers: {
         merchant: this.merchant,
         sign: this.generateJsonBase64Sign(data),
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     const ret = response.data;
     if (ret.state !== 0) {

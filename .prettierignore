@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+.gocache/
+.gopath/
+.gopath/
+apps/web/.next/
+apps/backend/prisma/migrations/
+apps/backend/prisma/mysql/
+apps/backend/src/generated/
+apps/agent/
+pnpm-lock.yaml
+*.db
+*.db-journal

@@ -13,7 +13,12 @@ import { setPageTitle } from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Sysinfo = {
   node_id?: number;
@@ -107,50 +112,78 @@ export default function NodeStatsPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-muted-foreground h-24 text-center">{tr("app.loading")}</TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="h-24 text-center">{tr("misc.empty.noData")}</TableCell></TableRow>
-            ) : rows.map((r) => (
-              <TableRow key={r.node_id ?? r.node_name}>
-                <TableCell>{r.node_name ?? r.node_id ?? "—"}</TableCell>
-                <TableCell>{r.node_group_name ?? "—"}</TableCell>
-                <TableCell><BadgeStatus status={r.status ?? "unknown"} /></TableCell>
-                <TableCell className="tabular-nums">{r.cpu != null ? `${r.cpu.toFixed(1)}%` : "—"}</TableCell>
-                <TableCell className="tabular-nums">{r.memory != null ? `${r.memory.toFixed(1)}%` : "—"}</TableCell>
-                <TableCell className="tabular-nums">{r.disk != null ? `${r.disk.toFixed(1)}%` : "—"}</TableCell>
-                <TableCell className="text-muted-foreground text-xs">{r.version ?? "—"}</TableCell>
-                <TableCell>
-                  {r.node_id != null ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-7" aria-label={tr("misc.label.actions")}>
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => void toggleStatus(Number(r.node_id), String(r.status ?? "active"))}>
-                          {tr("app.enableDisable")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            const cmd = "curl -sSL https://dl.relayx.cc/uninstall.sh | sh -s -- -y";
-                            void navigator.clipboard.writeText(cmd).then(
-                              () => toast.success(tr("zh_23cea6")),
-                              () => toast.error(tr("zh_f2c6b5")),
-                            );
-                          }}
-                        >
-                          {tr("zh_269e70")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => void removeNode(Number(r.node_id))}>
-                          {tr("app.deleteNode")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : null}
+              <TableRow>
+                <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
+                  {tr("app.loading")}
                 </TableCell>
               </TableRow>
-            ))}
+            ) : rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  {tr("misc.empty.noData")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.node_id ?? r.node_name}>
+                  <TableCell>{r.node_name ?? r.node_id ?? "—"}</TableCell>
+                  <TableCell>{r.node_group_name ?? "—"}</TableCell>
+                  <TableCell>
+                    <BadgeStatus status={r.status ?? "unknown"} />
+                  </TableCell>
+                  <TableCell className="tabular-nums">
+                    {r.cpu != null ? `${r.cpu.toFixed(1)}%` : "—"}
+                  </TableCell>
+                  <TableCell className="tabular-nums">
+                    {r.memory != null ? `${r.memory.toFixed(1)}%` : "—"}
+                  </TableCell>
+                  <TableCell className="tabular-nums">
+                    {r.disk != null ? `${r.disk.toFixed(1)}%` : "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{r.version ?? "—"}</TableCell>
+                  <TableCell>
+                    {r.node_id != null ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            aria-label={tr("misc.label.actions")}
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => void toggleStatus(Number(r.node_id), String(r.status ?? "active"))}
+                          >
+                            {tr("app.enableDisable")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const cmd = "curl -sSL https://dl.relayx.cc/uninstall.sh | sh -s -- -y";
+                              void navigator.clipboard.writeText(cmd).then(
+                                () => toast.success(tr("zh_23cea6")),
+                                () => toast.error(tr("zh_f2c6b5")),
+                              );
+                            }}
+                          >
+                            {tr("zh_269e70")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => void removeNode(Number(r.node_id))}
+                          >
+                            {tr("app.deleteNode")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

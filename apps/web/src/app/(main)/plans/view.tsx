@@ -21,7 +21,13 @@ type Plan = {
   stock: number | null;
 };
 
-const CYCLE: Record<string, string> = { month: t("zh_ccf97f"), quarter: t("zh_51e67e"), half_year: t("zh_89b172"), year: t("zh_1017de"), lifetime: t("zh_409752") };
+const CYCLE: Record<string, string> = {
+  month: t("zh_ccf97f"),
+  quarter: t("zh_51e67e"),
+  half_year: t("zh_89b172"),
+  year: t("zh_1017de"),
+  lifetime: t("zh_409752"),
+};
 
 export default function PlansPage() {
   const { data, isLoading, error } = usePlans(1, 50);
@@ -36,7 +42,9 @@ export default function PlansPage() {
     const res = await client.plan.coupon.$get({ query: { code: coupon.trim() } });
     if (!res.ok) return;
     const body = (await res.json()) as { value?: number; type?: string };
-    toast.success(tf("value_19107e", { value: body.type === "percentage" ? `${body.value}%` : `¥${body.value}` }));
+    toast.success(
+      tf("value_19107e", { value: body.type === "percentage" ? `${body.value}%` : `¥${body.value}` }),
+    );
   };
 
   const openDetail = async (plan: Plan) => {
@@ -52,7 +60,12 @@ export default function PlansPage() {
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-lg font-semibold">{t("nav.plans2")}</h2>
         <div className="ml-auto flex items-center gap-2">
-          <Input className="h-8 w-40" placeholder={t("zh_d7d38a")} value={coupon} onChange={(e) => setCoupon(e.target.value)} />
+          <Input
+            className="h-8 w-40"
+            placeholder={t("zh_d7d38a")}
+            value={coupon}
+            onChange={(e) => setCoupon(e.target.value)}
+          />
           <Button size="sm" variant="outline" onClick={() => void checkCoupon()}>
             {t("app.validate")}
           </Button>
@@ -71,7 +84,8 @@ export default function PlansPage() {
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2 text-sm">
                   <div className="text-muted-foreground">
-                    {CYCLE[p.billing_cycle] ?? p.billing_cycle} {t("zh_ad7328")} {p.traffic} {t("zh_4b15f9")} {p.tunnel_count}
+                    {CYCLE[p.billing_cycle] ?? p.billing_cycle} {t("zh_ad7328")} {p.traffic} {t("zh_4b15f9")}{" "}
+                    {p.tunnel_count}
                   </div>
                   <Button size="sm" variant="outline" onClick={() => void openDetail(p)}>
                     {t("app.details")}
@@ -97,13 +111,32 @@ export default function PlansPage() {
       {detail ? (
         <Dialog open onOpenChange={(v: boolean) => !v && setDetail(null)}>
           <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>{detail.name} {t("zh_8a54fc")}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>
+                {detail.name} {t("zh_8a54fc")}
+              </DialogTitle>
+            </DialogHeader>
             <div className="grid gap-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("admin.plans.price")}</span><span>¥{detail.price}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("app.billingCycle")}</span><span>{CYCLE[detail.billing_cycle] ?? detail.billing_cycle}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("admin.plans.traffic")}</span><span>{detail.traffic}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("app.tunnels")}</span><span>{detail.tunnel_count}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("admin.plans.stock")}</span><span>{detail.stock ?? t("app.unlimited")}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("admin.plans.price")}</span>
+                <span>¥{detail.price}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("app.billingCycle")}</span>
+                <span>{CYCLE[detail.billing_cycle] ?? detail.billing_cycle}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("admin.plans.traffic")}</span>
+                <span>{detail.traffic}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("app.tunnels")}</span>
+                <span>{detail.tunnel_count}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("admin.plans.stock")}</span>
+                <span>{detail.stock ?? t("app.unlimited")}</span>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

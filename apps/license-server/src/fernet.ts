@@ -22,10 +22,7 @@ const HMAC_INPUT_HEADER_LENGTH = 1 + 8; // version byte + 8-byte big-endian time
 
 /** urlsafe base64 (padded by default, matching Python's `base64.urlsafe_b64encode`). */
 export function urlSafeBase64Encode(data: Uint8Array, padded = true): string {
-  const urlSafe = Buffer.from(data)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  const urlSafe = Buffer.from(data).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
   return padded ? urlSafe : urlSafe.replace(/=+$/, "");
 }
 

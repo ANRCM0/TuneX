@@ -53,8 +53,7 @@ vi.mock("../../apps/backend/src/services/redis", () => ({
 }));
 
 vi.mock("../../apps/backend/src/services/dns", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("../../apps/backend/src/services/dns")>();
+  const actual = await importOriginal<typeof import("../../apps/backend/src/services/dns")>();
   return { ...actual, getDNSProvider: mocks.getDNSProvider };
 });
 
@@ -133,9 +132,9 @@ describe("nodeCustomLine (custom_line mapping)", () => {
 
 describe("DNS provider factory", () => {
   it("throws the upstream 400 for an unsupported provider type", async () => {
-    const real = await vi.importActual<
-      typeof import("../../apps/backend/src/services/dns")
-    >("../../apps/backend/src/services/dns");
+    const real = await vi.importActual<typeof import("../../apps/backend/src/services/dns")>(
+      "../../apps/backend/src/services/dns",
+    );
     let caught: { status?: number; message?: string } | undefined;
     try {
       real.getDNSProvider("route53" as never, "a.example.com", {});
@@ -147,9 +146,9 @@ describe("DNS provider factory", () => {
   });
 
   it("caches by type:domain:sha1(config) and re-creates on config change", async () => {
-    const real = await vi.importActual<
-      typeof import("../../apps/backend/src/services/dns")
-    >("../../apps/backend/src/services/dns");
+    const real = await vi.importActual<typeof import("../../apps/backend/src/services/dns")>(
+      "../../apps/backend/src/services/dns",
+    );
     const first = real.getDNSProvider("cloudflare" as never, "cache-a.example.com", {
       api_token: "token-1",
     });
@@ -168,12 +167,10 @@ describe("DNS provider factory", () => {
   });
 
   it("builds a Huawei provider for the huawei type", async () => {
-    const real = await vi.importActual<
-      typeof import("../../apps/backend/src/services/dns")
-    >("../../apps/backend/src/services/dns");
-    const { HuaweiDNSProvider } = await import(
-      "../../apps/backend/src/services/dns/huawei"
+    const real = await vi.importActual<typeof import("../../apps/backend/src/services/dns")>(
+      "../../apps/backend/src/services/dns",
     );
+    const { HuaweiDNSProvider } = await import("../../apps/backend/src/services/dns/huawei");
     const provider = real.getDNSProvider("huawei" as never, "hw.example.com", {
       access_key: "ak",
       secret_key: "sk",
@@ -198,14 +195,7 @@ describe("InNodeGroupDNSService.syncIpSet", () => {
       "电信",
     );
     expect(provider.updateRecord).toHaveBeenCalledTimes(1);
-    expect(provider.updateRecord).toHaveBeenCalledWith(
-      "1.1.1.1",
-      "5.5.5.5",
-      "A",
-      60,
-      5,
-      "电信",
-    );
+    expect(provider.updateRecord).toHaveBeenCalledWith("1.1.1.1", "5.5.5.5", "A", 60, 5, "电信");
     expect(provider.deleteRecord).toHaveBeenCalledTimes(2);
     expect(provider.deleteRecord).toHaveBeenNthCalledWith(1, "2.2.2.2");
     expect(provider.deleteRecord).toHaveBeenNthCalledWith(2, "4.4.4.4");
@@ -270,9 +260,7 @@ describe("InNodeGroupDNSService.updateNodeDnsRecords (register handshake)", () =
     ]);
     const dualStack = fakeProvider();
     const v4Only = fakeProvider();
-    mocks.getDNSProvider
-      .mockReturnValueOnce(dualStack as never)
-      .mockReturnValueOnce(v4Only as never);
+    mocks.getDNSProvider.mockReturnValueOnce(dualStack as never).mockReturnValueOnce(v4Only as never);
 
     await service.updateNodeDnsRecords(
       { id: 1, connect_ip: "entry.example.com" },
@@ -282,43 +270,16 @@ describe("InNodeGroupDNSService.updateNodeDnsRecords (register handshake)", () =
       "电信",
     );
 
-    expect(mocks.getDNSProvider).toHaveBeenNthCalledWith(
-      1,
-      "cloudflare",
-      "entry.example.com",
-      { api_token: "t1" },
-    );
-    expect(mocks.getDNSProvider).toHaveBeenNthCalledWith(
-      2,
-      "huawei",
-      "entry.example.com",
-      { access_key: "ak" },
-    );
-    expect(dualStack.updateRecord).toHaveBeenCalledWith(
-      "1.1.1.1",
-      "2.2.2.2",
-      "A",
-      120,
-      7,
-      "电信",
-    );
-    expect(dualStack.updateRecord).toHaveBeenCalledWith(
-      "2001:db8::1",
-      "2001:db8::2",
-      "AAAA",
-      120,
-      7,
-      "电信",
-    );
+    expect(mocks.getDNSProvider).toHaveBeenNthCalledWith(1, "cloudflare", "entry.example.com", {
+      api_token: "t1",
+    });
+    expect(mocks.getDNSProvider).toHaveBeenNthCalledWith(2, "huawei", "entry.example.com", {
+      access_key: "ak",
+    });
+    expect(dualStack.updateRecord).toHaveBeenCalledWith("1.1.1.1", "2.2.2.2", "A", 120, 7, "电信");
+    expect(dualStack.updateRecord).toHaveBeenCalledWith("2001:db8::1", "2001:db8::2", "AAAA", 120, 7, "电信");
     expect(v4Only.updateRecord).toHaveBeenCalledTimes(1);
-    expect(v4Only.updateRecord).toHaveBeenCalledWith(
-      "1.1.1.1",
-      "2.2.2.2",
-      "A",
-      60,
-      7,
-      "电信",
-    );
+    expect(v4Only.updateRecord).toHaveBeenCalledWith("1.1.1.1", "2.2.2.2", "A", 60, 7, "电信");
   });
 
   it("returns without touching providers when no active binding exists", async () => {
@@ -516,20 +477,8 @@ describe("InNodeGroupDNSService.syncDNSRecords (manual sync)", () => {
     const result = await service.syncDNSRecords(3, 77);
 
     expect(provider.deleteRecords).toHaveBeenCalledTimes(1);
-    expect(provider.createRecord).toHaveBeenCalledWith(
-      "1.1.1.1",
-      "A",
-      60,
-      5,
-      "电信",
-    );
-    expect(provider.createRecord).toHaveBeenCalledWith(
-      "2001:db8::1",
-      "AAAA",
-      60,
-      5,
-      "电信",
-    );
+    expect(provider.createRecord).toHaveBeenCalledWith("1.1.1.1", "A", 60, 5, "电信");
+    expect(provider.createRecord).toHaveBeenCalledWith("2001:db8::1", "AAAA", 60, 5, "电信");
     // The backup node stays out while a normal node is alive.
     expect(provider.createRecord).not.toHaveBeenCalledWith(
       "2.2.2.2",

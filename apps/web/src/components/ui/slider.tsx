@@ -26,7 +26,10 @@ export function Slider({
       step={step}
       value={value[0] ?? min}
       onChange={(e) => onValueChange?.([Number(e.target.value)])}
-      className={cn("accent-primary h-2 w-full cursor-pointer appearance-none rounded-full bg-muted", className)}
+      className={cn(
+        "accent-primary h-2 w-full cursor-pointer appearance-none rounded-full bg-muted",
+        className,
+      )}
     />
   );
 }

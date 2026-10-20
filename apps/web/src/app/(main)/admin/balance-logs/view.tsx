@@ -8,15 +8,31 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch } from "@/lib/actions";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "user.email", "label": t("misc.label.email"), "variant": "text"}, {"key": "type", "label": t("misc.label.type"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "user.email", label: t("misc.label.email"), variant: "text" },
+  { key: "type", label: t("misc.label.type"), variant: "select" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -24,17 +40,45 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/user/balance/log", page, perPage, status], () => adminClient.user.balance.log.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/user/balance/log", page, perPage, status],
+    () => adminClient.user.balance.log.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const patch = makePatch(adminClient.user.balance.log, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "user.email", header: t("misc.label.email"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "type", header: t("misc.label.type"), enableSorting: false, cell: (r) => <span>{labelEnum(r.getValue())}</span> },
-    { accessorKey: "amount", header: t("zh_206663"), enableSorting: true, cell: (r) => <SignedMoneyCell value={r.getValue()} /> },
-    { accessorKey: "balance", header: t("misc.label.balance"), enableSorting: true, cell: (r) => <MoneyCell value={r.getValue()} /> },
-    { accessorKey: "created_at", header: t("zh_89b4aa"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-
+      {
+        accessorKey: "user.email",
+        header: t("misc.label.email"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "type",
+        header: t("misc.label.type"),
+        enableSorting: false,
+        cell: (r) => <span>{labelEnum(r.getValue())}</span>,
+      },
+      {
+        accessorKey: "amount",
+        header: t("zh_206663"),
+        enableSorting: true,
+        cell: (r) => <SignedMoneyCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "balance",
+        header: t("misc.label.balance"),
+        enableSorting: true,
+        cell: (r) => <MoneyCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("zh_89b4aa"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
     ],
     [],
   );
@@ -62,7 +106,6 @@ export default function View() {
             </div>
           </div>
         )}
-
       />
     </div>
   );

@@ -28,7 +28,16 @@ router.get(
         description: "成功",
         content: {
           "application/json": {
-            schema: resolver(PaymentSchema.pick({ id: true, name: true, method: true, type: true, fixed_fee: true, percent_fee: true }).array()),
+            schema: resolver(
+              PaymentSchema.pick({
+                id: true,
+                name: true,
+                method: true,
+                type: true,
+                fixed_fee: true,
+                percent_fee: true,
+              }).array(),
+            ),
           },
         },
       },
@@ -125,13 +134,20 @@ router.on(["POST", "GET"], "/:id/callback", async (c) => {
     }
   }
   const referralMode = await systemConfigService.getConfig<string>(SystemConfigName.REFERRAL_MODE);
-  const commissionRate = await systemConfigService.getConfig<number>(SystemConfigName.REFERRAL_COMMISSION_RATE);
+  const commissionRate = await systemConfigService.getConfig<number>(
+    SystemConfigName.REFERRAL_COMMISSION_RATE,
+  );
   const order = await db.$transaction(async (tx) => {
     if (!(await settleTopupOrder(tx, pendingOrder))) {
       return null;
     }
     if (referralMode === "topup") {
-      await topupService.processReferralCommission(tx, pendingOrder.user_id, pendingOrder.price, commissionRate);
+      await topupService.processReferralCommission(
+        tx,
+        pendingOrder.user_id,
+        pendingOrder.price,
+        commissionRate,
+      );
     }
     return pendingOrder;
   });

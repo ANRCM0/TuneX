@@ -4,12 +4,7 @@ import { z } from "zod";
 import { db } from "../../db";
 import { describeRoute, resolver, zValidator } from "../../openapi";
 import { nodeGroupService } from "../../services/node_group";
-import {
-  BatchIdSchema,
-  IdSchema,
-  NodeGroupQuerySchema,
-  NodeGroupRequestSchema,
-} from "../../schemas/request";
+import { BatchIdSchema, IdSchema, NodeGroupQuerySchema, NodeGroupRequestSchema } from "../../schemas/request";
 import { NodeGroupResponseSchema, NodeGroupSummaryResponseSchema } from "../../schemas/response";
 import type { AppEnv } from "../../types";
 

@@ -144,8 +144,8 @@ export class LicenseStore {
     } else {
       this.db
         .prepare(
-          "INSERT INTO licenses (site_url,type,content,status,expired_at,created_at,updated_at)"
-            + " VALUES (?,?,?,'active',?,?,?)",
+          "INSERT INTO licenses (site_url,type,content,status,expired_at,created_at,updated_at)" +
+            " VALUES (?,?,?,'active',?,?,?)",
         )
         .run(siteUrl, type, content, expiredAt, now, now);
     }
@@ -159,9 +159,7 @@ export class LicenseStore {
 
   /** Active license for `siteUrl`, or `null` when the panel is unlicensed (404). */
   get(siteUrl: string): LicenseContent | null {
-    const row = this.db
-      .prepare("SELECT * FROM licenses WHERE site_url=? AND status='active'")
-      .get(siteUrl);
+    const row = this.db.prepare("SELECT * FROM licenses WHERE site_url=? AND status='active'").get(siteUrl);
     if (!row) return null;
     return {
       site_url: asText(row["site_url"]),
@@ -175,9 +173,7 @@ export class LicenseStore {
   /** Re-bind a license (matched by its opaque `content`) to a new domain. */
   rebind(content: string, newSiteUrl: string): boolean {
     const result = this.db
-      .prepare(
-        "UPDATE licenses SET site_url=?, updated_at=? WHERE content=? AND status='active'",
-      )
+      .prepare("UPDATE licenses SET site_url=?, updated_at=? WHERE content=? AND status='active'")
       .run(newSiteUrl, utcnow(), content);
     return result.changes > 0;
   }
@@ -185,9 +181,7 @@ export class LicenseStore {
   /** Mark every active license for `siteUrl` as revoked. */
   revoke(siteUrl: string): number {
     const result = this.db
-      .prepare(
-        "UPDATE licenses SET status='revoked', updated_at=? WHERE site_url=? AND status='active'",
-      )
+      .prepare("UPDATE licenses SET status='revoked', updated_at=? WHERE site_url=? AND status='active'")
       .run(utcnow(), siteUrl);
     return Number(result.changes);
   }
@@ -212,18 +206,13 @@ export class LicenseStore {
   // ── orders ──────────────────────────────────────────────────────────────────
 
   /** Record a successful order (`POST /license` behaves as "payment succeeded"). */
-  addOrder(
-    siteUrl: string,
-    type: string,
-    cycle: string,
-    payType: string | null,
-  ): string {
+  addOrder(siteUrl: string, type: string, cycle: string, payType: string | null): string {
     // Python: secrets.token_hex(8) → 16 lowercase hex chars.
     const id = randomBytes(8).toString("hex");
     this.db
       .prepare(
-        "INSERT INTO orders (order_id,site_url,type,cycle,pay_type,status,created_at)"
-          + " VALUES (?,?,?,?,?,'success',?)",
+        "INSERT INTO orders (order_id,site_url,type,cycle,pay_type,status,created_at)" +
+          " VALUES (?,?,?,?,?,'success',?)",
       )
       .run(id, siteUrl, type, cycle, payType, utcnow());
     return id;
@@ -231,14 +220,12 @@ export class LicenseStore {
 
   /** Paginated order history — `GET /license/history`. */
   history(siteUrl: string, page: number, limit: number): HistoryPage {
-    const totalRow = this.db
-      .prepare("SELECT COUNT(*) c FROM orders WHERE site_url=?")
-      .get(siteUrl);
+    const totalRow = this.db.prepare("SELECT COUNT(*) c FROM orders WHERE site_url=?").get(siteUrl);
     const total = asNumber(totalRow?.["c"]);
     const rows = this.db
       .prepare(
-        "SELECT order_id,site_url,type,cycle,pay_type,amount,status,created_at FROM orders"
-          + " WHERE site_url=? ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT order_id,site_url,type,cycle,pay_type,amount,status,created_at FROM orders" +
+          " WHERE site_url=? ORDER BY id DESC LIMIT ? OFFSET ?",
       )
       .all(siteUrl, limit, (page - 1) * limit);
     return {

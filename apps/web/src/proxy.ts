@@ -14,9 +14,7 @@ import { getSessionUser } from "@/lib/auth";
  * under `AUTH_MODE=local` and StackAuth.
  */
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|privacy-policy|terms-of-service|socket.io|api).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|privacy-policy|terms-of-service|socket.io|api).*)"],
 };
 
 export async function proxy(req: NextRequest) {

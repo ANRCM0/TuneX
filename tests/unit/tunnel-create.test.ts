@@ -201,9 +201,10 @@ describe("createTunnel", () => {
       service.createTunnel(userId, baseTunnel({ in_node_group_id: 999999 })),
     ).rejects.toMatchObject({ status: 404, message: "节点组不存在" });
 
-    await expect(
-      service.createTunnel(999999, baseTunnel({ listen_port: 30009 })),
-    ).rejects.toMatchObject({ status: 404, message: "用户不存在" });
+    await expect(service.createTunnel(999999, baseTunnel({ listen_port: 30009 }))).rejects.toMatchObject({
+      status: 404,
+      message: "用户不存在",
+    });
   });
 
   it("persists a prepared wireguard listen protocol", async () => {
@@ -255,10 +256,7 @@ describe("getTunnels", () => {
     const alpha = await service.getTunnels({ page: 1, perPage: 10, name: "alpha" }, userId);
     expect(alpha.total).toBe(2);
 
-    const active = await service.getTunnels(
-      { page: 1, perPage: 10, status: ["active"] },
-      userId,
-    );
+    const active = await service.getTunnels({ page: 1, perPage: 10, status: ["active"] }, userId);
     expect(active.data.map((t) => t.name)).toEqual(["alpha-low"]);
   });
 

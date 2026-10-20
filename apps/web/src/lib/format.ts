@@ -66,11 +66,28 @@ const ENUM_TABLES: Record<string, string>[] = [
   { pending: t("zh_59a9eb"), approved: t("zh_4b3c96"), rejected: t("zh_4c7c52") },
   { percentage: t("zh_4ce634"), fixed: t("zh_b209f7") },
   { alipay: t("zh_66f117"), wechat: t("zh_68406d"), bank: t("zh_0be83e"), usdt: "USDT" },
-  { round: t("zh_65a48f"), rand: t("zh_834fd6"), fifo: t("zh_0ed683"), hash: t("zh_f2b0b1"), ll: t("zh_ed9de3"), lc: t("zh_21715b") },
+  {
+    round: t("zh_65a48f"),
+    rand: t("zh_834fd6"),
+    fifo: t("zh_0ed683"),
+    hash: t("zh_f2b0b1"),
+    ll: t("zh_ed9de3"),
+    lc: t("zh_21715b"),
+  },
   { cloudflare: "Cloudflare", huawei: t("zh_c1c6f8") },
   { port_forward: t("zh_d62b07"), remote_port_forward: t("zh_699a14") },
-  { topup: t("account.topUp"), plan: t("zh_963fc5"), commission_transfer: t("lib.transferCommission"), admin_adjust: t("zh_5b4476") },
-  { referral: t("zh_e6e685"), transfer: t("lib.transferCommission"), withdraw: t("zh_5b301d"), admin_adjust: t("zh_5b4476") },
+  {
+    topup: t("account.topUp"),
+    plan: t("zh_963fc5"),
+    commission_transfer: t("lib.transferCommission"),
+    admin_adjust: t("zh_5b4476"),
+  },
+  {
+    referral: t("zh_e6e685"),
+    transfer: t("lib.transferCommission"),
+    withdraw: t("zh_5b301d"),
+    admin_adjust: t("zh_5b4476"),
+  },
 ];
 
 /** Resolve an enum key to its Chinese label using the 19 recovered dictionaries (i18n/zh-CN). */

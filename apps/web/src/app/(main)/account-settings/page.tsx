@@ -20,12 +20,30 @@ export default function AccountSettingsPage() {
     <div className="flex max-w-2xl flex-col gap-4 p-4 md:p-6">
       <h2 className="text-lg font-semibold">{t("zh_7a66bc")}</h2>
       <Card>
-        <CardHeader><CardTitle className="text-sm">{t("zh_836ffe")}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("zh_836ffe")}</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-2 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("misc.label.email")}</span><span>{user?.email ?? "—"}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{t("admin.users.role")}</span><span>{user?.super_admin ? t("zh_6f22a7") : (user?.admin_roles?.length ? t("zh_ef84e7") : t("misc.label.users"))}</span></div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("misc.label.email")}</span>
+            <span>{user?.email ?? "—"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("admin.users.role")}</span>
+            <span>
+              {user?.super_admin
+                ? t("zh_6f22a7")
+                : user?.admin_roles?.length
+                  ? t("zh_ef84e7")
+                  : t("misc.label.users")}
+            </span>
+          </div>
           <p className="text-muted-foreground text-xs">
-            {t("stackauth_api_key_mfa_st_78d55a")} <Link className="underline" href="/account">{t("nav.profile")}</Link> {t("api_key_70e5fa")}
+            {t("stackauth_api_key_mfa_st_78d55a")}{" "}
+            <Link className="underline" href="/account">
+              {t("nav.profile")}
+            </Link>{" "}
+            {t("api_key_70e5fa")}
           </p>
         </CardContent>
       </Card>

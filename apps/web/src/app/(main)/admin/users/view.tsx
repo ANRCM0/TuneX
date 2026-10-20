@@ -8,9 +8,22 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,8 +34,11 @@ import { toast } from "sonner";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "email", "label": t("misc.label.email"), "variant": "text"}, {"key": "status", "label": t("misc.label.status"), "variant": "select"}, {"key": "super_admin", "label": t("zh_6f22a7"), "variant": "select"}];
-
+const FILTERS: FilterDef[] = [
+  { key: "email", label: t("misc.label.email"), variant: "text" },
+  { key: "status", label: t("misc.label.status"), variant: "select" },
+  { key: "super_admin", label: t("zh_6f22a7"), variant: "select" },
+];
 
 /** 三个管理动作：余额调整 / 佣金调整 / 模拟登录（POST /admin/user/:id/*）。 */
 function UserActionDialog({
@@ -51,7 +67,10 @@ function UserActionDialog({
   const submit = async () => {
     if (action === "password") {
       if (pwd.length < 8) return toast.error(t("8_67ac94"));
-      const res = await adminClient.user[":id"].password.$patch({ param: { id: userId }, json: { password: pwd } });
+      const res = await adminClient.user[":id"].password.$patch({
+        param: { id: userId },
+        json: { password: pwd },
+      });
       if (res.ok) {
         toast.success(t("zh_eb5719"));
         onClose();
@@ -63,8 +82,14 @@ function UserActionDialog({
     if (!Number.isFinite(n) || n === 0) return toast.error(t("zh_1003d5"));
     const res =
       action === "balance"
-        ? await adminClient.user[":id"].balance.adjust.$post({ param: { id: userId }, json: { amount: n, reason } })
-        : await adminClient.user[":id"].commission.adjust.$post({ param: { id: userId }, json: { amount: n, reason } });
+        ? await adminClient.user[":id"].balance.adjust.$post({
+            param: { id: userId },
+            json: { amount: n, reason },
+          })
+        : await adminClient.user[":id"].commission.adjust.$post({
+            param: { id: userId },
+            json: { amount: n, reason },
+          });
     if (res.ok) {
       toast.success(t("zh_1ea071"));
       onClose();
@@ -72,12 +97,19 @@ function UserActionDialog({
     }
   };
 
-  const title = action === "balance" ? t("admin.users.adjustBalance") : action === "commission" ? t("app.adjustCommission") : t("misc.label.resetPassword");
+  const title =
+    action === "balance"
+      ? t("admin.users.adjustBalance")
+      : action === "commission"
+        ? t("app.adjustCommission")
+        : t("misc.label.resetPassword");
 
   return (
     <Dialog open onOpenChange={(v: boolean) => !v && onClose()}>
       <DialogContent className="sm:max-w-sm">
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         <div className="grid gap-3">
           {action === "password" ? (
             <div className="grid gap-1.5">
@@ -88,18 +120,31 @@ function UserActionDialog({
             <>
               <div className="grid gap-1.5">
                 <Label className="text-xs">{t("zh_43bb99")}</Label>
-                <Input value={amount} inputMode="decimal" onChange={(e) => setAmount(e.target.value)} placeholder={t("10_5_e264c9")} />
+                <Input
+                  value={amount}
+                  inputMode="decimal"
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder={t("10_5_e264c9")}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs">{t("zh_e03614")}</Label>
-                <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("zh_53e328")} />
+                <Input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={t("zh_53e328")}
+                />
               </div>
             </>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose}>{t("misc.label.cancel")}</Button>
-          <Button size="sm" onClick={() => void submit()}>{t("misc.label.submit")}</Button>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            {t("misc.label.cancel")}
+          </Button>
+          <Button size="sm" onClick={() => void submit()}>
+            {t("misc.label.submit")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -151,7 +196,9 @@ function UserEditDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{user ? t("zh_2b8f00") : t("admin.users.newUser")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{user ? t("zh_2b8f00") : t("admin.users.newUser")}</DialogTitle>
+        </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("misc.label.email")}</Label>
@@ -159,12 +206,19 @@ function UserEditDialog({
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("admin.users.password")}</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={user ? t("zh_33236a") : t("8_bfd5e7")} />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={user ? t("zh_33236a") : t("8_bfd5e7")}
+            />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">{t("misc.label.status")}</Label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">{t("zh_d4e9ca")}</SelectItem>
                 <SelectItem value="inactive">{t("zh_be70be")}</SelectItem>
@@ -183,8 +237,12 @@ function UserEditDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>{t("misc.label.cancel")}</Button>
-          <Button size="sm" onClick={() => void submit()}>{t("admin.roles.save")}</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            {t("misc.label.cancel")}
+          </Button>
+          <Button size="sm" onClick={() => void submit()}>
+            {t("admin.roles.save")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -202,24 +260,93 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/user", page, perPage, status], () => adminClient.user.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/user", page, perPage, status],
+    () => adminClient.user.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const remove = makeDelete(adminClient.user, { kind: "query.ids" }, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "email", header: t("misc.label.email"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "status", header: t("misc.label.status"), enableSorting: false, cell: (r) => <StatusCell value={r.getValue()} /> },
-    { accessorKey: "super_admin", header: t("zh_6f22a7"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "admin_roles", header: t("admin.users.role"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "balance", header: t("misc.label.balance"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "commission_balance", header: t("zh_9d493c"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "auto_renew", header: t("zh_efe6de"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "referral_commission_rate", header: t("zh_3191b8"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "referral_first_only", header: t("zh_f4720d"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "tg_id", header: "Telegram ID", enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "note", header: t("zh_e03614"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-    { accessorKey: "updated_at", header: t("misc.label.updated"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "email",
+        header: t("misc.label.email"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: t("misc.label.status"),
+        enableSorting: false,
+        cell: (r) => <StatusCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "super_admin",
+        header: t("zh_6f22a7"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "admin_roles",
+        header: t("admin.users.role"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "balance",
+        header: t("misc.label.balance"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "commission_balance",
+        header: t("zh_9d493c"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "auto_renew",
+        header: t("zh_efe6de"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "referral_commission_rate",
+        header: t("zh_3191b8"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "referral_first_only",
+        header: t("zh_f4720d"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "tg_id",
+        header: "Telegram ID",
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "note",
+        header: t("zh_e03614"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "updated_at",
+        header: t("misc.label.updated"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",
@@ -233,12 +360,20 @@ export default function View() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-
-                <DropdownMenuItem onClick={() => { setEditUser(c.row.original as Record<string, unknown>); setEditOpen(true); }}>{t("misc.label.edit")}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditUser(c.row.original as Record<string, unknown>);
+                    setEditOpen(true);
+                  }}
+                >
+                  {t("misc.label.edit")}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
                     void (async () => {
-                      const res = await adminClient.node.group.user[":user_id"].summary.$get({ param: { user_id: String(id) } });
+                      const res = await adminClient.node.group.user[":user_id"].summary.$get({
+                        param: { user_id: String(id) },
+                      });
                       if (!res.ok) return;
                       const body = await res.json();
                       toast.success(tf("result_0453d4", { result: JSON.stringify(body).slice(0, 120) }));
@@ -247,23 +382,47 @@ export default function View() {
                 >
                   {t("zh_72c060")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setTarget(id); setAction("balance"); }}>{t("admin.users.adjustBalance")}</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setTarget(id); setAction("commission"); }}>{t("app.adjustCommission")}</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setTarget(id); setAction("password"); }}>{t("misc.label.resetPassword")}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setTarget(id);
+                    setAction("balance");
+                  }}
+                >
+                  {t("admin.users.adjustBalance")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setTarget(id);
+                    setAction("commission");
+                  }}
+                >
+                  {t("app.adjustCommission")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setTarget(id);
+                    setAction("password");
+                  }}
+                >
+                  {t("misc.label.resetPassword")}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() =>
                     void (async () => {
                       const res = await adminClient.user[":id"].impersonate.$post({ param: { id } });
                       if (res.ok) {
                         const body = (await res.json()) as { token?: string };
-                        if (body.token) window.open(`/home?impersonation=${body.token}`, "_blank", "noopener,noreferrer");
+                        if (body.token)
+                          window.open(`/home?impersonation=${body.token}`, "_blank", "noopener,noreferrer");
                       }
                     })()
                   }
                 >
                   {t("app.impersonate")}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>{t("misc.label.delete")}</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>
+                  {t("misc.label.delete")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -286,7 +445,13 @@ export default function View() {
         filters={filterControls}
         searchPlaceholder={t("zh_85a4f1")}
         toolbarExtra={
-          <Button size="sm" onClick={() => { setEditUser(null); setEditOpen(true); }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditUser(null);
+              setEditOpen(true);
+            }}
+          >
             {t("admin.users.newUser")}
           </Button>
         }
@@ -301,13 +466,29 @@ export default function View() {
             </div>
           </div>
         )}
-        bulkActions={(rows, clear) => (<Button variant="destructive" size="sm" onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}>{t("misc.label.deleteSelected")}</Button>)}
+        bulkActions={(rows, clear) => (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}
+          >
+            {t("misc.label.deleteSelected")}
+          </Button>
+        )}
       />
-      <UserEditDialog open={editOpen} onOpenChange={setEditOpen} user={editUser} onDone={() => void mutate()} />
+      <UserEditDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        user={editUser}
+        onDone={() => void mutate()}
+      />
       <UserActionDialog
         action={action}
         userId={target}
-        onClose={() => { setAction(null); setTarget(null); }}
+        onClose={() => {
+          setAction(null);
+          setTarget(null);
+        }}
         onDone={() => void mutate()}
       />
     </div>

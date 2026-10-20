@@ -40,7 +40,9 @@ router.get(
   ),
   async (c) => {
     const { page, perPage, sort, name, method, status } = c.req.valid("query");
-    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({ [sort2.id]: sort2.desc ? "desc" : "asc" }));
+    const orderBy = sort?.map((sort2: { id: string; desc?: boolean }) => ({
+      [sort2.id]: sort2.desc ? "desc" : "asc",
+    }));
     const where = {
       name: name ? { contains: name } : undefined,
       method: method ? method : undefined,

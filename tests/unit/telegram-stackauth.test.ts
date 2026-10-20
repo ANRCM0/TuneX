@@ -42,12 +42,18 @@ beforeAll(async () => {
   // Construct directly: the container export is a lazy proxy that hides the
   // axios instance we need to replace with an adapter.
   const StackAuth = (stackModule as unknown as { stackAuthService: unknown }).stackAuthService;
-  const instance = new (stackModule as unknown as { StackAuthService: new () => unknown })
-    .StackAuthService() as typeof stackauth;
+  const instance = new (
+    stackModule as unknown as { StackAuthService: new () => unknown }
+  ).StackAuthService() as typeof stackauth;
   stackauth = instance;
   stackHttp = (instance as unknown as { http: typeof stackHttp }).http;
   stackHttp.defaults.adapter = (async (config: never) => {
-    const typed = config as unknown as { method?: string; url?: string; data?: unknown; headers?: Record<string, unknown> };
+    const typed = config as unknown as {
+      method?: string;
+      url?: string;
+      data?: unknown;
+      headers?: Record<string, unknown>;
+    };
     stackCalls.push({ method: typed.method, url: typed.url, data: typed.data, headers: typed.headers });
     const { status, data } = stackResponder(typed);
     const response = { data, status, statusText: String(status), headers: {}, config: typed };

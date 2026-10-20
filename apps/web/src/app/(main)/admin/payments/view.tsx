@@ -8,16 +8,33 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 import { CrudDialog, FIELDS } from "@/components/crud-dialogs";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "name", "label": t("misc.label.name"), "variant": "text"}, {"key": "method", "label": t("zh_a87078"), "variant": "select"}, {"key": "status", "label": t("misc.label.status"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "name", label: t("misc.label.name"), variant: "text" },
+  { key: "method", label: t("zh_a87078"), variant: "select" },
+  { key: "status", label: t("misc.label.status"), variant: "select" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -25,20 +42,69 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/pay", page, perPage, status], () => adminClient.pay.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/pay", page, perPage, status],
+    () => adminClient.pay.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const remove = makeDelete(adminClient.pay, { kind: "param.id" }, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "name", header: t("misc.label.name"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "method", header: t("zh_a87078"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "type", header: t("zh_f0d837"), enableSorting: false, cell: (r) => <span>{labelEnum(r.getValue())}</span> },
-    { accessorKey: "fixed_fee", header: t("zh_09d65a"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "percent_fee", header: t("zh_a8021c"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "url", header: "URL", enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "status", header: t("misc.label.status"), enableSorting: false, cell: (r) => <StatusCell value={r.getValue()} /> },
-    { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-    { accessorKey: "updated_at", header: t("misc.label.updated"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "name",
+        header: t("misc.label.name"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "method",
+        header: t("zh_a87078"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "type",
+        header: t("zh_f0d837"),
+        enableSorting: false,
+        cell: (r) => <span>{labelEnum(r.getValue())}</span>,
+      },
+      {
+        accessorKey: "fixed_fee",
+        header: t("zh_09d65a"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "percent_fee",
+        header: t("zh_a8021c"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "url",
+        header: "URL",
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: t("misc.label.status"),
+        enableSorting: false,
+        cell: (r) => <StatusCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "updated_at",
+        header: t("misc.label.updated"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",
@@ -52,9 +118,17 @@ export default function View() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-
-                <DropdownMenuItem onClick={() => { setEditing(c.row.original as Record<string, unknown>); setCreateOpen(true); }}>{t("misc.label.edit")}</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>{t("misc.label.delete")}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditing(c.row.original as Record<string, unknown>);
+                    setCreateOpen(true);
+                  }}
+                >
+                  {t("misc.label.edit")}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>
+                  {t("misc.label.delete")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -82,7 +156,10 @@ export default function View() {
         draggable
         onReorder={async (rows, orderBy, index) => {
           const id = Number((rows[index] as { id?: unknown }).id);
-          const res = await adminClient.pay[":id"].order.$patch({ param: { id: String(id) }, json: { order_by: orderBy } });
+          const res = await adminClient.pay[":id"].order.$patch({
+            param: { id: String(id) },
+            json: { order_by: orderBy },
+          });
           if (res.ok) await mutate();
         }}
         mobileCard={(row) => (
@@ -101,12 +178,23 @@ export default function View() {
             {t("app.new")}
           </Button>
         }
-        bulkActions={(rows, clear) => (<Button variant="destructive" size="sm" onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}>{t("misc.label.deleteSelected")}</Button>)}
+        bulkActions={(rows, clear) => (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}
+          >
+            {t("misc.label.deleteSelected")}
+          </Button>
+        )}
       />
 
       <CrudDialog
         open={createOpen}
-        onOpenChange={(v) => { setCreateOpen(v); if (!v) setEditing(null); }}
+        onOpenChange={(v) => {
+          setCreateOpen(v);
+          if (!v) setEditing(null);
+        }}
         initial={editing ?? undefined}
         title={t("app.newPayment")}
         fields={FIELDS.payment}

@@ -14,7 +14,10 @@ const tunnel = (over: Partial<ShareTunnel> & { protocol?: Record<string, unknown
   name: "hk-tokyo",
   listen_port: 10000,
   in_node_group: group,
-  listen_protocol: { type: over.protocol?.type as string, ...over.protocol } as ShareTunnel["listen_protocol"],
+  listen_protocol: {
+    type: over.protocol?.type as string,
+    ...over.protocol,
+  } as ShareTunnel["listen_protocol"],
   ...over,
 });
 
@@ -25,8 +28,12 @@ describe("buildShare — URI protocols", () => {
   });
 
   it("socks5 and relay use their own schemes", () => {
-    expect(buildShare(tunnel({ protocol: { type: "socks5" } }))?.url).toBe("socks5://203.0.113.7:10000#hk-tokyo");
-    expect(buildShare(tunnel({ protocol: { type: "relay" } }))?.url).toBe("relay://203.0.113.7:10000#hk-tokyo");
+    expect(buildShare(tunnel({ protocol: { type: "socks5" } }))?.url).toBe(
+      "socks5://203.0.113.7:10000#hk-tokyo",
+    );
+    expect(buildShare(tunnel({ protocol: { type: "relay" } }))?.url).toBe(
+      "relay://203.0.113.7:10000#hk-tokyo",
+    );
   });
 
   it("shadowsocks base64-encodes the credential pair", () => {
@@ -47,7 +54,16 @@ describe("buildShare — URI protocols", () => {
       }),
     );
     expect(r?.url).toContain("vless://11111111-2222-3333-4444-555555555555@203.0.113.7:10000?");
-    for (const part of ["type=tcp", "encryption=none", "security=reality", "flow=xtls-rprx-vision", "fp=chrome", "sni=www.apple.com", "pbk=PUBKEY", "sid=abcd"]) {
+    for (const part of [
+      "type=tcp",
+      "encryption=none",
+      "security=reality",
+      "flow=xtls-rprx-vision",
+      "fp=chrome",
+      "sni=www.apple.com",
+      "pbk=PUBKEY",
+      "sid=abcd",
+    ]) {
       expect(r?.url).toContain(part);
     }
   });

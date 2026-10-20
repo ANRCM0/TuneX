@@ -73,13 +73,25 @@ export function generateOpenVpnPki(): OpenVpnPki {
 
     // Self-signed CA — mirrors buildCert({ cA: true, keyCertSign, cRLSign, digitalSignature }).
     openssl([
-      "req", "-x509", "-new", "-nodes", "-key", caKeyPath, "-sha256",
-      "-days", String(CERT_VALID_DAYS),
-      "-subj", "/CN=RelayX OpenVPN CA",
-      "-addext", "basicConstraints=critical,CA:TRUE",
-      "-addext", "keyUsage=critical,keyCertSign,cRLSign,digitalSignature",
-      "-addext", "subjectKeyIdentifier=hash",
-      "-out", caCertPath,
+      "req",
+      "-x509",
+      "-new",
+      "-nodes",
+      "-key",
+      caKeyPath,
+      "-sha256",
+      "-days",
+      String(CERT_VALID_DAYS),
+      "-subj",
+      "/CN=RelayX OpenVPN CA",
+      "-addext",
+      "basicConstraints=critical,CA:TRUE",
+      "-addext",
+      "keyUsage=critical,keyCertSign,cRLSign,digitalSignature",
+      "-addext",
+      "subjectKeyIdentifier=hash",
+      "-out",
+      caCertPath,
     ]);
 
     const sign = (
@@ -104,9 +116,22 @@ export function generateOpenVpnPki(): OpenVpnPki {
         ].join("\n"),
       );
       openssl([
-        "x509", "-req", "-in", csrPath, "-CA", caCertPath, "-CAkey", caKeyPath,
-        "-CAcreateserial", "-days", String(CERT_VALID_DAYS), "-sha256",
-        "-extfile", extPath, "-out", crtPath,
+        "x509",
+        "-req",
+        "-in",
+        csrPath,
+        "-CA",
+        caCertPath,
+        "-CAkey",
+        caKeyPath,
+        "-CAcreateserial",
+        "-days",
+        String(CERT_VALID_DAYS),
+        "-sha256",
+        "-extfile",
+        extPath,
+        "-out",
+        crtPath,
       ]);
       return readFileSync(crtPath, "utf8");
     };
@@ -144,9 +169,7 @@ export function generateTlsCryptKey(): string {
   for (let i = 0; i < hex.length; i += 32) {
     lines.push(hex.slice(i, i + 32));
   }
-  return [
-    "-----BEGIN OpenVPN Static key V1-----",
-    ...lines,
-    "-----END OpenVPN Static key V1-----",
-  ].join("\n");
+  return ["-----BEGIN OpenVPN Static key V1-----", ...lines, "-----END OpenVPN Static key V1-----"].join(
+    "\n",
+  );
 }

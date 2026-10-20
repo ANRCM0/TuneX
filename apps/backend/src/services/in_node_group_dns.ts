@@ -5,10 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { db } from "../db";
 import { logger } from "../logger";
 import { service } from "../container";
-import {
-  InNodeGroupDNSQuerySchema,
-  InNodeGroupDNSRequestSchema,
-} from "../schemas/request";
+import { InNodeGroupDNSQuerySchema, InNodeGroupDNSRequestSchema } from "../schemas/request";
 import { getDNSProvider } from "./dns";
 import type { DNSProvider, DNSRecordType } from "./dns/interface";
 import { redisService, type RedisService } from "./redis";
@@ -163,10 +160,7 @@ export class InNodeGroupDNSService {
     return result;
   }
 
-  async syncNodeCustomLines(
-    node_group_id: number,
-    custom_line: Record<string, string> | null | undefined,
-  ) {
+  async syncNodeCustomLines(node_group_id: number, custom_line: Record<string, string> | null | undefined) {
     const nodes = await db.node.findMany({
       where: { node_group_id },
       select: { id: true },
@@ -405,8 +399,7 @@ export class InNodeGroupDNSService {
       for (const node of inNodeGroupDNS.in_node_group.nodes) {
         if (aliveMap.has(node.id)) continue;
         const isAlive =
-          node.status === Status.active &&
-          (await this.redisService.nodeIsAlive(node.node_group_id, node.id));
+          node.status === Status.active && (await this.redisService.nodeIsAlive(node.node_group_id, node.id));
         aliveMap.set(node.id, isAlive);
       }
     }
@@ -425,18 +418,13 @@ export class InNodeGroupDNSService {
       try {
         actualIps = new Set((await provider.listRecords()).map((record) => record.ip));
       } catch (error) {
-        logger.error(
-          error,
-          `cronSyncNodeDNS: failed to list records for config ${inNodeGroupDNS.id}`,
-        );
+        logger.error(error, `cronSyncNodeDNS: failed to list records for config ${inNodeGroupDNS.id}`);
         for (const node of nodeGroup.nodes) {
           unknown.add(node.id);
         }
         continue;
       }
-      const hasAliveNormalNode = nodeGroup.nodes.some(
-        (node) => !node.backup && aliveMap.get(node.id),
-      );
+      const hasAliveNormalNode = nodeGroup.nodes.some((node) => !node.backup && aliveMap.get(node.id));
       for (const node of nodeGroup.nodes) {
         currentStatus.set(node.id, node.dns_status);
         const isAlive = aliveMap.get(node.id) ?? false;
@@ -469,10 +457,7 @@ export class InNodeGroupDNSService {
           hasRecords = !cleaned;
         }
         const prev = dnsStatus.get(node.id);
-        dnsStatus.set(
-          node.id,
-          shouldBeInDNS ? (prev ?? true) && hasRecords : (prev ?? false) || hasRecords,
-        );
+        dnsStatus.set(node.id, shouldBeInDNS ? (prev ?? true) && hasRecords : (prev ?? false) || hasRecords);
       }
       const groupIps = new Set(nodeGroup.nodes.flatMap((node) => node.connect_ip.split(",")));
       for (const ip of actualIps) {

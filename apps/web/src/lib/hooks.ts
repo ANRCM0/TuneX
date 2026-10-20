@@ -23,7 +23,9 @@ export type User = {
   super_admin?: boolean;
   admin_access?: Record<string, "read" | "write">;
   admin_roles?: { id: number; name: string }[];
-  user_plan?: { plan: { name: string; allow_custom_in_node_group?: boolean; allow_custom_out_node_group?: boolean } };
+  user_plan?: {
+    plan: { name: string; allow_custom_in_node_group?: boolean; allow_custom_out_node_group?: boolean };
+  };
 };
 
 export type License = { type?: "personal" | "business"; expired_at?: string; site_url?: string };
@@ -40,7 +42,10 @@ export const keyTickets = (page: number, perPage: number, status?: string) =>
   ["/ticket", page, perPage, status] as const;
 
 export function useUser(enabled = true): SWRResponse<User> {
-  return useSWR(keyUser(), async () => json(await client.user.info.$get()), { suspense: false, isPaused: () => !enabled });
+  return useSWR(keyUser(), async () => json(await client.user.info.$get()), {
+    suspense: false,
+    isPaused: () => !enabled,
+  });
 }
 
 export function useLicense(): SWRResponse<License> {
@@ -50,7 +55,9 @@ export function useLicense(): SWRResponse<License> {
 }
 
 export function useSiteConfig(): SWRResponse<Record<string, string>> {
-  return useSWR(keySiteConfig(), async () => json(await client.system.config.site.$get()), { suspense: false });
+  return useSWR(keySiteConfig(), async () => json(await client.system.config.site.$get()), {
+    suspense: false,
+  });
 }
 
 export function useSystemConfig(names: string[]): SWRResponse<Record<string, unknown>> {
@@ -67,7 +74,11 @@ export function usePlans(page = 1, perPage = 10): SWRResponse<Page<Record<string
   );
 }
 
-export function useTunnels(page = 1, perPage = 10, sort?: unknown): SWRResponse<Page<Record<string, unknown>>> {
+export function useTunnels(
+  page = 1,
+  perPage = 10,
+  sort?: unknown,
+): SWRResponse<Page<Record<string, unknown>>> {
   return useSWR(keyTunnels(page, perPage, sort), async () =>
     json(
       await client.tunnel.$get({
@@ -85,7 +96,11 @@ export function useNodeGroups(): SWRResponse<Page<Record<string, unknown>>> {
   return useSWR(keyNodeGroups(), async () => json(await client.node.group.$get({ query: {} })));
 }
 
-export function useTickets(page = 1, perPage = 10, status?: string): SWRResponse<Page<Record<string, unknown>>> {
+export function useTickets(
+  page = 1,
+  perPage = 10,
+  status?: string,
+): SWRResponse<Page<Record<string, unknown>>> {
   return useSWR(keyTickets(page, perPage, status), async () =>
     json(
       await client.ticket.$get({

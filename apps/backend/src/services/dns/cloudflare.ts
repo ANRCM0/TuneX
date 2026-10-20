@@ -19,7 +19,12 @@ import {
  * Endpoints, filters, defaults and error handling match the SDK call sites exactly.
  */
 
-const CLOUDFLARE_API_BASE = "https://api.cloudflare.com/client/v4";
+/**
+ * Base URL for the Cloudflare v4 API. Overridable so the integration suite can point the
+ * client at a local fixture server (`CLOUDFLARE_API_BASE`), and so deployments behind an
+ * egress proxy can rewrite it.
+ */
+const CLOUDFLARE_API_BASE = process.env.CLOUDFLARE_API_BASE || "https://api.cloudflare.com/client/v4";
 
 interface CloudflareZone {
   id: string;
@@ -131,7 +136,9 @@ class CloudflareClient {
           }),
         update: (recordId, params) =>
           this.request<CloudflareRecord>({
-            method: "PUT",
+            // `PATCH` is the Cloudflare v4 partial-update verb for a DNS record; `PUT`
+            // works too but overwrites fields the panel does not send.
+            method: "PATCH",
             url: `/zones/${params.zone_id}/dns_records/${recordId}`,
             data: {
               name: params.name,

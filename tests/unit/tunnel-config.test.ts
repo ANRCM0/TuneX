@@ -81,11 +81,20 @@ beforeAll(async () => {
   const dbModule = await import("../../apps/backend/src/db");
   db = dbModule.db;
   const { TunnelService: Service } = await import("../../apps/backend/src/services/tunnel");
-  service = new Service({} as never, {} as never, {} as never, {
-    getConfig: async () => 30,
-  } as never);
+  service = new Service(
+    {} as never,
+    {} as never,
+    {} as never,
+    {
+      getConfig: async () => 30,
+    } as never,
+  );
   const group = await db.nodeGroup.create({
-    data: { name: "in-group", node_type: "in", user_id: (await db.user.create({ data: { email: "t@example.test" } })).id },
+    data: {
+      name: "in-group",
+      node_type: "in",
+      user_id: (await db.user.create({ data: { email: "t@example.test" } })).id,
+    },
   });
   groupId = group.id;
 }, 60_000);
@@ -205,12 +214,8 @@ describe("getInNodeConfig", () => {
       makeTunnel({ user: { id: 1, user_plan: { whitelist_ips: ["9.9.9.9"], plan: {} } } }),
     ]);
 
-    expect(config.bypasses).toEqual([
-      { name: `bypass-${groupId}`, whitelist: true, matchers: ["1.2.3.4"] },
-    ]);
-    expect(config.admissions).toEqual([
-      { name: "admission-1", whitelist: true, matchers: ["9.9.9.9"] },
-    ]);
+    expect(config.bypasses).toEqual([{ name: `bypass-${groupId}`, whitelist: true, matchers: ["1.2.3.4"] }]);
+    expect(config.admissions).toEqual([{ name: "admission-1", whitelist: true, matchers: ["9.9.9.9"] }]);
     expect(config.services[0].bypass).toBe(`bypass-${groupId}`);
     expect(config.services[0].admission).toBe("admission-1");
 
@@ -221,9 +226,10 @@ describe("getInNodeConfig", () => {
   });
 
   it("adds the shared relay listener for remote port forwards", async () => {
-    const config = await inConfig([
-      makeTunnel({ id: 3, category: "remote_port_forward", listen_port: null }),
-    ], ":20000-30000");
+    const config = await inConfig(
+      [makeTunnel({ id: 3, category: "remote_port_forward", listen_port: null })],
+      ":20000-30000",
+    );
     expect(config.services).toEqual([
       expect.objectContaining({
         name: "tcp",
@@ -474,25 +480,28 @@ describe("getTunnelChainsFromTunnel", () => {
 
 describe("getOutNodeConfig", () => {
   async function outConfig(tunnels: unknown[], portRange: string | null = null) {
-    return (await service.getOutNodeConfig(
-      groupId,
-      portRange,
-      tunnels as never,
-      {},
-      new Map(),
-    )) as { services: Json[] };
+    return (await service.getOutNodeConfig(groupId, portRange, tunnels as never, {}, new Map())) as {
+      services: Json[];
+    };
   }
 
   it("emits one WAIT_LISTEN service per tunnel type", async () => {
-    const config = await outConfig([
-      makeTunnel({ id: 1, out_node_group_id: groupId, out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] } }),
-      makeTunnel({
-        id: 2,
-        tunnel_type: "udp",
-        out_node_group_id: groupId,
-        out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] },
-      }),
-    ], ":30000-40000");
+    const config = await outConfig(
+      [
+        makeTunnel({
+          id: 1,
+          out_node_group_id: groupId,
+          out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] },
+        }),
+        makeTunnel({
+          id: 2,
+          tunnel_type: "udp",
+          out_node_group_id: groupId,
+          out_node_group: { user_id: 1, load_balance_type: "round", nodes: [] },
+        }),
+      ],
+      ":30000-40000",
+    );
     expect(config.services.map((s) => s.name).sort()).toEqual(["tcp", "udp"]);
     const tcp = config.services.find((s) => s.name === "tcp")!;
     expect(tcp).toMatchObject({

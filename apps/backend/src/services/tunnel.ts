@@ -158,10 +158,7 @@ function orderByPath<T>(collection: T[], path: string, order: "asc" | "desc"): T
   const read = (item: unknown): unknown =>
     path
       .split(".")
-      .reduce<unknown>(
-        (acc, key) => (acc == null ? acc : (acc as Record<string, unknown>)[key]),
-        item,
-      );
+      .reduce<unknown>((acc, key) => (acc == null ? acc : (acc as Record<string, unknown>)[key]), item);
   return [...collection].sort((a, b) => {
     const av = read(a);
     const bv = read(b);
@@ -298,9 +295,7 @@ function emitYaml(value: unknown, indent: number): string {
       .join("\n");
   }
   if (value !== null && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).filter(
-      ([, v]) => v !== undefined,
-    );
+    const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v !== undefined);
     if (entries.length === 0) return `${pad}{}`;
     return entries
       .map(([key, v]) => {
@@ -446,12 +441,10 @@ export class TunnelService {
         : DEFAULT_MIERU_TRANSPORT_PROTOCOL;
     const legacyPeer = next.mieruPeers?.[0];
     if (!result.username) {
-      result.username =
-        (prevIsMieru && prev?.username) || legacyPeer?.username || generateMieruUsername();
+      result.username = (prevIsMieru && prev?.username) || legacyPeer?.username || generateMieruUsername();
     }
     if (!result.password) {
-      result.password =
-        (prevIsMieru && prev?.password) || legacyPeer?.password || generateMieruPassword();
+      result.password = (prevIsMieru && prev?.password) || legacyPeer?.password || generateMieruPassword();
     }
     if (!result.mtu) {
       result.mtu = DEFAULT_MIERU_MTU;
@@ -562,20 +555,14 @@ export class TunnelService {
     const groupIds = new Set<number>();
     for (const tunnel of allTunnels.filter(isWaiting)) {
       if (tunnel.category === TunnelCategory.port_forward) {
-        const groupTunnels = allTunnels.filter(
-          (t) => t.in_node_group_id === tunnel.in_node_group_id,
-        );
+        const groupTunnels = allTunnels.filter((t) => t.in_node_group_id === tunnel.in_node_group_id);
         if (
-          this.filterAvailableTunnels(groupTunnels, tunnel.in_node_group_id).some(
-            (t) => t.id === tunnel.id,
-          )
+          this.filterAvailableTunnels(groupTunnels, tunnel.in_node_group_id).some((t) => t.id === tunnel.id)
         ) {
           groupIds.add(tunnel.in_node_group_id);
         }
       } else if (tunnel.out_node_group_id) {
-        const groupTunnels = allTunnels.filter(
-          (t) => t.out_node_group_id === tunnel.out_node_group_id,
-        );
+        const groupTunnels = allTunnels.filter((t) => t.out_node_group_id === tunnel.out_node_group_id);
         if (
           this.filterAvailableTunnels(groupTunnels, undefined, tunnel.out_node_group_id).some(
             (t) => t.id === tunnel.id,
@@ -705,16 +692,8 @@ export class TunnelService {
   }
 
   async getTunnelTraffics(user_id: number, query: Record<string, any>) {
-    const {
-      page,
-      perPage,
-      sort,
-      tunnel_name,
-      in_node_group_id,
-      out_node_group_id,
-      start_date,
-      end_date,
-    } = query;
+    const { page, perPage, sort, tunnel_name, in_node_group_id, out_node_group_id, start_date, end_date } =
+      query;
     const orderBy = sort?.map((sort2: { id: string; desc: boolean }) => {
       return {
         [sort2.id]: sort2.desc ? "desc" : "asc",
@@ -924,26 +903,16 @@ export class TunnelService {
         const plan = tunnel.user.user_plan?.plan;
         if (!plan?.all_in_node_groups) {
           const nodeGroups = plan?.node_groups ?? [];
-          if (
-            nodeGroups.length > 0 &&
-            !nodeGroups.some((g) => g.node_group_id === in_node_group_id)
-          ) {
+          if (nodeGroups.length > 0 && !nodeGroups.some((g) => g.node_group_id === in_node_group_id)) {
             return false;
           }
         }
       }
-      if (
-        out_node_group_id &&
-        tunnel.out_node_group &&
-        tunnel.out_node_group.user_id !== tunnel.user_id
-      ) {
+      if (out_node_group_id && tunnel.out_node_group && tunnel.out_node_group.user_id !== tunnel.user_id) {
         const plan = tunnel.user.user_plan?.plan;
         if (!plan?.all_out_node_groups) {
           const nodeGroups = plan?.node_groups ?? [];
-          if (
-            nodeGroups.length > 0 &&
-            !nodeGroups.some((g) => g.node_group_id === out_node_group_id)
-          ) {
+          if (nodeGroups.length > 0 && !nodeGroups.some((g) => g.node_group_id === out_node_group_id)) {
             return false;
           }
         }
@@ -1022,7 +991,11 @@ export class TunnelService {
         },
       },
     });
-    return this.filterAvailableTunnels(tunnels, in_node_group_id ?? undefined, out_node_group_id ?? undefined);
+    return this.filterAvailableTunnels(
+      tunnels,
+      in_node_group_id ?? undefined,
+      out_node_group_id ?? undefined,
+    );
   }
 
   getConnectIP(connect_ip: string, ip_type: IpType): string | undefined {
@@ -1096,11 +1069,7 @@ export class TunnelService {
     return { in_hops, out_hops };
   }
 
-  getOutListenFromCache(
-    outListens: Record<string, string>,
-    node_id: number,
-    type: string,
-  ): string | null {
+  getOutListenFromCache(outListens: Record<string, string>, node_id: number, type: string): string | null {
     return outListens[`${node_id}:${type}`] ?? null;
   }
 
@@ -1160,13 +1129,7 @@ export class TunnelService {
           tunnelLimits,
         );
       case NodeType.out:
-        return this.getOutNodeConfig(
-          node_group_id,
-          port_range,
-          allTunnels,
-          outListens,
-          tunnelLimits,
-        );
+        return this.getOutNodeConfig(node_group_id, port_range, allTunnels, outListens, tunnelLimits);
     }
   }
 
@@ -1178,9 +1141,7 @@ export class TunnelService {
     outListens: Record<string, string>,
     tunnelLimits: Map<number, TunnelLimit>,
   ): Promise<JsonRecord> {
-    const observerPeriod = await this.systemConfigService.getConfig(
-      SystemConfigName.OBSERVER_PERIOD,
-    );
+    const observerPeriod = await this.systemConfigService.getConfig(SystemConfigName.OBSERVER_PERIOD);
     const services: JsonRecord[] = [];
     const chains: JsonRecord[] = [];
     const climiters = new Map<string, JsonRecord>();
@@ -1196,9 +1157,7 @@ export class TunnelService {
     const admissions: JsonRecord[] = [];
     const filteredTunnels = allTunnels.filter((t) => t.in_node_group_id === in_node_group_id);
     const tunnels = this.filterAvailableTunnels(filteredTunnels, in_node_group_id) as AvailableTunnel[];
-    const port_forward_tunnels = tunnels.filter(
-      (tunnel) => tunnel.category === TunnelCategory.port_forward,
-    );
+    const port_forward_tunnels = tunnels.filter((tunnel) => tunnel.category === TunnelCategory.port_forward);
     for (const tunnel of port_forward_tunnels) {
       let listen_address: string;
       const listen_ip = tunnel.listen_ip || "";
@@ -1397,9 +1356,7 @@ export class TunnelService {
                 allowedIPs: normalizeWireGuardPeerAllowedIPs(peer.allowedIPs, index),
                 presharedKey: peer.presharedKey ?? undefined,
                 persistentKeepalive:
-                  peer.persistentKeepalive != null
-                    ? peer.persistentKeepalive.toString()
-                    : undefined,
+                  peer.persistentKeepalive != null ? peer.persistentKeepalive.toString() : undefined,
               })),
             },
           },
@@ -1651,9 +1608,7 @@ export class TunnelService {
     ) as AvailableTunnel[];
     const climiters = new Map<string, JsonRecord>();
     const limiters = new Map<string, JsonRecord>();
-    const port_forward_tunnels = tunnels.filter(
-      (tunnel) => tunnel.category === TunnelCategory.port_forward,
-    );
+    const port_forward_tunnels = tunnels.filter((tunnel) => tunnel.category === TunnelCategory.port_forward);
     const tunnel_types = new Set<TunnelType>(port_forward_tunnels.map((t) => t.tunnel_type));
     const existsInChains = allTunnels.some((t) =>
       t.tunnel_chains.some(
@@ -1898,10 +1853,7 @@ export class TunnelService {
         }
       }
       const out_allow_tunnel_types = asList<TunnelType>(out_node_group?.allow_tunnel_types);
-      if (
-        out_node_group.allow_tunnel_types &&
-        !out_allow_tunnel_types.includes(tunnel_type)
-      ) {
+      if (out_node_group.allow_tunnel_types && !out_allow_tunnel_types.includes(tunnel_type)) {
         throw new HTTPException(403, { message: "出口节点组不允许使用此隧道类型" });
       }
     }
@@ -1921,11 +1873,7 @@ export class TunnelService {
     });
   }
 
-  async createTunnel(
-    user_id: number,
-    data: JsonRecord,
-    max_tunnels?: number | null,
-  ): Promise<void> {
+  async createTunnel(user_id: number, data: JsonRecord, max_tunnels?: number | null): Promise<void> {
     const {
       name,
       listen_ip,
@@ -2163,10 +2111,7 @@ export class TunnelService {
     if (!isEmptyObject(forward_ips)) {
       let result: unknown[] = [];
       try {
-        result = await io
-          .timeout(TIMEOUT)
-          .to(`node_group/${group_id}`)
-          .emitWithAck("test", forward_ips);
+        result = await io.timeout(TIMEOUT).to(`node_group/${group_id}`).emitWithAck("test", forward_ips);
       } catch (error) {
         logger.error(`隧道测试失败: ${error}, ips: ${JSON.stringify(forward_ips)}`);
       }
@@ -2241,8 +2186,7 @@ export class TunnelService {
       const port = tunnel.listen_port;
       const remark = encodeURIComponent(tunnel.name);
       if (listen_protocol.type === "wireguard") {
-        const builder =
-          wgFormat === "v2rayn" ? buildWireGuardV2rayNUrl : buildWireGuardShadowrocketUrl;
+        const builder = wgFormat === "v2rayn" ? buildWireGuardV2rayNUrl : buildWireGuardShadowrocketUrl;
         const wgConfig = builder(listen_protocol, server, port, tunnel.name);
         if (!wgConfig) {
           continue;

@@ -8,16 +8,32 @@ import { adminClient, client } from "@/lib/client";
 import { useRpcList } from "@/lib/rpc";
 import { ListPage } from "@/components/list-page";
 import { useListFilters, type FilterDef } from "@/components/list-filters";
-import { CopyCell, DateCell, MoneyCell, QrCell, SignedMoneyCell, StatusCell, TrafficCell } from "@/components/cells";
+import {
+  CopyCell,
+  DateCell,
+  MoneyCell,
+  QrCell,
+  SignedMoneyCell,
+  StatusCell,
+  TrafficCell,
+} from "@/components/cells";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { labelEnum } from "@/lib/format";
 import { makeDelete, makePatch, makePatcher } from "@/lib/actions";
 import { CrudDialog, FIELDS } from "@/components/crud-dialogs";
 
 type Row = Record<string, unknown>;
 
-const FILTERS: FilterDef[] = [{"key": "type", "label": t("zh_1b05dd"), "variant": "select"}, {"key": "valid_cycle", "label": t("zh_5731b2"), "variant": "select"}];
+const FILTERS: FilterDef[] = [
+  { key: "type", label: t("zh_1b05dd"), variant: "select" },
+  { key: "valid_cycle", label: t("zh_5731b2"), variant: "select" },
+];
 
 export default function View() {
   const [page, setPage] = React.useState(1);
@@ -25,21 +41,75 @@ export default function View() {
   const status: string | undefined = undefined;
   const { controls: filterControls, params: filterParams } = useListFilters(FILTERS);
 
-  const { data, isLoading, error, mutate } = useRpcList<Row>(["/admin/plan/coupon", page, perPage, status], () => adminClient.plan.coupon.$get, { page, perPage, status, ...filterParams });
+  const { data, isLoading, error, mutate } = useRpcList<Row>(
+    ["/admin/plan/coupon", page, perPage, status],
+    () => adminClient.plan.coupon.$get,
+    { page, perPage, status, ...filterParams },
+  );
   const remove = makeDelete(adminClient.plan.coupon, { kind: "query.ids" }, mutate);
 
   const columns = React.useMemo<ColumnDef<Row, unknown>[]>(
     () => [
-    { accessorKey: "code", header: t("zh_d7d38a"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "type", header: t("zh_1b05dd"), enableSorting: false, cell: (r) => <span>{labelEnum(r.getValue())}</span> },
-    { accessorKey: "value", header: t("zh_74e272"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "valid_cycle", header: t("zh_5731b2"), enableSorting: false, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "valid_start", header: t("zh_17e0e7"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-    { accessorKey: "valid_end", header: t("zh_6c9396"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-    { accessorKey: "max_use", header: t("zh_10f6ed"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "max_use_per_user", header: t("zh_a4e76f"), enableSorting: true, cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span> },
-    { accessorKey: "created_at", header: t("misc.label.created"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
-    { accessorKey: "updated_at", header: t("misc.label.updated"), enableSorting: true, cell: (r) => <DateCell value={r.getValue()} /> },
+      {
+        accessorKey: "code",
+        header: t("zh_d7d38a"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "type",
+        header: t("zh_1b05dd"),
+        enableSorting: false,
+        cell: (r) => <span>{labelEnum(r.getValue())}</span>,
+      },
+      {
+        accessorKey: "value",
+        header: t("zh_74e272"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "valid_cycle",
+        header: t("zh_5731b2"),
+        enableSorting: false,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "valid_start",
+        header: t("zh_17e0e7"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "valid_end",
+        header: t("zh_6c9396"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "max_use",
+        header: t("zh_10f6ed"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "max_use_per_user",
+        header: t("zh_a4e76f"),
+        enableSorting: true,
+        cell: (r) => <span className="max-w-[18rem] truncate">{String(r.getValue() ?? "—")}</span>,
+      },
+      {
+        accessorKey: "created_at",
+        header: t("misc.label.created"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
+      {
+        accessorKey: "updated_at",
+        header: t("misc.label.updated"),
+        enableSorting: true,
+        cell: (r) => <DateCell value={r.getValue()} />,
+      },
       {
         id: "actions",
         header: "",
@@ -53,9 +123,17 @@ export default function View() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-
-                <DropdownMenuItem onClick={() => { setEditing(c.row.original as Record<string, unknown>); setCreateOpen(true); }}>{t("misc.label.edit")}</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>{t("misc.label.delete")}</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditing(c.row.original as Record<string, unknown>);
+                    setCreateOpen(true);
+                  }}
+                >
+                  {t("misc.label.edit")}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => void remove([id])}>
+                  {t("misc.label.delete")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -96,12 +174,23 @@ export default function View() {
             {t("app.new")}
           </Button>
         }
-        bulkActions={(rows, clear) => (<Button variant="destructive" size="sm" onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}>{t("misc.label.deleteSelected")}</Button>)}
+        bulkActions={(rows, clear) => (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => void remove(rows.map((r) => Number(r.id))).then(clear)}
+          >
+            {t("misc.label.deleteSelected")}
+          </Button>
+        )}
       />
 
       <CrudDialog
         open={createOpen}
-        onOpenChange={(v) => { setCreateOpen(v); if (!v) setEditing(null); }}
+        onOpenChange={(v) => {
+          setCreateOpen(v);
+          if (!v) setEditing(null);
+        }}
         initial={editing ?? undefined}
         title={t("app.newCoupon")}
         fields={FIELDS.coupon}

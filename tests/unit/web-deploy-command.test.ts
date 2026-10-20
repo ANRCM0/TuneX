@@ -33,7 +33,16 @@ describe("buildInstallCommand", () => {
       listenIP: "0.0.0.0",
       portRange: "10000-20000",
     });
-    const order = ["-s https://panel.example.com", "-t tok_123", "-n abc", "-d", "-S relayx-agent", "-o eth0", "-l 0.0.0.0", "-r 10000-20000"];
+    const order = [
+      "-s https://panel.example.com",
+      "-t tok_123",
+      "-n abc",
+      "-d",
+      "-S relayx-agent",
+      "-o eth0",
+      "-l 0.0.0.0",
+      "-r 10000-20000",
+    ];
     let cursor = -1;
     for (const piece of order) {
       const at = cmd.indexOf(piece);
@@ -44,7 +53,10 @@ describe("buildInstallCommand", () => {
   });
 
   it("expands connect IPs on commas and whitespace", () => {
-    const cmd = buildInstallCommand(origin, token, { ...EMPTY_DEPLOY_OPTIONS, connectIps: "1.2.3.4, 5.6.7.8  9.9.9.9" });
+    const cmd = buildInstallCommand(origin, token, {
+      ...EMPTY_DEPLOY_OPTIONS,
+      connectIps: "1.2.3.4, 5.6.7.8  9.9.9.9",
+    });
     expect(cmd).toContain("-i 1.2.3.4 -i 5.6.7.8 -i 9.9.9.9");
   });
 
@@ -61,7 +73,17 @@ describe("buildInstallCommand", () => {
       mtlsPort: "8",
       quicPort: "9",
     });
-    for (const flag of ["--tcp-port 1", "--mtcp-port 2", "--udp-port 3", "--relayx-port 4", "--wss-port 5", "--mwss-port 6", "--tls-port 7", "--mtls-port 8", "--quic-port 9"]) {
+    for (const flag of [
+      "--tcp-port 1",
+      "--mtcp-port 2",
+      "--udp-port 3",
+      "--relayx-port 4",
+      "--wss-port 5",
+      "--mwss-port 6",
+      "--tls-port 7",
+      "--mtls-port 8",
+      "--quic-port 9",
+    ]) {
       expect(cmd).toContain(flag);
     }
   });
@@ -70,7 +92,11 @@ describe("buildInstallCommand", () => {
     const empty = buildInstallCommand(origin, token, EMPTY_DEPLOY_OPTIONS);
     expect(empty).not.toContain("-I ");
     expect(empty).not.toContain("-p ");
-    const set = buildInstallCommand(origin, token, { ...EMPTY_DEPLOY_OPTIONS, vnstatInterface: "eth1", proxy: "socks5://p:1080" });
+    const set = buildInstallCommand(origin, token, {
+      ...EMPTY_DEPLOY_OPTIONS,
+      vnstatInterface: "eth1",
+      proxy: "socks5://p:1080",
+    });
     expect(set).toContain("-I eth1");
     expect(set).toContain("-p socks5://p:1080");
   });

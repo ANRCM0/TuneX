@@ -147,7 +147,11 @@ describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upst
   // read must not assume the evidence tree exists.
   const upstream = existsSync(UPSTREAM_SCHEMA)
     ? parsePrisma(readFileSync(UPSTREAM_SCHEMA, "utf8"))
-    : { models: new Map<string, Field[]>(), enums: new Map<string, string[]>(), blocks: new Map<string, string[]>() };
+    : {
+        models: new Map<string, Field[]>(),
+        enums: new Map<string, string[]>(),
+        blocks: new Map<string, string[]>(),
+      };
 
   // `LocalCredential` is the replica's own auth table (docs/DEVIATIONS.md §30); it is the
   // only model allowed to exist on top of the decompiled schema.
@@ -185,7 +189,9 @@ describe.skipIf(!existsSync(UPSTREAM_SCHEMA))("replica schema vs decompiled upst
         if (!mine) continue;
         for (const key of ["type", "nullable", "list", "id", "unique", "default"] as const) {
           if (field[key] !== mine[key]) {
-            differences.push(`${model}.${name}.${key}: upstream=${JSON.stringify(field[key])} replica=${JSON.stringify(mine[key])}`);
+            differences.push(
+              `${model}.${name}.${key}: upstream=${JSON.stringify(field[key])} replica=${JSON.stringify(mine[key])}`,
+            );
           }
         }
       }
@@ -246,16 +252,22 @@ describe("generated zod schemas", () => {
         .map(([name]) => `${model}.${name}`),
     );
     expect(generatedNullable.sort()).toEqual(
-      nullableColumns.map((f) => `${[...replicaSchema.models.entries()].find(([, fields]) => fields.includes(f))![0]}.${f.name}`).sort(),
+      nullableColumns
+        .map(
+          (f) =>
+            `${[...replicaSchema.models.entries()].find(([, fields]) => fields.includes(f))![0]}.${f.name}`,
+        )
+        .sort(),
     );
   });
 
   it("never emits a relation column", () => {
     for (const [model, fields] of zod) {
       for (const name of fields.keys()) {
-        expect(isRelation(replicaSchema.models.get(model)!.find((f) => f.name === name)!), `${model}.${name}`).toBe(
-          false,
-        );
+        expect(
+          isRelation(replicaSchema.models.get(model)!.find((f) => f.name === name)!),
+          `${model}.${name}`,
+        ).toBe(false);
       }
     }
   });

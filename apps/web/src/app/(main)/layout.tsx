@@ -53,10 +53,22 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="bg-background/80 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-4 backdrop-blur">
-          <Button variant="ghost" size="icon" className="md:hidden" aria-label={t("zh_99aaea")} onClick={() => setMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label={t("zh_99aaea")}
+            onClick={() => setMobileOpen(true)}
+          >
             <Menu className="size-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="hidden md:inline-flex" aria-label={t("zh_37b948")} onClick={toggle}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:inline-flex"
+            aria-label={t("zh_37b948")}
+            onClick={toggle}
+          >
             <Menu className="size-4" />
           </Button>
           <h1 className="flex-1 truncate text-sm font-semibold">{title}</h1>

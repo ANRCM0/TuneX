@@ -32,9 +32,7 @@ export const QUEUE_DISPLAY_NAME = "RelayX";
  * The BullMQ connection. `maxRetriesPerRequest: null` is required by BullMQ (and is the
  * same option the recovered `redis.ts` passes to ioredis).
  */
-export const queueConnection = REDIS_URL
-  ? new Redis(REDIS_URL, { maxRetriesPerRequest: null })
-  : null;
+export const queueConnection = REDIS_URL ? new Redis(REDIS_URL, { maxRetriesPerRequest: null }) : null;
 
 /** `null` when `REDIS_URL` is unset — see the deviation note above. */
 export const queueDefault = queueConnection
@@ -55,9 +53,7 @@ export async function initBullMQ(): Promise<void> {
       initialised = true;
       startLocalScheduler();
       const cronJobs = jobs.filter((job) => job.cron);
-      logger.info(
-        `Local cron scheduler started (${cronJobs.length} jobs): REDIS_URL is not set.`,
-      );
+      logger.info(`Local cron scheduler started (${cronJobs.length} jobs): REDIS_URL is not set.`);
     }
     return;
   }
