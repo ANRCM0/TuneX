@@ -1,5 +1,7 @@
 # RelayX 复刻剩余工作
 
+> 当前“已复刻 / 未复刻”的总账见 [GAP_REPORT.md](GAP_REPORT.md)；本文件只记录复刻阶段的推进顺序。
+
 目标：副本在本仓库能跑起来的面上，和 `relayx-analysis/reports/` 里已经写明的上游行为一致。不恢复上游已经失效的比较，也不补部署层没有的账号和内核能力。
 
 证据基线是 `.audit/*.md`（2026-10-19）加上其后已经落地的 Fernet 默认密钥对齐（`apps/backend/src/config.ts` 与 agent `key1` 同为 `KV/JjKrj8g6nNnvpQoViRs4QLLap5d9cRSwmMBOEdP4=`）。
@@ -23,9 +25,9 @@
 ## 阶段 5：不做
 
 - `@socket.io/admin-ui`，以及 `/queuedash` 上未鉴权的 `job.retry` / `queue.clean` / `scheduler.add`。队列只保留现在的只读状态。
-- `relayx` 的探测伪装（随机 UA、nginx 假页面、`Server` 头轮换），以及 `window+1` 环形重放缓存。
+- `relayx` 监听端的探测伪装（随机 UA、nginx 假页面、`Server` 头轮换）。重放拒绝与 fail-closed 上限已实现（`internal/relayx/replay.go`，map 结构，非上游 `window+1` 环）。
 - MySQL `FLOAT` 的 4 字节舍入。副本数据源是 SQLite。
-- 后端镜像、Caddy、真实 Cloudflare/华为云账号、内核 WireGuard/TUN。`docs/COVERAGE.md` 已列出。
+- Caddy 与上游发布的镜像仓库；本仓库用自己的 `docker.yml` 构建 backend/web/agent/license 四个镜像。真实 Cloudflare/华为云账号、内核 WireGuard/TUN 见 `docs/COVERAGE.md`。
 - 上游 minisign 公钥。报告写明编译进 agent 但从未引用。
 - `parallel` 负载策略。
 

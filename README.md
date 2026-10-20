@@ -121,7 +121,7 @@ Repo scripts (not pnpm scripts):
 Run `pnpm test` and `pnpm typecheck` for current counts, or `bash scripts/verify.sh` for the whole matrix (the live stack is `bash scripts/verify.sh --e2e`). [docs/VERIFY.md](docs/VERIFY.md) records what each check asserts. Latest full pass on a fresh SQLite database:
 
 - `pnpm -r typecheck` — exit 0 (backend, license server, shared, web)
-- `pnpm test` — 60 files, 534 passed (the live smoke case self-skips when no backend is listening)
+- `pnpm test` — 62 files, 560 passed (2026-10-20; the live smoke case self-skips when no backend is listening)
 - `pnpm test:e2e` — 1 passed
 - `pnpm --filter @relayx/license-server test` — 6 files, 44 passed
 - `go vet ./...` and `go test ./...` in `apps/agent` — clean, all packages ok
@@ -179,6 +179,7 @@ Mounted in `apps/backend/src/app.ts`.
 - [docs/WEB.md](docs/WEB.md) — the console: stack, request flow, auth, i18n, tests, deviations
 - [docs/COVERAGE.md](docs/COVERAGE.md) — which suite covers which layer, and what is intentionally not covered
 - [docs/REPLICATION.md](docs/REPLICATION.md) — remaining replication phases
+- [docs/GAP_REPORT.md](docs/GAP_REPORT.md) — replica vs upstream gap report: what is done, what is not, and why
 
 ## Legal / provenance
 
