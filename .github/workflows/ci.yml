@@ -45,6 +45,10 @@ jobs:
         run: pnpm -r typecheck
       - name: Unit tests
         run: pnpm test
+      - name: Web build (Next.js standalone)
+        # The console is a workspace package: typecheck/tests run above, but the
+        # production build is a separate gate (Turbopack, RSC, route manifest).
+        run: pnpm --filter @relayx/web build
       - name: License-server tests
         run: pnpm --filter @relayx/license-server test
 
