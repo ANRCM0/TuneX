@@ -9,8 +9,9 @@ name: MySQL target
 #   1. the baseline migration applies to an empty MySQL 8 database;
 #   2. `prisma migrate diff` finds no drift between migrations and the schema;
 #   3. the whole backend vitest suite passes with the MySQL client
-#      (`RELAYX_TEST_DIALECT=mysql`, dialect-aware harness in tests/helpers/temp-db.ts), so
-#      every service and route the suite covers is exercised on the MySQL target;
+#      (`RELAYX_TEST_DIALECT=mysql`, dialect-aware harness in tests/helpers/temp-db.ts). Each
+#      suite gets its own database created from the baseline DDL, so files still run in
+#      parallel and every service and route the suite covers is exercised on MySQL;
 #   4. a client generated from the MySQL schema round-trips JSON, enums, Float, DateTime
 #      (millisecond precision), unique constraints and foreign-key actions;
 #   5. the backend boots on that client and the aggregate endpoints — whose SQL is
@@ -146,10 +147,6 @@ jobs:
           RELAYX_TEST_DIALECT: mysql
         run: pnpm test:mysql
 
-      - name: Empty the test database before the standalone smokes
-        working-directory: apps/backend
-        run: node scripts/mysql-truncate.mjs
-
       - name: Runtime smoke (JSON, enums, Float, DateTime, uniques, cascades)
         working-directory: apps/backend
         run: node scripts/mysql-smoke.mjs
@@ -161,6 +158,15 @@ jobs:
           AUTH_MODE: local
           MYSQL_SMOKE_PORT: "3311"
         run: node scripts/mysql-endpoints-smoke.mjs
+
+      - name: Drop isolation databases left by a failed suite
+        if: always()
+        working-directory: apps/backend
+        env:
+          NODE_ENV: test
+        # A suite that crashed before its afterAll leaves relayx_t_* behind. The container goes
+        # away with the job, but a local run should not accumulate databases either.
+        run: node scripts/mysql-test-db.mjs sweep
 
       - name: Guard the dialect switch and the documented gaps
         run: |
@@ -175,4 +181,5 @@ jobs:
           grep -q "scripts/mysql-endpoints-smoke.mjs" .github/workflows/mysql.yml
           grep -q "pnpm test:mysql" .github/workflows/mysql.yml
           grep -q "RELAYX_TEST_DIALECT" tests/helpers/temp-db.ts
+          grep -q "mysql-test-db.mjs" tests/helpers/temp-db.ts
           echo "both SQL dialects, the MySQL endpoint step and the documented gaps are present"

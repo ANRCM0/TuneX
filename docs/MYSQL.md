@@ -15,15 +15,15 @@ harness is switched the same way.
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `apps/backend/prisma/schema.prisma`               | The SQLite schema — the source of truth, pinned to the decompiled upstream by `tests/unit/schema-parity.test.ts` |
 | `apps/backend/prisma/migrations/0001_init/`       | SQLite baseline migration                                                                                        |
-| `apps/backend/prisma/mysql/schema.prisma`         | **Generated** MySQL variant: `datasource` + the native types the SQLite port drops                                |
+| `apps/backend/prisma/mysql/schema.prisma`         | **Generated** MySQL variant: `datasource` + the native types the SQLite port drops                               |
 | `apps/backend/prisma/mysql/migrations/0001_init/` | **Generated** MySQL baseline DDL                                                                                 |
 | `apps/backend/scripts/gen-mysql-schema.mjs`       | Generator; `--check` is read-only and fails on staleness                                                         |
 | `apps/backend/scripts/mysql-smoke.mjs`            | Runtime smoke: JSON, enums, Float, DateTime, uniques, FK actions                                                 |
 | `apps/backend/scripts/mysql-endpoints-smoke.mjs`  | Boots the backend on MySQL and asserts the aggregate endpoints over HTTP                                         |
-| `apps/backend/scripts/mysql-truncate.mjs`         | Empties the shared test database, children first (FK order from `information_schema`)                            |
-| `tests/helpers/temp-db.ts`                        | Per-suite database: temp SQLite file, or truncate of the shared MySQL database when `RELAYX_TEST_DIALECT=mysql`  |
+| `apps/backend/scripts/mysql-test-db.mjs`          | Creates/drops a suite's MySQL database and replays the baseline DDL; `sweep` removes leftovers                   |
+| `tests/helpers/temp-db.ts`                        | Per-suite database: temp SQLite file, or a dedicated MySQL database when `RELAYX_TEST_DIALECT=mysql`             |
 | `apps/backend/src/utils/date.ts`                  | Both SQL dialects for the aggregate queries; `DATABASE_URL` selects one at call time                             |
-| `.github/workflows/mysql.yml`                     | Applies the baseline, checks drift, generates the client, runs both smokes                                       |
+| `.github/workflows/mysql.yml`                     | Applies the baseline, checks drift, generates the client, runs the suite and both smokes                         |
 | `tests/unit/mysql-workflow.test.ts`               | Asserts the workflow contract and that `--check` cannot repair what it checks                                    |
 | `tests/unit/aggregate-dialect.test.ts`            | Asserts the aggregate call sites delegate to `utils/date.ts` and never hand-write a dialect                      |
 | `tests/unit/date.test.ts`                         | Pins both branches and the `DATABASE_URL` switch                                                                 |
@@ -58,14 +58,18 @@ DATABASE_URL="$MYSQL_URL" pnpm db:mysql:endpoints # HTTP: boots the panel and ca
 DATABASE_URL="$MYSQL_URL" pnpm test:mysql
 ```
 
-`pnpm test:mysql` is `RELAYX_TEST_DIALECT=mysql vitest run --no-file-parallelism`. The suites
-call `createTempDatabase()` at module scope and expect a clean database, so the MySQL branch of
-`tests/helpers/temp-db.ts` pushes `prisma/mysql/schema.prisma` once per run (cached by a stamp
-file keyed on the URL and the schema's size/mtime) and then empties every table for each suite.
-The database is shared, hence `--no-file-parallelism`: two suites truncating concurrently would
-delete each other's fixtures. `node apps/backend/scripts/mysql-truncate.mjs` does the same
-emptying standalone, which is how the workflow resets the database between the suite and the
-smoke scripts.
+`pnpm test:mysql` is `RELAYX_TEST_DIALECT=mysql vitest run` — **parallel**, like the SQLite run.
+The suites call `createTempDatabase()` at module scope and expect a clean database, so the MySQL
+branch of `tests/helpers/temp-db.ts` creates a database of its own for every suite
+(`relayx_t_<suite>_<pid>_<n>`) through `apps/backend/scripts/mysql-test-db.mjs`, then replays the
+committed baseline DDL (55 statements) into it. The database in `DATABASE_URL` is only the
+maintenance connection: suites never write to it, so workers cannot collide.
+`cleanup()` drops the database, and `node apps/backend/scripts/mysql-test-db.mjs sweep` drops any
+`relayx_t_*` a crashed suite left behind (the workflow runs it with `if: always()`).
+
+Replaying the baseline rather than `prisma db push` is deliberate: it is the exact file CI
+applies and `prisma migrate diff` checks, it is ~55 round trips instead of a schema diff, and
+it keeps `schema.prisma` out of the test path.
 
 `mysql-endpoints-smoke.mjs` starts the backend itself on `MYSQL_SMOKE_PORT` (default 3311),
 seeds a super admin plus fixtures around a Shanghai midnight, and asserts exact bucketed
@@ -122,10 +126,9 @@ routes or their tests change (and on demand via `workflow_dispatch`):
 2. `pnpm db:mysql:deploy` — the baseline DDL applies to an empty MySQL 8;
 3. `prisma migrate diff --from-migrations … --shadow-database-url …` — no drift;
 4. `prisma generate` from the MySQL schema, then `pnpm test:mysql` — the **entire backend
-   vitest suite** (61 files) runs against the MySQL client through the dialect-aware
-   `createTempDatabase`, so every service and route the suite exercises is proven on MySQL,
-   not just the aggregates;
-5. `mysql-smoke.mjs` (after `mysql-truncate.mjs` resets the shared database):
+   vitest suite** (61 files) runs against the MySQL client, each file in its own database, in
+   parallel, so every service and route the suite exercises is proven on MySQL;
+5. `mysql-smoke.mjs`:
    JSON round-trip (nested object + array), enum round-trip, `Float` keeps `0.00390625`,
    `DateTime` keeps milliseconds, `email` uniqueness rejects duplicates, `_sum` aggregate is
    exact, a `NodeGroup` that still has `Node` rows refuses deletion (RESTRICT) while deleting a
@@ -151,11 +154,11 @@ section, so the documentation cannot drift away from what the job actually runs.
 These are **not** covered, and the workflow fails if the documentation is deleted without
 addressing them:
 
-- **The MySQL suite is serial and shares one database.** `pnpm test:mysql` runs with
-  `--no-file-parallelism` because the suites truncate a shared database; it is slower than the
-  SQLite run and cannot be parallelised without giving every suite its own database (which on
-  MySQL costs a `CREATE DATABASE` plus a push per suite). Isolation is by truncation, so a suite
-  that depended on leftovers from another would behave differently than on SQLite — none do.
+- **The MySQL run pays for a database per suite.** Each suite creates its database and replays
+  55 DDL statements (~0.3 s), then drops it; on a server with slow DDL that is the dominant cost
+  of the job. A pool of pre-created databases would remove it, but it needs a sweep on every
+  exit path and MySQL has no `CREATE DATABASE … TEMPLATE`, so the schema still has to be
+  replayed per database.
 - **`DateTime` storage differs by engine.** SQLite holds unix milliseconds, MySQL
   `DATETIME(3)`. The helpers normalise that difference for the aggregate queries; a new raw
   query that compares a `DateTime` column as a string, without going through `utils/date.ts`,

@@ -41,7 +41,6 @@ describe("mysql workflow", () => {
       "--from-migrations apps/backend/prisma/mysql/migrations",
       "run: npx prisma generate --schema apps/backend/prisma/mysql/schema.prisma",
       "run: pnpm test:mysql",
-      "run: node scripts/mysql-truncate.mjs",
       "run: node scripts/mysql-smoke.mjs",
       "run: node scripts/mysql-endpoints-smoke.mjs",
     ].map((needle) => workflow.indexOf(needle));
@@ -49,25 +48,47 @@ describe("mysql workflow", () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it("runs the backend suite against MySQL and keeps the shared-database harness wired", () => {
+  it("gives every suite its own MySQL database so files run in parallel", () => {
     expect(workflow).toContain("RELAYX_TEST_DIALECT: mysql");
     expect(workflow).toContain("pnpm test:mysql");
+    // Crashed suites leave databases behind; the job sweeps them either way.
+    expect(workflow).toContain("node scripts/mysql-test-db.mjs sweep");
 
     const scripts = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).scripts as Record<
       string,
       string
     >;
     expect(scripts["test:mysql"]).toContain("RELAYX_TEST_DIALECT=mysql");
-    // One shared database means suites must not run concurrently against it.
-    expect(scripts["test:mysql"]).toContain("--no-file-parallelism");
+    // Isolation is per database now, so the run must not be serialised.
+    expect(scripts["test:mysql"]).not.toContain("--no-file-parallelism");
 
     const helper = readFileSync(join(ROOT, "tests/helpers/temp-db.ts"), "utf8");
     expect(helper).toContain("RELAYX_TEST_DIALECT");
-    expect(helper).toContain("prisma/mysql/schema.prisma");
-    expect(helper).toContain("mysql-truncate.mjs");
+    expect(helper).toContain("mysql-test-db.mjs");
+    expect(helper).toContain("relayx_t_");
     // The SQLite branch must keep working: it is the default checkout.
     expect(helper).toContain("mkdtempSync");
     expect(helper).toContain("schema.prisma");
+  });
+
+  it("replays the committed baseline DDL into each suite database", async () => {
+    // The harness executes the same statements CI applies; if the splitter mis-parses the
+    // generated file, every MySQL suite fails with a fragment instead of a statement.
+    const { splitStatements, withDatabase } = await import("../../apps/backend/scripts/mysql-test-db.mjs");
+    const ddl = readFileSync(
+      join(ROOT, "apps/backend/prisma/mysql/migrations/0001_init/migration.sql"),
+      "utf8",
+    );
+    const statements = splitStatements(ddl) as string[];
+    expect(statements.length).toBeGreaterThan(30);
+    expect(statements.filter((statement) => statement.startsWith("CREATE TABLE"))).toHaveLength(25);
+    expect(
+      statements.filter((statement) => !/^(CREATE TABLE|ALTER TABLE|CREATE (UNIQUE )?INDEX)/.test(statement)),
+    ).toEqual([]);
+
+    expect(withDatabase("mysql://u:p@127.0.0.1:3306/base?connection_limit=5", "relayx_t_x_1")).toBe(
+      "mysql://u:p@127.0.0.1:3306/relayx_t_x_1?connection_limit=5",
+    );
   });
 
   it("fails the job when either dialect branch or the documented gaps disappear", () => {

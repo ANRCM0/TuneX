@@ -130,10 +130,10 @@ Each entry is something this replica does differently from the analysis tree (`/
       (`apps/backend/scripts/mysql-endpoints-smoke.mjs`). The aggregate SQL is no longer
       SQLite-only: `apps/backend/src/utils/date.ts` has both branches and selects one from
       `DATABASE_URL`. The **test suite** follows the same switch: `tests/helpers/temp-db.ts`
-      builds a temp SQLite file by default and, with `RELAYX_TEST_DIALECT=mysql`, pushes
-      `prisma/mysql/schema.prisma` into the `DATABASE_URL` database and truncates it per suite
-      (one shared database, `--no-file-parallelism`), so `pnpm test:mysql` runs every suite on
-      MySQL in CI. `docs/MYSQL.md` documents the invariants and the remaining gaps (serial
+      builds a temp SQLite file by default and, with `RELAYX_TEST_DIALECT=mysql`, creates a
+      database per suite (`relayx_t_*`) from the baseline DDL via
+      `apps/backend/scripts/mysql-test-db.mjs`, so `pnpm test:mysql` runs every suite on MySQL
+      in CI — in parallel, because suites never share a database. `docs/MYSQL.md` documents the invariants and the remaining gaps (serial
       shared-database runs, in-process Redis, no browser).
     - **Rate limits + lockout.** `middlewares/rate_limit.ts` adds fixed windows for sign-in,
       sign-up, verification mail, payment callbacks, the node observer and a generic API
