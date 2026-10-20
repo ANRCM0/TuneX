@@ -26,17 +26,16 @@ import { getEffectiveAccess } from "../middlewares/auth";
 import { SITE_URL } from "../config";
 import { db } from "../db";
 import { PlanSchema, UserPlanSchema, UserSchema } from "../generated/zod";
-import { formatStatsDate, getDateGroupBy, getDateInterval, toLocalTZ } from "../utils/date";
+import {
+  formatStatsDate,
+  getDateGroupBy,
+  getDateInterval,
+  localNowMinusDays,
+  toLocalTZ,
+} from "../utils/date";
 import type { AppEnv } from "../types";
 
 const router = new Hono<AppEnv>();
-
-/**
- * SQLite has no `NOW() - INTERVAL n DAY`; the equivalent local-time bound is
- * `datetime('now', '+8 hours', '-n days')`, which is directly comparable with the
- * `datetime(col / 1000, 'unixepoch', '+8 hours')` fragments built by `utils/date`.
- */
-const localNowMinusDays = (days: number): string => `datetime('now', '+8 hours', '-${days} days')`;
 
 router.get(
   "/info",

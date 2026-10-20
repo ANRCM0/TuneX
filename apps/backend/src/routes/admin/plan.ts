@@ -3,7 +3,13 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
 import { describeRoute, resolver, zValidator } from "../../openapi";
-import { getDateGroupBy, getDateInterval, formatStatsDate, toLocalTZ } from "../../utils/date";
+import {
+  getDateGroupBy,
+  getDateInterval,
+  formatStatsDate,
+  localNowMinusDays,
+  toLocalTZ,
+} from "../../utils/date";
 import { BatchIdSchema, IdSchema, TableRequestSchema } from "../../schemas/request";
 import { OrderStatsResponseSchema } from "../../schemas/response";
 import { PlanOrderSchema, PlanSchema } from "../../generated/zod";
@@ -13,9 +19,9 @@ import type { AppEnv } from "../../types";
 /**
  * Upstream: src/routes/admin/plan.ts (228 lines) — ported 1:1.
  *
- * SQLite adaptation (see docs/DEVIATIONS.md): the stats query uses SQLite's
- * `datetime('now', '+8 hours', '-N days')` window instead of MySQL's
- * `NOW() - INTERVAL N DAY`; the TZ offset comes from `TZ_OFFSET` via the date helpers.
+ * The stats window is `localNowMinusDays(N)`: `datetime('now', '+8 hours', '-N days')` on
+ * SQLite, `DATE_FORMAT(DATE_SUB(CONVERT_TZ(UTC_TIMESTAMP(), …), INTERVAL N DAY), …)` on
+ * MySQL — the two dialects of upstream's `NOW() - INTERVAL N DAY`. See utils/date.ts.
  */
 const router = new Hono<AppEnv>();
 
@@ -269,7 +275,7 @@ router.get(
     if (start_date) {
       conds.push(`${localCreatedAt} >= '${start_date}'`);
     } else {
-      conds.push(`${localCreatedAt} >= datetime('now', '+8 hours', '-${interval} days')`);
+      conds.push(`${localCreatedAt} >= ${localNowMinusDays(interval)}`);
     }
     if (end_date) {
       conds.push(`${localCreatedAt} <= '${end_date}'`);

@@ -9,11 +9,14 @@ name: MySQL target
 #   1. the baseline migration applies to an empty MySQL 8 database;
 #   2. `prisma migrate diff` finds no drift between migrations and the schema;
 #   3. a client generated from the MySQL schema round-trips JSON, enums, Float, DateTime
-#      (millisecond precision), unique constraints and cascades.
+#      (millisecond precision), unique constraints and cascades;
+#   4. the backend boots on that client and the aggregate endpoints — whose SQL is
+#      dialect-switched in apps/backend/src/utils/date.ts — answer over HTTP with the
+#      expected Asia/Shanghai buckets (`scripts/mysql-endpoints-smoke.mjs`).
 #
-# What it does NOT prove: the panel's own aggregate endpoints. They use SQLite dialect
-# (`datetime(col/1000,'unixepoch')`, `strftime`) — see docs/MYSQL.md §Known gaps. That step
-# fails the job if someone edits those helpers without updating the document.
+# What it does NOT prove: the whole backend test suite on MySQL. That suite is SQLite-only
+# (`prisma db push`, date helpers); this job covers the aggregate surface, not every route.
+# See docs/MYSQL.md §Known gaps.
 
 on:
   push:
@@ -22,12 +25,22 @@ on:
       - "apps/backend/prisma/**"
       - "apps/backend/scripts/**"
       - "apps/backend/src/utils/date.ts"
+      - "apps/backend/src/services/stats.ts"
+      - "apps/backend/src/routes/**"
+      - "tests/unit/date.test.ts"
+      - "tests/unit/aggregate-dialect.test.ts"
+      - "tests/unit/mysql-workflow.test.ts"
       - ".github/workflows/mysql.yml"
   pull_request:
     paths:
       - "apps/backend/prisma/**"
       - "apps/backend/scripts/**"
       - "apps/backend/src/utils/date.ts"
+      - "apps/backend/src/services/stats.ts"
+      - "apps/backend/src/routes/**"
+      - "tests/unit/date.test.ts"
+      - "tests/unit/aggregate-dialect.test.ts"
+      - "tests/unit/mysql-workflow.test.ts"
       - ".github/workflows/mysql.yml"
   workflow_dispatch:
 
@@ -128,11 +141,23 @@ jobs:
         working-directory: apps/backend
         run: node scripts/mysql-smoke.mjs
 
-      - name: Guard the documented SQLite-only surface
+      - name: Aggregate endpoints over HTTP (boots the backend on MySQL)
+        working-directory: apps/backend
+        env:
+          NODE_ENV: test
+          AUTH_MODE: local
+          MYSQL_SMOKE_PORT: "3311"
+        run: node scripts/mysql-endpoints-smoke.mjs
+
+      - name: Guard the dialect switch and the documented gaps
         run: |
           set -euo pipefail
-          # These helpers are SQLite dialect on purpose; if they change, docs/MYSQL.md must too.
+          # Both branches are load-bearing: MySQL is the target this job proves, SQLite is
+          # the default checkout. If either disappears, or the HTTP step is dropped while
+          # docs/MYSQL.md still claims coverage, the job fails.
           grep -q "unixepoch" apps/backend/src/utils/date.ts
-          grep -q "strftime" apps/backend/src/utils/date.ts
+          grep -q "CONVERT_TZ" apps/backend/src/utils/date.ts
           grep -q "Known gaps" docs/MYSQL.md
-          echo "SQLite-only aggregate helpers and the documented gap are both still present"
+          test -f apps/backend/scripts/mysql-endpoints-smoke.mjs
+          grep -q "scripts/mysql-endpoints-smoke.mjs" .github/workflows/mysql.yml
+          echo "both SQL dialects, the MySQL endpoint step and the documented gaps are present"

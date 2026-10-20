@@ -12,12 +12,12 @@
  *   - Float columns keep their fractional part (traffic accounting is GiB floats);
  *   - DateTime keeps millisecond precision (tunnel/traffic bucketing is per-second);
  *   - unique constraints reject duplicates (email, node_group token, api_key);
- *   - relations and cascades behave (deleting a node group removes its nodes).
+ *   - referential actions match schema.prisma: `NodeGroup`/`Node` and `NodeGroup`/`Tunnel`
+ *     are ON DELETE RESTRICT, while deleting a `User` cascades to its `LocalCredential`.
  *
- * Known gap this script does NOT paper over: the panel's own aggregate queries are SQLite
- * dialect (`datetime(col/1000,'unixepoch','+8 hours')`, `strftime`), so the stats endpoints
- * do not run on MySQL. That is tracked in docs/MYSQL.md and guarded by the SQLite-only
- * assertions in tests/unit/date.test.ts.
+ * Scope: this script proves the schema and client only. The aggregate endpoints are covered
+ * separately by `mysql-endpoints-smoke.mjs`, which boots the backend on this same client and
+ * calls them over HTTP; the dialect switch itself is in apps/backend/src/utils/date.ts.
  *
  * Usage: DATABASE_URL="mysql://user:pass@host:3306/db" node apps/backend/scripts/mysql-smoke.mjs
  */
@@ -172,10 +172,36 @@ try {
   assert.equal(sum._sum.traffic, 0.00390625);
   ok("aggregate _sum over Float");
 
-  // ── cascade: deleting the group removes its nodes ──────────────────────────
-  await db.nodeGroup.delete({ where: { id: group.id } });
-  assert.equal(await db.node.count({ where: { node_group_id: group.id } }), 0);
-  ok("cascade delete: NodeGroup removal removes its Nodes");
+  // ── referential actions: RESTRICT here, CASCADE there ──────────────────────
+  // `Node.node_group_id` and `Tunnel.in_node_group_id` are ON DELETE RESTRICT in the
+  // generated DDL (`schema.prisma` sets no onDelete on either), so the group above cannot be
+  // removed while its node exists. Drop the tunnel first so the check isolates `Node`.
+  await db.tunnelTraffic.deleteMany({ where: { tunnel_id: tunnel.id } });
+  await db.tunnel.delete({ where: { id: tunnel.id } });
+  let restricted = false;
+  try {
+    await db.nodeGroup.delete({ where: { id: group.id } });
+  } catch (error) {
+    restricted = error?.code === "P2003";
+  }
+  assert.equal(restricted, true, "deleting a NodeGroup that still has Nodes must be rejected");
+  assert.equal(await db.node.count({ where: { node_group_id: group.id } }), 1);
+  ok("referential action RESTRICT: NodeGroup with Node rows refuses deletion");
+
+  // The one ON DELETE CASCADE relation in the schema is LocalCredential.user.
+  const cascadeUser = await db.user.create({
+    data: {
+      email: `cascade-${stamp}@example.test`,
+      api_key: `cascade-key-${stamp}`,
+      subscription_key: `cascade-sub-${stamp}`,
+    },
+  });
+  await db.localCredential.create({
+    data: { user_id: cascadeUser.id, password_hash: "scrypt$fixture$not-a-real-hash" },
+  });
+  await db.user.delete({ where: { id: cascadeUser.id } });
+  assert.equal(await db.localCredential.count({ where: { user_id: cascadeUser.id } }), 0);
+  ok("referential action CASCADE: deleting a User removes its LocalCredential");
 
   console.log(`\nmysql-smoke: ${results.length} checks passed`);
 } catch (error) {

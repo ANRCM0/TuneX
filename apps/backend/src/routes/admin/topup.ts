@@ -2,7 +2,13 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db";
 import { describeRoute, resolver, zValidator } from "../../openapi";
-import { formatStatsDate, getDateGroupBy, getDateInterval, toLocalTZ } from "../../utils/date";
+import {
+  formatStatsDate,
+  getDateGroupBy,
+  getDateInterval,
+  localNowMinusDays,
+  toLocalTZ,
+} from "../../utils/date";
 import { IdSchema, TopupOrderQuerySchema } from "../../schemas/request";
 import { TopupOrderResponseSchema, TopupOrderStatsResponseSchema } from "../../schemas/response";
 import { topupService } from "../../services/topup";
@@ -11,8 +17,10 @@ import type { AppEnv } from "../../types";
 /**
  * Upstream: src/routes/admin/topup.ts (95 lines) — ported 1:1.
  *
- * SQLite adaptation (see docs/DEVIATIONS.md): the stats window uses SQLite
- * `datetime('now', '+8 hours', '-N days')` instead of MySQL `NOW() - INTERVAL N DAY`.
+ * The stats window is `localNowMinusDays(N)` from utils/date.ts — SQLite
+ * `datetime('now', '+8 hours', '-N days')` or MySQL `DATE_FORMAT(DATE_SUB(CONVERT_TZ(
+ * UTC_TIMESTAMP(), …), INTERVAL N DAY), …)`, both shaped like `toLocalTZ` so the
+ * comparison is text-to-text on either engine.
  */
 const router = new Hono<AppEnv>();
 
@@ -111,7 +119,7 @@ router.get(
     if (start_date) {
       conds.push(`${localCreatedAt} >= '${start_date}'`);
     } else {
-      conds.push(`${localCreatedAt} >= datetime('now', '+8 hours', '-${interval} days')`);
+      conds.push(`${localCreatedAt} >= ${localNowMinusDays(interval)}`);
     }
     if (end_date) {
       conds.push(`${localCreatedAt} <= '${end_date}'`);

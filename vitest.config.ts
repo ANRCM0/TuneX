@@ -29,6 +29,10 @@ export default defineConfig({
         "apps/agent/**",
         "tests/**",
         "scripts/**",
+        // Standalone `node` harnesses driven by CI (schema generation, MySQL smokes). They are
+        // executed, not imported by the app, so no unit test can cover them; their correctness
+        // is proven by the workflows that run them.
+        "apps/*/scripts/**",
       ],
       // Ratchet, not an aspiration: set a few points under the measured baseline so a real
       // regression fails CI while refactors do not. Raise these when coverage improves.

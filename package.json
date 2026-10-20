@@ -33,7 +33,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "prettier --check \"apps/backend/src/**/*.ts\" \"apps/license-server/src/**/*.ts\" \"apps/web/src/**/*.{ts,tsx}\" \"packages/shared/src/**/*.ts\" \"tests/**/*.ts\" \"*.json\" \".github/workflows/*.yml\"",
     "format": "prettier --write \"apps/backend/src/**/*.ts\" \"apps/license-server/src/**/*.ts\" \"apps/web/src/**/*.{ts,tsx}\" \"packages/shared/src/**/*.ts\" \"tests/**/*.ts\" \"*.json\" \".github/workflows/*.yml\"",
-    "db:mysql:smoke": "node apps/backend/scripts/mysql-smoke.mjs"
+    "db:mysql:smoke": "node apps/backend/scripts/mysql-smoke.mjs",
+    "db:mysql:endpoints": "node apps/backend/scripts/mysql-endpoints-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

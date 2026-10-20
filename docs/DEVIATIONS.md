@@ -28,7 +28,7 @@ Each entry is something this replica does differently from the analysis tree (`/
 
 9. **Telegram transport is `fetch`, not Telegraf.** `services/telegram.ts` calls `https://api.telegram.org/bot<token>/<method>` and long-polls `getUpdates`. Commands, callbacks, keyboards, and Chinese strings follow the decompile. `start()` logs and returns when `TELEGRAM_BOT_TOKEN` is unset (observed at boot).
 
-10. **Stats SQL is SQLite-shaped.** Aggregates live in `services/stats.ts` (`TOKENS.Stats`). Date bounds are computed in JS, shifted to Asia/Shanghai, and bound as parameters instead of MySQL `NOW() - INTERVAL n DAY`. Grouping uses frozen `getDateGroupBy` / `toLocalTZ`. `/traffic` still merges today's Redis tunnel counters. `/admin/stats` reuses frozen `AdminStatsQuerySchema` (`z.coerce.date`, `aggregate_by` default `"day"`); upstream used inline `z.string()` for the dates. Omitted params behave the same. Curl of `/admin/stats`, `?aggregate_by=month`, and `/admin/stats/traffic` returned 200.
+10. **Stats SQL is dialect-switched.** Aggregates live in `services/stats.ts` (`TOKENS.Stats`) and the plan/topup/tunnel/referral dashboards; every date fragment comes from `utils/date.ts`, which emits SQLite (`datetime(col/1000,'unixepoch')`, `strftime`) or MySQL (`CONVERT_TZ`, `DATE_FORMAT`, `DATE_SUB(UTC_TIMESTAMP(), …)`) depending on `DATABASE_URL`. Both branches return the same `YYYY-MM-DD HH:MM:SS` text, so bounds compare identically on each engine (`docs/MYSQL.md`). In `services/stats.ts` the bounds are computed in JS, shifted to Asia/Shanghai, and bound as parameters instead of upstream's inline `NOW() - INTERVAL n DAY`; the dashboard routers interpolate `localNowMinusDays` / `utcNowMinusDays` instead. `/traffic` still merges today's Redis tunnel counters. `/admin/stats` reuses frozen `AdminStatsQuerySchema` (`z.coerce.date`, `aggregate_by` default `"day"`); upstream used inline `z.string()` for the dates. Omitted params behave the same. Curl of `/admin/stats`, `?aggregate_by=month`, and `/admin/stats/traffic` returned 200 on SQLite; the MySQL branch is exercised over HTTP by `apps/backend/scripts/mysql-endpoints-smoke.mjs` in CI.
 
 11. **`cronSaveTraffic` counts keys.** It returns `Object.keys(traffics).length`. Upstream `traffics.length` is `undefined` on a plain object and is a TypeScript error.
 
@@ -116,15 +116,18 @@ Each entry is something this replica does differently from the analysis tree (`/
     - **Migrations.** `prisma/migrations/0001_init` is the baseline for SQLite and
       `prisma/mysql/{schema.prisma,migrations}` is generated from the same models
       (`apps/backend/scripts/gen-mysql-schema.mjs`). The MySQL schema validates and emits DDL,
-      but no MySQL server runs here, so runtime parity is untested.
+      but no MySQL server runs in this checkout, so runtime parity is proven by the CI job
+      rather than locally.
     - **MySQL target.** The datasource provider must be a literal, so the MySQL variant lives
       in its own directory rather than behind `env()`. Deploy with
       `pnpm db:mysql:deploy` and `DATABASE_URL=mysql://…`. `.github/workflows/mysql.yml` proves
       it against a real `mysql:8.0` (baseline applies, no drift, MySQL-generated client
-      round-trips JSON/enums/Float/DateTime/uniques/cascades). **The panel's aggregate queries
-      remain SQLite dialect** (`datetime(col/1000,'unixepoch')`, `strftime`), so the stats and
-      dashboard endpoints do not run on MySQL — documented in `docs/MYSQL.md` §Known gaps and
-      guarded by the workflow.
+      round-trips JSON/enums/Float/DateTime/uniques and both FK actions) **and boots the backend on that
+      client** to hit the aggregate endpoints over HTTP
+      (`apps/backend/scripts/mysql-endpoints-smoke.mjs`). The aggregate SQL is no longer
+      SQLite-only: `apps/backend/src/utils/date.ts` has both branches and selects one from
+      `DATABASE_URL`; `docs/MYSQL.md` documents the invariants and the remaining gaps (the
+      rest of the test suite still runs on SQLite only).
     - **Rate limits + lockout.** `middlewares/rate_limit.ts` adds fixed windows for sign-in,
       sign-up, verification mail, payment callbacks, the node observer and a generic API
       bucket, plus a per-account lockout after `LOGIN_MAX_FAILURES`. Upstream has neither; the
