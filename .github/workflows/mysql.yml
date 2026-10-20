@@ -9,9 +9,9 @@ name: MySQL target
 #   1. the baseline migration applies to an empty MySQL 8 database;
 #   2. `prisma migrate diff` finds no drift between migrations and the schema;
 #   3. the whole backend vitest suite passes with the MySQL client
-#      (`RELAYX_TEST_DIALECT=mysql`, dialect-aware harness in tests/helpers/temp-db.ts). Each
-#      suite gets its own database created from the baseline DDL, so files still run in
-#      parallel and every service and route the suite covers is exercised on MySQL;
+#      (`RELAYX_TEST_DIALECT=mysql`, dialect-aware harness in tests/helpers/temp-db.ts). Files run
+#      in parallel against a small pool of databases built from the baseline DDL, so every
+#      service and route the suite covers is exercised on MySQL;
 #   4. a client generated from the MySQL schema round-trips JSON, enums, Float, DateTime
 #      (millisecond precision), unique constraints and foreign-key actions;
 #   5. the backend boots on that client and the aggregate endpoints — whose SQL is
@@ -145,6 +145,8 @@ jobs:
       - name: Backend test suite on MySQL (RELAYX_TEST_DIALECT=mysql)
         env:
           RELAYX_TEST_DIALECT: mysql
+          # One line per test file with the database-acquire cost; the docs quote this number.
+          RELAYX_TEST_VERBOSE: "1"
         run: pnpm test:mysql
 
       - name: Runtime smoke (JSON, enums, Float, DateTime, uniques, cascades)
@@ -164,8 +166,8 @@ jobs:
         working-directory: apps/backend
         env:
           NODE_ENV: test
-        # A suite that crashed before its afterAll leaves relayx_t_* behind. The container goes
-        # away with the job, but a local run should not accumulate databases either.
+        # The pool keeps its databases between runs on purpose. The container goes away with
+        # the job, but a local run should not accumulate schemas either, so drop them here.
         run: node scripts/mysql-test-db.mjs sweep
 
       - name: Guard the dialect switch and the documented gaps

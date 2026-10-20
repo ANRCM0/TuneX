@@ -59,17 +59,33 @@ DATABASE_URL="$MYSQL_URL" pnpm test:mysql
 ```
 
 `pnpm test:mysql` is `RELAYX_TEST_DIALECT=mysql vitest run` — **parallel**, like the SQLite run.
-The suites call `createTempDatabase()` at module scope and expect a clean database, so the MySQL
-branch of `tests/helpers/temp-db.ts` creates a database of its own for every suite
-(`relayx_t_<suite>_<pid>_<n>`) through `apps/backend/scripts/mysql-test-db.mjs`, then replays the
-committed baseline DDL (55 statements) into it. The database in `DATABASE_URL` is only the
-maintenance connection: suites never write to it, so workers cannot collide.
-`cleanup()` drops the database, and `node apps/backend/scripts/mysql-test-db.mjs sweep` drops any
-`relayx_t_*` a crashed suite left behind (the workflow runs it with `if: always()`).
+The suites call `createTempDatabase()` at module scope and expect an empty schema, so the MySQL
+branch of `tests/helpers/temp-db.ts` hands each process a database from a small **pool**:
+
+- a slot is claimed by creating a lock file with `open(…, "wx")`, which is atomic, so exactly
+  one process wins a slot; the file records the owning pid;
+- `apps/backend/scripts/mysql-test-db.mjs acquire <db>` builds the database the first time a
+  slot is ever used (replaying the committed baseline DDL, 55 statements) and otherwise only
+  empties it — one `DELETE` per table in foreign-key order;
+- the lock is released on exit and the database stays for the next file, which is where the
+  saving comes from: `CREATE DATABASE` plus 55 DDL statements happen once per slot, not once per
+  file;
+- a slot whose pid is gone is taken over; a lock with no readable pid is only considered stale
+  after a five-second grace window (the owner may be between `open` and `write`); if every slot
+  is live, the file falls back to a private `relayx_t_e<pid>` database it drops itself, so the
+  run can never deadlock;
+- the database in `DATABASE_URL` is only the maintenance connection — suites never write to it,
+  which is what makes the parallelism safe.
+
+The pool is keyed on the server URL **and a digest of the baseline DDL**, so changing the schema
+gives fresh databases instead of reusing ones built from the old one.
+`node apps/backend/scripts/mysql-test-db.mjs sweep` drops every `relayx_t_*`, pooled slots
+included; the workflow runs it with `if: always()`. Locally the pool is kept between runs on
+purpose (that is the saving) unless you run `sweep`.
 
 Replaying the baseline rather than `prisma db push` is deliberate: it is the exact file CI
-applies and `prisma migrate diff` checks, it is ~55 round trips instead of a schema diff, and
-it keeps `schema.prisma` out of the test path.
+applies and `prisma migrate diff` checks, and it keeps `schema.prisma` out of the test path.
+`RELAYX_TEST_VERBOSE=1` prints one line per process with how long it held its database.
 
 `mysql-endpoints-smoke.mjs` starts the backend itself on `MYSQL_SMOKE_PORT` (default 3311),
 seeds a super admin plus fixtures around a Shanghai midnight, and asserts exact bucketed
@@ -154,11 +170,13 @@ section, so the documentation cannot drift away from what the job actually runs.
 These are **not** covered, and the workflow fails if the documentation is deleted without
 addressing them:
 
-- **The MySQL run pays for a database per suite.** Each suite creates its database and replays
-  55 DDL statements (~0.3 s), then drops it; on a server with slow DDL that is the dominant cost
-  of the job. A pool of pre-created databases would remove it, but it needs a sweep on every
-  exit path and MySQL has no `CREATE DATABASE … TEMPLATE`, so the schema still has to be
-  replayed per database.
+- **The MySQL pool is per machine, not per run.** Leftover `relayx_t_*` databases survive a
+  local run by design (that is where the saving comes from); `sweep` is the only cleanup, and CI
+  runs it. Anything that inspects the server between runs will see them, and a run killed with
+  `SIGKILL` leaves its lock behind until the pid check or the grace window clears it.
+- **Ids are not reset between files.** A pooled database is emptied with `DELETE`, so
+  `AUTO_INCREMENT` keeps counting. No suite compares an id to a literal — they compare ids to
+  each other — but a new test that expects `id === 1` would fail on MySQL.
 - **`DateTime` storage differs by engine.** SQLite holds unix milliseconds, MySQL
   `DATETIME(3)`. The helpers normalise that difference for the aggregate queries; a new raw
   query that compares a `DateTime` column as a string, without going through `utils/date.ts`,
